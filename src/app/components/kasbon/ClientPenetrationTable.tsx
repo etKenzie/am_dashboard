@@ -2,20 +2,18 @@
 
 import { Download as DownloadIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    CircularProgress,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    Typography
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography
 } from '@mui/material';
-import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { ClientSummary } from '../../api/kasbon/KasbonSlice';
 
@@ -30,25 +28,14 @@ const ClientPenetrationTable = ({
   loading,
   error
 }: ClientPenetrationTableProps) => {
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+
 
   // Sort data by penetration_rate in descending order
   const sortedData = [...data].sort((a, b) => {
     return b.penetration_rate - a.penetration_rate;
   });
 
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    // Ensure minimum of 10 rows per page
-    const adjustedRowsPerPage = Math.max(10, newRowsPerPage);
-    setRowsPerPage(adjustedRowsPerPage);
-    setPage(0);
-  };
 
   const formatPercentage = (value: number) => {
     return `${(value * 100).toFixed(2)}%`;
@@ -169,19 +156,32 @@ const ClientPenetrationTable = ({
               </TableRow>
             ) : (
               sortedData
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row, index) => (
                   <TableRow key={`${row.sourced_to}-${row.project}`} hover>
                     <TableCell sx={{ fontWeight: 'bold' }}>
-                      {page * rowsPerPage + index + 1}
+                      {index + 1}
                     </TableCell>
                     <TableCell>{row.sourced_to}</TableCell>
                     <TableCell>{row.project}</TableCell>
                     <TableCell align="right">{row.active_employees.toLocaleString()}</TableCell>
                     <TableCell align="right">{row.eligible_employees.toLocaleString()}</TableCell>
-                    <TableCell align="right">{formatPercentage(row.eligible_rate)}</TableCell>
+                    <TableCell 
+                      align="right" 
+                      sx={{ 
+                        fontWeight: row.eligible_rate < 0.7 ? 'bold' : 'normal',
+                        color: row.eligible_rate < 0.7 ? 'error.main' : 'inherit'
+                      }}
+                    >
+                      {formatPercentage(row.eligible_rate)}
+                    </TableCell>
                     <TableCell align="right">{row.approved_requests.toLocaleString()}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                    <TableCell 
+                      align="right" 
+                      sx={{ 
+                        fontWeight: row.penetration_rate < 0.7 ? 'bold' : 'normal',
+                        color: row.penetration_rate < 0.7 ? 'error.main' : 'primary.main'
+                      }}
+                    >
                       {formatPercentage(row.penetration_rate)}
                     </TableCell>
                   </TableRow>
@@ -189,15 +189,6 @@ const ClientPenetrationTable = ({
             )}
           </TableBody>
         </Table>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          component="div"
-          count={sortedData.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
       </TableContainer>
     </Box>
   );

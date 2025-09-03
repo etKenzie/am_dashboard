@@ -2,20 +2,18 @@
 
 import { Download as DownloadIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    CircularProgress,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    Typography
+  Box,
+  Button,
+  CircularProgress,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography
 } from '@mui/material';
-import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { ClientSummary } from '../../api/kasbon/KasbonSlice';
 
@@ -30,8 +28,7 @@ const ClientDelinquencyTable = ({
   loading,
   error
 }: ClientDelinquencyTableProps) => {
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+
 
   // Filter out clients with 0 delinquency rate and 0 unrecovered payment, then sort by total_unrecovered_payment in descending order
   const sortedData = [...data]
@@ -40,17 +37,7 @@ const ClientDelinquencyTable = ({
       return b.total_unrecovered_payment - a.total_unrecovered_payment;
     });
 
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    // Ensure minimum of 10 rows per page
-    const adjustedRowsPerPage = Math.max(10, newRowsPerPage);
-    setRowsPerPage(adjustedRowsPerPage);
-    setPage(0);
-  };
 
   const formatPercentage = (value: number) => {
     return `${(value * 100).toFixed(2)}%`;
@@ -70,6 +57,7 @@ const ClientDelinquencyTable = ({
       'Rank': index + 1,
       'Sourced To': item.sourced_to,
       'Project': item.project,
+      'Delinquent Requests': item.delinquent_requests,
       'Delinquency Rate': formatPercentage(item.delinquency_rate),
       'Total Unrecovered Payment': formatCurrency(item.total_unrecovered_payment),
     }));
@@ -92,6 +80,7 @@ const ClientDelinquencyTable = ({
       { wch: 8 },  // Rank
       { wch: 35 }, // Sourced To
       { wch: 25 }, // Project
+      { wch: 20 }, // Delinquent Requests
       { wch: 18 }, // Delinquency Rate
       { wch: 25 }, // Total Unrecovered Payment
     ];
@@ -142,6 +131,7 @@ const ClientDelinquencyTable = ({
               <TableCell sx={{ fontWeight: 'bold', width: '80px' }}>Rank</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>Sourced To</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>Project</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }} align="right">Delinquent Requests</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }} align="right">Delinquency Rate</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }} align="right">Unrecovered Payment</TableCell>
             </TableRow>
@@ -149,13 +139,13 @@ const ClientDelinquencyTable = ({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={6} align="center">
                   <CircularProgress size={20} />
                 </TableCell>
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={6} align="center">
                   <Typography variant="body2" color="error">
                     {error}
                   </Typography>
@@ -163,7 +153,7 @@ const ClientDelinquencyTable = ({
               </TableRow>
             ) : sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={6} align="center">
                   <Typography variant="body2" color="textSecondary">
                     No data found
                   </Typography>
@@ -171,34 +161,36 @@ const ClientDelinquencyTable = ({
               </TableRow>
             ) : (
               sortedData
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row, index) => (
                   <TableRow key={`${row.sourced_to}-${row.project}`} hover>
                     <TableCell sx={{ fontWeight: 'bold' }}>
-                      {page * rowsPerPage + index + 1}
+                      {index + 1}
                     </TableCell>
                     <TableCell>{row.sourced_to}</TableCell>
                     <TableCell>{row.project}</TableCell>
-                    <TableCell align="right" sx={{ color: 'error.main' }}>
-                      {formatPercentage(row.delinquency_rate)}
-                    </TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                      {formatCurrency(row.total_unrecovered_payment)}
-                    </TableCell>
+                                         <TableCell align="right" sx={{ 
+                       fontWeight: row.delinquency_rate > 0.002 ? 'bold' : 'normal',
+                       color: row.delinquency_rate > 0.002 ? 'error.main' : 'inherit'
+                     }}>
+                       {row.delinquent_requests}
+                     </TableCell>
+                     <TableCell align="right" sx={{ 
+                       fontWeight: row.delinquency_rate > 0.002 ? 'bold' : 'normal',
+                       color: row.delinquency_rate > 0.002 ? 'error.main' : 'inherit'
+                     }}>
+                       {formatPercentage(row.delinquency_rate)}
+                     </TableCell>
+                     <TableCell align="right" sx={{ 
+                       fontWeight: row.delinquency_rate > 0.002 ? 'bold' : 'normal',
+                       color: row.delinquency_rate > 0.002 ? 'error.main' : 'inherit'
+                     }}>
+                       {formatCurrency(row.total_unrecovered_payment)}
+                     </TableCell>
                   </TableRow>
                 ))
             )}
           </TableBody>
         </Table>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          component="div"
-          count={sortedData.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
       </TableContainer>
     </Box>
   );

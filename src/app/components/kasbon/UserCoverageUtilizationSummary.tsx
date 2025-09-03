@@ -40,6 +40,18 @@ const UserCoverageUtilizationSummary: React.FC<UserCoverageUtilizationSummaryPro
         isLoading: isLoading
       },
       { 
+        title: "Total Active Employees", 
+        value: coverageUtilizationData?.total_active_employees || 0,
+        isCurrency: false,
+        isLoading: isLoading
+      },
+      { 
+        title: "Eligible Rate", 
+        value: coverageUtilizationData?.eligible_rate || 0,
+        isCurrency: false,
+        isLoading: isLoading
+      },
+      { 
         title: "Total Loan Requests", 
         value: coverageUtilizationData?.total_loan_requests || 0,
         isCurrency: false,
@@ -76,7 +88,7 @@ const UserCoverageUtilizationSummary: React.FC<UserCoverageUtilizationSummaryPro
         isLoading: isLoading
       },
       { 
-        title: "Average Approval Days", 
+        title: "Processing Time (Days)", 
         value: coverageUtilizationData?.average_approval_time || 0,
         isCurrency: false,
         isLoading: isLoading,

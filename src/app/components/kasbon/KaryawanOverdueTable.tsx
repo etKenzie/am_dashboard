@@ -43,6 +43,8 @@ const headCells: HeadCell[] = [
   { id: 'sourced_to', label: 'Sourced To', numeric: false },
   { id: 'project', label: 'Project', numeric: false },
   { id: 'total_amount_owed', label: 'Amount Owed', numeric: true },
+  { id: 'admin_fee', label: 'Admin Fee', numeric: true },
+  { id: 'total_payment', label: 'Total Payment', numeric: true },
   { id: 'repayment_date', label: 'Repayment Date', numeric: false },
   { id: 'days_overdue', label: 'Days Overdue', numeric: true },
 ];
@@ -140,6 +142,8 @@ const KaryawanOverdueTable = ({
       karyawan.project.toLowerCase(),
       karyawan.repayment_date.toLowerCase(),
       karyawan.days_overdue.toString(),
+      karyawan.admin_fee.toString(),
+      karyawan.total_payment.toString(),
     ];
 
     return searchableFields.some((field) =>
@@ -169,7 +173,7 @@ const KaryawanOverdueTable = ({
     let aValue: any = a[orderBy];
     let bValue: any = b[orderBy];
 
-    if (orderBy === 'id_karyawan' || orderBy === 'total_amount_owed' || orderBy === 'days_overdue') {
+    if (orderBy === 'id_karyawan' || orderBy === 'total_amount_owed' || orderBy === 'admin_fee' || orderBy === 'total_payment' || orderBy === 'days_overdue') {
       aValue = Number(aValue);
       bValue = Number(bValue);
     }
@@ -193,6 +197,8 @@ const KaryawanOverdueTable = ({
       'Sourced To': k.sourced_to,
       'Project': k.project,
       'Amount Owed': k.total_amount_owed,
+      'Admin Fee': k.admin_fee,
+      'Total Payment': k.total_payment,
       'Repayment Date': k.repayment_date,
       'Days Overdue': k.days_overdue,
     }));
@@ -219,6 +225,8 @@ const KaryawanOverdueTable = ({
       { wch: 25 }, // Sourced To
       { wch: 20 }, // Project
       { wch: 15 }, // Amount Owed
+      { wch: 15 }, // Admin Fee
+      { wch: 15 }, // Total Payment
       { wch: 15 }, // Repayment Date
       { wch: 15 }  // Days Overdue
     ];
@@ -450,6 +458,12 @@ const KaryawanOverdueTable = ({
                       <TableCell>{row.project}</TableCell>
                       <TableCell align="right" sx={{ fontWeight: 'bold', color: 'error.main' }}>
                         {formatCurrency(row.total_amount_owed)}
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
+                        {formatCurrency(row.admin_fee)}
+                      </TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 'bold', color: 'info.main' }}>
+                        {formatCurrency(row.total_payment)}
                       </TableCell>
                       <TableCell>{formatDate(row.repayment_date)}</TableCell>
                       <TableCell align="right">

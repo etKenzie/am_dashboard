@@ -11,11 +11,9 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   Typography
 } from '@mui/material';
-import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { ClientSummary } from '../../api/kasbon/KasbonSlice';
 
@@ -40,8 +38,7 @@ const ClientSummaryTable = ({
   displayFieldLabel,
   formatValue
 }: ClientSummaryTableProps) => {
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+
 
   // Sort data by the specified field in descending order
   const sortedData = [...data].sort((a, b) => {
@@ -50,17 +47,7 @@ const ClientSummaryTable = ({
     return bValue - aValue;
   });
 
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    // Ensure minimum of 10 rows per page
-    const adjustedRowsPerPage = Math.max(10, newRowsPerPage);
-    setRowsPerPage(adjustedRowsPerPage);
-    setPage(0);
-  };
 
   const prepareDataForExport = (data: ClientSummary[]) => {
     return data.map((item, index) => ({
@@ -165,11 +152,10 @@ const ClientSummaryTable = ({
               </TableRow>
             ) : (
               sortedData
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row, index) => (
                   <TableRow key={`${row.sourced_to}-${row.project}`} hover>
                     <TableCell sx={{ fontWeight: 'bold' }}>
-                      {page * rowsPerPage + index + 1}
+                      {index + 1}
                     </TableCell>
                     <TableCell>{row.sourced_to}</TableCell>
                     <TableCell>{row.project}</TableCell>
@@ -181,15 +167,6 @@ const ClientSummaryTable = ({
             )}
           </TableBody>
         </Table>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          component="div"
-          count={sortedData.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-        />
       </TableContainer>
     </Box>
   );

@@ -134,6 +134,8 @@ export interface KaryawanOverdue {
   sourced_to: string;
   project: string;
   total_amount_owed: number;
+  admin_fee: number;
+  total_payment: number;
   repayment_date: string;
   days_overdue: number;
 }
@@ -267,8 +269,10 @@ export interface CoverageUtilization {
 export interface CoverageUtilizationResponse {
   status: string;
   total_eligible_employees: number;
+  total_active_employees: number;
   total_loan_requests: number;
   penetration_rate: number;
+  eligible_rate: number;
   total_approved_requests: number;
   total_rejected_requests: number;
   approval_rate: number;
@@ -485,6 +489,7 @@ export interface ClientSummary {
   total_admin_fee_collected: number;
   total_unrecovered_payment: number;
   admin_fee_profit: number;
+  delinquent_requests: number;
   delinquency_rate: number;
 }
 
