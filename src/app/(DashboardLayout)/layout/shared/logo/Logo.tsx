@@ -19,24 +19,25 @@ const Logo = () => {
     overflow: "hidden",
     display: "block",
   }));
+  const logoHeight = TopbarHeight - 12
 
   if (activeDir === "ltr") {
     return (
       <LinkStyled href="/">
         {activeMode === "dark" ? (
           <Image
-            src={createAssetUrl("/images/logos/valdo_white.png")}
+            src={createAssetUrl("/images/logos/valdo_logo.png")}
             alt="logo"
-            height={TopbarHeight}
-            width={174}
+            height={logoHeight}
+            width={180}
             priority
           />
         ) : (
           <Image
-            src={createAssetUrl("/images/logos/valdo_black.png")}
+            src={createAssetUrl("/images/logos/valdo_logo.png")}
             alt="logo"
-            height={TopbarHeight}
-            width={174}
+            height={logoHeight}
+            width={180}
             priority
           />
         )}
