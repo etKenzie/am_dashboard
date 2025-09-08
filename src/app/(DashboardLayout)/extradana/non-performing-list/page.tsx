@@ -4,21 +4,21 @@ import { getPageRoles } from '@/config/roles';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import LoanNonPerformingList from '../../../components/shared/LoanNonPerformingList';
 
-const KasbonNonPerformingList = () => {
+const ExtradanaNonPerformingList = () => {
   return (
     <LoanNonPerformingList
-      loanType="kasbon"
-      title="Kasbon Non-Performing List"
-      description="List of kasbon non-performing loans and overdue accounts"
-      requiredRoles={getPageRoles('KASBON_DASHBOARD')}
+      loanType="extradana"
+      title="Extradana Non-Performing List"
+      description="List of extradana non-performing loans and overdue accounts"
+      requiredRoles={getPageRoles('KASBON_DASHBOARD')} // Using same roles for now
     />
   );
 };
 
-export default function ProtectedKasbonNonPerformingList() {
+export default function ProtectedExtradanaNonPerformingList() {
   return (
     <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
-      <KasbonNonPerformingList />
+      <ExtradanaNonPerformingList />
     </ProtectedRoute>
   );
 }

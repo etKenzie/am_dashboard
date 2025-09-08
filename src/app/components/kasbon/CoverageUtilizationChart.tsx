@@ -1,16 +1,16 @@
 'use client';
 
 import {
-    Box,
-    Card,
-    CardContent,
-    CircularProgress,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    SelectChangeEvent,
-    Typography
+  Box,
+  Card,
+  CardContent,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Typography
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -27,6 +27,7 @@ interface CoverageUtilizationChartProps {
     project: string;
     month?: string;
     year?: string;
+    loanType: string;
   };
 }
 
@@ -105,6 +106,7 @@ const CoverageUtilizationChart = ({ filters }: CoverageUtilizationChartProps) =>
         project: filters.project || undefined,
         start_date: formatDate(startDate),
         end_date: formatDate(endDate),
+        loan_type: filters.loanType
       });
       setChartData(response);
     } catch (error) {

@@ -56,6 +56,7 @@ interface KaryawanOverdueTableProps {
     project: string;
     month: string;
     year: string;
+    loanType: string;
   };
   title?: string;
 }
@@ -91,7 +92,8 @@ const KaryawanOverdueTable = ({
         project: filters.project || undefined,
         id_karyawan: undefined,
         month: selectedMonth,
-        year: selectedYear
+        year: selectedYear,
+        loan_type: filters.loanType,
       });
       
       setKaryawan(response.results);

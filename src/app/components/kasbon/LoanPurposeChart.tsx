@@ -1,11 +1,11 @@
 'use client';
 
 import {
-    Box,
-    Card,
-    CardContent,
-    CircularProgress,
-    Typography
+  Box,
+  Card,
+  CardContent,
+  CircularProgress,
+  Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
 import { useEffect, useState } from 'react';
@@ -20,6 +20,7 @@ interface LoanPurposeChartProps {
     project: string;
     month: string;
     year: string;
+    loanType: string;
   };
 }
 
@@ -38,6 +39,7 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
         project: filters.project || undefined,
         month: filters.month,
         year: filters.year,
+        loan_type: filters.loanType,
       });
       setChartData(response);
     } catch (error) {

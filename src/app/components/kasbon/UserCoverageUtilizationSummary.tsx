@@ -98,14 +98,14 @@ const UserCoverageUtilizationSummary: React.FC<UserCoverageUtilizationSummaryPro
         title: "Total Disbursed Amount", 
         value: coverageUtilizationData?.total_disbursed_amount || 0,
         isCurrency: true,
-        mdSize: 4,
+        mdSize: 3.4285,
         isLoading: isLoading
       },
       { 
         title: "Average Disbursed Amount", 
         value: coverageUtilizationData?.average_disbursed_amount || 0,
         isCurrency: true,
-        mdSize: 4,
+        mdSize: 3.4285,
         isLoading: isLoading
       },
     ];
@@ -118,7 +118,7 @@ const UserCoverageUtilizationSummary: React.FC<UserCoverageUtilizationSummaryPro
       </Typography>
       <SummaryTiles 
         tiles={createTiles()} 
-        md={2} 
+        md={1.714} 
       />
     </Box>
   );

@@ -27,6 +27,7 @@ interface RepaymentRiskChartProps {
     project: string;
     month?: string;
     year?: string;
+    loanType: string;
   };
 }
 
@@ -105,6 +106,7 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
         project: filters.project || undefined,
         start_date: formatDate(startDate),
         end_date: formatDate(endDate),
+        loan_type: filters.loanType,
       });
       setChartData(response);
     } catch (error) {

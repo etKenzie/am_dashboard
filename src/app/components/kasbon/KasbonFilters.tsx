@@ -1,12 +1,12 @@
 'use client';
 
 import {
-    FormControl,
-    Grid,
-    InputLabel,
-    MenuItem,
-    Select,
-    SelectChangeEvent
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import type { KasbonFilters as KasbonFiltersType } from '../../api/kasbon/KasbonSlice';
@@ -40,10 +40,10 @@ const KasbonFilters = ({ filters, onFiltersChange }: KasbonFiltersProps) => {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => (currentYear - i).toString());
 
-  const fetchFilters = async (employer?: string, placement?: string) => {
+  const fetchFilters = async (employer?: string, placement?: string, loanType?: string) => {
     setLoading(true);
     try {
-      const response = await fetchKasbonFilters(employer, placement);
+      const response = await fetchKasbonFilters(employer, placement, loanType);
       setAvailableFilters(response.filters);
     } catch (error) {
       console.error('Failed to fetch filters:', error);

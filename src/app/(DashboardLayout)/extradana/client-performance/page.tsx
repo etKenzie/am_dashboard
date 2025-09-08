@@ -4,21 +4,21 @@ import { getPageRoles } from '@/config/roles';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import LoanDashboard from '../../../components/shared/LoanDashboard';
 
-const KasbonDashboard = () => {
+const ExtradanaDashboard = () => {
   return (
     <LoanDashboard
-      loanType="kasbon"
-      title="Kasbon Dashboard"
-      description="Manage kasbon data for employees"
-      requiredRoles={getPageRoles('KASBON_DASHBOARD')}
+      loanType="extradana"
+      title="Extradana Dashboard"
+      description="Manage extradana data for employees"
+      requiredRoles={getPageRoles('KASBON_DASHBOARD')} // Using same roles for now
     />
   );
 };
 
-export default function ProtectedKasbonDashboard() {
+export default function ProtectedExtradanaDashboard() {
   return (
     <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
-      <KasbonDashboard />
+      <ExtradanaDashboard />
     </ProtectedRoute>
   );
 }

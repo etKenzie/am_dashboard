@@ -1,7 +1,6 @@
 'use client';
 
 import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import React from 'react';
 
 export interface KasbonOverviewFilterValues {
   month: string;

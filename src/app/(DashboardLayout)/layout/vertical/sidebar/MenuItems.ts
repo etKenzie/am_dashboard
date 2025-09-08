@@ -1,5 +1,6 @@
 import {
   IconCalendarDollar,
+  IconCashBanknote,
   IconDashboard,
   IconGraph,
   IconHome,
@@ -74,6 +75,37 @@ const Menuitems: MenuitemsType[] = [
         title: "Non-Performing List",
         icon: IconUserCancel,
         href: "/kasbon/non-performing-list",
+      },
+      
+    ],
+  },
+
+  {
+    id: uniqueId(),
+    title: "Extradana",
+    icon: IconCashBanknote,
+    href: "/extradana",
+    
+    children: [
+      {
+        id: uniqueId(),
+        title: "Overview",
+        icon: IconDashboard,
+        href: "/extradana/overview",
+        chip: "New",
+        chipColor: "secondary",
+      },
+      {
+        id: uniqueId(),
+        title: "Client Performance",
+        icon: IconGraph,
+        href: "/extradana/client-performance",
+      },
+      {
+        id: uniqueId(),
+        title: "Non-Performing List",
+        icon: IconUserCancel,
+        href: "/extradana/non-performing-list",
       },
       
     ],
