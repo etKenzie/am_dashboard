@@ -16,7 +16,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dynamic from "next/dynamic";
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { fetchRepaymentRiskMonthly, RepaymentRiskMonthlyResponse } from '../../api/kasbon/KasbonSlice';
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -119,7 +119,7 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
   // Fetch data when dates change
   useEffect(() => {
     fetchChartData();
-  }, [startDate, endDate, filters]);
+  }, [startDate, endDate, filters.employer, filters.placement, filters.project, filters.loanType]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);
@@ -337,4 +337,4 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
   );
 };
 
-export default RepaymentRiskChart;
+export default React.memo(RepaymentRiskChart);

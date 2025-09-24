@@ -143,6 +143,7 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
     fetchRepaymentRiskData(newFilters);
   }, [fetchLoanPurposeData, fetchCoverageUtilizationData, fetchRepaymentRiskData]);
 
+  // Initial data fetch when component mounts and filters are initialized
   useEffect(() => {
     // Only fetch data if month and year are set (after initialization)
     if (filters.month && filters.year) {
@@ -150,7 +151,7 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
       fetchCoverageUtilizationData(filters);
       fetchRepaymentRiskData(filters);
     }
-  }, [filters.month, filters.year, filters.employer, filters.placement, filters.project, fetchLoanPurposeData, fetchCoverageUtilizationData, fetchRepaymentRiskData]);
+  }, [filters.month, filters.year]); // Only depend on month and year for initial load
 
   return (
     <PageContainer title={title} description={description}>

@@ -8,7 +8,7 @@ import {
   Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { fetchLoanPurpose, LoanPurposeResponse } from '../../api/kasbon/KasbonSlice';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
@@ -52,7 +52,7 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
   // Fetch data when filters change
   useEffect(() => {
     fetchChartData();
-  }, [filters]);
+  }, [filters.month, filters.year, filters.employer, filters.placement, filters.project, filters.loanType]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -253,4 +253,4 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
   );
 };
 
-export default LoanPurposeChart;
+export default React.memo(LoanPurposeChart);
