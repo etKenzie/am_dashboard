@@ -2,20 +2,20 @@
 
 import { Download as DownloadIcon } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  CircularProgress,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography
+    Box,
+    Button,
+    CircularProgress,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Typography
 } from '@mui/material';
 import * as XLSX from 'xlsx';
-import { ClientSummary } from '../../api/kasbon/KasbonSlice';
+import { ClientSummary } from '../../api/loan/LoanSlice';
 
 interface ClientDelinquencyTableProps {
   data: ClientSummary[];

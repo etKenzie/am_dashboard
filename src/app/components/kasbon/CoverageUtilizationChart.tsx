@@ -1,23 +1,23 @@
 'use client';
 
 import {
-  Box,
-  Card,
-  CardContent,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Typography
+    Box,
+    Card,
+    CardContent,
+    CircularProgress,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    SelectChangeEvent,
+    Typography
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dynamic from "next/dynamic";
 import React, { useEffect, useState } from 'react';
-import { CoverageUtilizationMonthlyResponse, fetchCoverageUtilizationMonthly } from '../../api/kasbon/KasbonSlice';
+import { CoverageUtilizationMonthlyResponse, fetchCoverageUtilizationMonthly } from '../../api/loan/LoanSlice';
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface CoverageUtilizationChartProps {

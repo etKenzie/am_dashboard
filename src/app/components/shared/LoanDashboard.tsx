@@ -3,7 +3,7 @@
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
-import { CoverageUtilizationResponse, fetchCoverageUtilization, fetchLoanPurpose, fetchRepaymentRisk, LoanPurposeResponse, RepaymentRiskResponse } from '../../api/kasbon/KasbonSlice';
+import { CoverageUtilizationResponse, fetchCoverageUtilization, fetchLoanPurpose, fetchRepaymentRisk, LoanPurposeResponse, RepaymentRiskResponse } from '../../api/loan/LoanSlice';
 import PageContainer from '../container/PageContainer';
 import CoverageUtilizationChart from '../kasbon/CoverageUtilizationChart';
 import KasbonFilters, { KasbonFilterValues } from '../kasbon/KasbonFilters';

@@ -12,21 +12,21 @@ export interface KaryawanResponse {
   results: Karyawan[];
 }
 
-// Types for Kasbon Filters API
-export interface KasbonFilters {
+// Types for Loan Filters API
+export interface LoanFilters {
   employers: string[];
   placements: string[];
   projects: string[];
 }
 
-export interface KasbonFiltersResponse {
+export interface LoanFiltersResponse {
   status: string;
-  filters: KasbonFilters;
+  filters: LoanFilters;
 }
 
 
 // Types for Loan Fees Monthly Query Parameters
-export interface KasbonLoanFeesMonthlyParams {
+export interface LoanFeesMonthlyParams {
   employer?: string;
   sourced_to?: string;
   project?: string;
@@ -140,10 +140,10 @@ export interface CoverageUtilizationMonthlyParams {
 // Types for Repayment Risk API
 export interface RepaymentRisk {
   total_expected_repayment: number;
-  total_kasbon_principal_collected: number;
+  total_loan_principal_collected: number;
   total_admin_fee_collected: number;
   total_unrecovered_repayment: number;
-  total_unrecovered_kasbon_principal: number;
+  total_unrecovered_loan_principal: number;
   total_unrecovered_admin_fee: number;
   repayment_recovery_rate: number;
   delinquencies_rate: number;
@@ -154,10 +154,10 @@ export interface RepaymentRisk {
 export interface RepaymentRiskResponse {
   status: string;
   total_expected_repayment: number;
-  total_kasbon_principal_collected: number;
+  total_loan_principal_collected: number;
   total_admin_fee_collected: number;
   total_unrecovered_repayment: number;
-  total_unrecovered_kasbon_principal: number;
+  total_unrecovered_loan_principal: number;
   total_unrecovered_admin_fee: number;
   repayment_recovery_rate: number;
   delinquencies_rate: number;
@@ -179,7 +179,7 @@ export interface RepaymentRiskParams {
 export interface RepaymentRiskMonthlyData {
   repayment_recovery_rate: number;
   total_expected_repayment: number;
-  total_kasbon_principal_collected: number;
+  total_loan_principal_collected: number;
   total_unrecovered_repayment: number;
   admin_fee_profit: number;
 }
@@ -359,8 +359,8 @@ export const fetchKaryawanByClient = async (clientId: string): Promise<KaryawanR
   return fetchKaryawan(clientId);
 };
 
-// Fetch Kasbon Filters
-export const fetchKasbonFilters = async (employer?: string, placement?: string, loan_type?: string): Promise<KasbonFiltersResponse> => {
+// Fetch Loan Filters
+export const fetchLoanFilters = async (employer?: string, placement?: string, loan_type?: string): Promise<LoanFiltersResponse> => {
   const baseUrl = AM_API_URL;
   
   // Build query string from parameters
@@ -371,10 +371,10 @@ export const fetchKasbonFilters = async (employer?: string, placement?: string, 
   if (loan_type) queryParams.append('loan_type', loan_type);
   
   const url = queryParams.toString() 
-    ? `${baseUrl}/kasbon/filters?${queryParams.toString()}`
-    : `${baseUrl}/kasbon/filters`;
+    ? `${baseUrl}/loan/filters?${queryParams.toString()}`
+    : `${baseUrl}/loan/filters`;
   
-  console.log('Fetching kasbon filters from:', url);
+  console.log('Fetching loan filters from:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -384,7 +384,7 @@ export const fetchKasbonFilters = async (employer?: string, placement?: string, 
   });
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch kasbon filters: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to fetch loan filters: ${response.status} ${response.statusText}`);
   }
   
   return response.json();
@@ -407,7 +407,7 @@ export const fetchKaryawanOverdue = async (params: KaryawanOverdueParams): Promi
   if (params.year) queryParams.append('year', params.year);
   if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   
-  const url = `${baseUrl}/kasbon/karyawan-overdue?${queryParams.toString()}`;
+  const url = `${baseUrl}/loan/karyawan-overdue?${queryParams.toString()}`;
   
   console.log('Fetching karyawan overdue from:', url);
   
@@ -439,7 +439,7 @@ export const fetchCoverageUtilization = async (params: CoverageUtilizationParams
   if (params.year) queryParams.append('year', params.year);
   if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   
-  const url = `${baseUrl}/kasbon/coverage-utilization?${queryParams.toString()}`;
+  const url = `${baseUrl}/loan/coverage-utilization?${queryParams.toString()}`;
   
   console.log('Fetching coverage utilization from:', url);
   
@@ -471,7 +471,7 @@ export const fetchCoverageUtilizationMonthly = async (params: CoverageUtilizatio
   if (params.end_date) queryParams.append('end_date', params.end_date);
   if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   
-  const url = `${baseUrl}/kasbon/coverage-utilization-monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/loan/coverage-utilization-monthly?${queryParams.toString()}`;
   
   console.log('Fetching coverage utilization monthly from:', url);
   
@@ -503,7 +503,7 @@ export const fetchRepaymentRisk = async (params: RepaymentRiskParams): Promise<R
   if (params.year) queryParams.append('year', params.year);
   if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   
-  const url = `${baseUrl}/kasbon/repayment-risk?${queryParams.toString()}`;
+  const url = `${baseUrl}/loan/repayment-risk?${queryParams.toString()}`;
   
   console.log('Fetching repayment risk from:', url);
   
@@ -535,7 +535,7 @@ export const fetchRepaymentRiskMonthly = async (params: RepaymentRiskMonthlyPara
   if (params.end_date) queryParams.append('end_date', params.end_date);
   if (params.loan_type) queryParams.append('loan_type', params.loan_type);
 
-  const url = `${baseUrl}/kasbon/repayment-risk-monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/loan/repayment-risk-monthly?${queryParams.toString()}`;
   
   console.log('Fetching repayment risk monthly from:', url);
   
@@ -566,7 +566,7 @@ export const fetchLoanRequests = async (params: LoanRequestsParams): Promise<Loa
   if (params.month) queryParams.append('month', params.month);
   if (params.year) queryParams.append('year', params.year);
   
-  const url = `${baseUrl}/kasbon/requests?${queryParams.toString()}`;
+  const url = `${baseUrl}/loan/requests?${queryParams.toString()}`;
   
   console.log('Fetching loan requests from:', url);
   
@@ -597,7 +597,7 @@ export const fetchLoanDisbursement = async (params: LoanDisbursementParams): Pro
   if (params.month) queryParams.append('month', params.month);
   if (params.year) queryParams.append('year', params.year);
   
-  const url = `${baseUrl}/kasbon/disbursement?${queryParams.toString()}`;
+  const url = `${baseUrl}/loan/disbursement?${queryParams.toString()}`;
   
   console.log('Fetching loan disbursement from:', url);
   
@@ -628,7 +628,7 @@ export const fetchLoanDisbursementMonthly = async (params: LoanDisbursementMonth
   if (params.start_date) queryParams.append('start_date', params.start_date);
   if (params.end_date) queryParams.append('end_date', params.end_date);
   
-  const url = `${baseUrl}/kasbon/disbursement-monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/loan/disbursement-monthly?${queryParams.toString()}`;
   
   console.log('Fetching loan disbursement monthly from:', url);
   
@@ -661,7 +661,7 @@ export const fetchLoanPurpose = async (params: LoanPurposeParams): Promise<LoanP
   if (params.year) queryParams.append('year', params.year);
   if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   
-  const url = `${baseUrl}/kasbon/loan-purpose?${queryParams.toString()}`;
+  const url = `${baseUrl}/loan/loan-purpose?${queryParams.toString()}`;
   
   console.log('Fetching loan purpose from:', url);
   
@@ -690,7 +690,7 @@ export const fetchClientSummary = async (params: ClientSummaryParams): Promise<C
   if (params.year) queryParams.append('year', params.year);
   if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   
-  const url = `${baseUrl}/kasbon/client-summary?${queryParams.toString()}`;
+  const url = `${baseUrl}/loan/client-summary?${queryParams.toString()}`;
   
   console.log('Fetching client summary from:', url);
   

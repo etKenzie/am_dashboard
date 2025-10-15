@@ -3,7 +3,7 @@
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { Box, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { ClientSummary, fetchClientSummary } from '../../api/kasbon/KasbonSlice';
+import { ClientSummary, fetchClientSummary } from '../../api/loan/LoanSlice';
 import PageContainer from '../container/PageContainer';
 import ClientDelinquencyTable from '../kasbon/ClientDelinquencyTable';
 import ClientPenetrationTable from '../kasbon/ClientPenetrationTable';

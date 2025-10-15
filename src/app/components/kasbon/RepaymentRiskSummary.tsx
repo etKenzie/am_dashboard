@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import React from 'react';
-import { RepaymentRiskResponse } from '../../api/kasbon/KasbonSlice';
+import { RepaymentRiskResponse } from '../../api/loan/LoanSlice';
 import SummaryTiles from '../shared/SummaryTiles';
 
 interface RepaymentRiskSummaryProps {
@@ -40,8 +40,8 @@ const RepaymentRiskSummary: React.FC<RepaymentRiskSummaryProps> = ({
         isLoading: isLoading
       },
       { 
-        title: "Total Kasbon Principal Collected", 
-        value: repaymentRiskData?.total_kasbon_principal_collected || 0,
+        title: "Total Loan Principal Collected", 
+        value: repaymentRiskData?.total_loan_principal_collected || 0,
         isCurrency: true,
         isLoading: isLoading
       },
@@ -58,8 +58,8 @@ const RepaymentRiskSummary: React.FC<RepaymentRiskSummaryProps> = ({
         isLoading: isLoading
       },
       { 
-        title: "Total Unrecovered Kasbon Principal", 
-        value: repaymentRiskData?.total_unrecovered_kasbon_principal || 0,
+        title: "Total Unrecovered Loan Principal", 
+        value: repaymentRiskData?.total_unrecovered_loan_principal || 0,
         isCurrency: true,
         isLoading: isLoading
       },

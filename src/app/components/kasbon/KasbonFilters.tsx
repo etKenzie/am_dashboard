@@ -9,8 +9,8 @@ import {
   SelectChangeEvent
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import type { KasbonFilters as KasbonFiltersType } from '../../api/kasbon/KasbonSlice';
-import { fetchKasbonFilters } from '../../api/kasbon/KasbonSlice';
+import type { LoanFilters as LoanFiltersType } from '../../api/loan/LoanSlice';
+import { fetchLoanFilters } from '../../api/loan/LoanSlice';
 
 export interface KasbonFilterValues {
   month: string;
@@ -26,7 +26,7 @@ interface KasbonFiltersProps {
 }
 
 const KasbonFilters = ({ filters, onFiltersChange }: KasbonFiltersProps) => {
-  const [availableFilters, setAvailableFilters] = useState<KasbonFiltersType | null>(null);
+  const [availableFilters, setAvailableFilters] = useState<LoanFiltersType | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Generate month options (01-12)
@@ -43,7 +43,7 @@ const KasbonFilters = ({ filters, onFiltersChange }: KasbonFiltersProps) => {
   const fetchFilters = async (employer?: string, placement?: string, loanType?: string) => {
     setLoading(true);
     try {
-      const response = await fetchKasbonFilters(employer, placement, loanType);
+      const response = await fetchLoanFilters(employer, placement, loanType);
       setAvailableFilters(response.filters);
     } catch (error) {
       console.error('Failed to fetch filters:', error);

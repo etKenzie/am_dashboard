@@ -2,31 +2,31 @@
 
 import { Download as DownloadIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  FormControl,
-  Grid,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  TableSortLabel,
-  TextField,
-  Typography,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    FormControl,
+    Grid,
+    InputAdornment,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Select,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
+    TableSortLabel,
+    TextField,
+    Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
-import { Karyawan } from '../../api/kasbon/KasbonSlice';
+import { Karyawan } from '../../api/loan/LoanSlice';
 
 type Order = 'asc' | 'desc';
 type SortableField = keyof Karyawan;

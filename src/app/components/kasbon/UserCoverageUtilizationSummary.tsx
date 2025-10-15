@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import React from 'react';
-import { CoverageUtilizationResponse } from '../../api/kasbon/KasbonSlice';
+import { CoverageUtilizationResponse } from '../../api/loan/LoanSlice';
 import SummaryTiles from '../shared/SummaryTiles';
 
 interface UserCoverageUtilizationSummaryProps {

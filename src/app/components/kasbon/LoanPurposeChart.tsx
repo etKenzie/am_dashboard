@@ -1,15 +1,15 @@
 'use client';
 
 import {
-  Box,
-  Card,
-  CardContent,
-  CircularProgress,
-  Typography
+    Box,
+    Card,
+    CardContent,
+    CircularProgress,
+    Typography
 } from '@mui/material';
 import dynamic from "next/dynamic";
 import React, { useEffect, useState } from 'react';
-import { fetchLoanPurpose, LoanPurposeResponse } from '../../api/kasbon/KasbonSlice';
+import { fetchLoanPurpose, LoanPurposeResponse } from '../../api/loan/LoanSlice';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 

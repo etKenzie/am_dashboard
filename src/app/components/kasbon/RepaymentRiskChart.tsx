@@ -1,23 +1,23 @@
 'use client';
 
 import {
-  Box,
-  Card,
-  CardContent,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Typography
+    Box,
+    Card,
+    CardContent,
+    CircularProgress,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Select,
+    SelectChangeEvent,
+    Typography
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dynamic from "next/dynamic";
 import React, { useEffect, useState } from 'react';
-import { fetchRepaymentRiskMonthly, RepaymentRiskMonthlyResponse } from '../../api/kasbon/KasbonSlice';
+import { fetchRepaymentRiskMonthly, RepaymentRiskMonthlyResponse } from '../../api/loan/LoanSlice';
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface RepaymentRiskChartProps {
@@ -173,8 +173,8 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
           data: months.map(month => chartData.monthly_data[month].total_expected_repayment)
         },
         {
-          name: 'Total Kasbon Principal Collected',
-          data: months.map(month => chartData.monthly_data[month].total_kasbon_principal_collected)
+          name: 'Total Loan Principal Collected',
+          data: months.map(month => chartData.monthly_data[month].total_loan_principal_collected)
         },
         {
           name: 'Total Unrecovered Repayment',
