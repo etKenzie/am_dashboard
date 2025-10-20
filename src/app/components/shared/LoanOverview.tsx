@@ -1,7 +1,7 @@
 'use client';
 
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
-import { Box, Typography } from '@mui/material';
+import { Box, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { ClientSummary, fetchClientSummary } from '../../api/loan/LoanSlice';
 import PageContainer from '../container/PageContainer';
@@ -11,14 +11,12 @@ import ClientSummaryTable from '../kasbon/ClientSummaryTable';
 import KasbonOverviewFilters, { KasbonOverviewFilterValues } from '../kasbon/KasbonOverviewFilters';
 
 interface LoanOverviewProps {
-  loanType: 'kasbon' | 'extradana';
   title: string;
   description: string;
   requiredRoles: readonly string[];
 }
 
 const LoanOverview: React.FC<LoanOverviewProps> = ({ 
-  loanType, 
   title, 
   description, 
   requiredRoles 
@@ -28,6 +26,9 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
   
   // Log access check result for debugging
   console.log(`${title} Access Check:`, accessCheck);
+  
+  // Loan type state - mandatory selection, default to kasbon
+  const [loanType, setLoanType] = useState<'kasbon' | 'extradana' | ''>('kasbon');
   
   // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<KasbonOverviewFilterValues>({
@@ -54,7 +55,7 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
   // Fetch client summary data
   useEffect(() => {
     const fetchData = async () => {
-      if (!filters.month || !filters.year) return;
+      if (!filters.month || !filters.year || !loanType) return;
       
       setLoading(true);
       setError(null);
@@ -84,6 +85,14 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
     setFilters(newFilters);
   };
 
+  const handleLoanTypeChange = (event: SelectChangeEvent<string>) => {
+    const newLoanType = event.target.value as 'kasbon' | 'extradana';
+    setLoanType(newLoanType);
+    // Clear data when loan type changes
+    setClientSummaryData([]);
+    setError(null);
+  };
+
   return (
     <PageContainer title={title} description={description}>
       <Box>
@@ -94,16 +103,35 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
           </Typography>
         </Box>
 
-        {/* Filters */}
+        {/* Loan Type Selector */}
         <Box mb={3}>
-          <KasbonOverviewFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-          />
+          <FormControl fullWidth>
+            <InputLabel>Loan Type *</InputLabel>
+            <Select
+              value={loanType}
+              label="Loan Type *"
+              onChange={handleLoanTypeChange}
+              required
+            >
+              <MenuItem value="kasbon">Kasbon</MenuItem>
+              <MenuItem value="extradana">Extradana</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
 
-        {/* Client Summary Tables */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* Filters - Only show when loan type is selected */}
+        {loanType && (
+          <Box mb={3}>
+            <KasbonOverviewFilters
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+            />
+          </Box>
+        )}
+
+        {/* Client Summary Tables - Only show when loan type is selected */}
+        {loanType ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* First Row: Total Disbursement and Total Requests */}
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, alignItems: 'stretch' }}>
             {/* Clients by Total Disbursement */}
@@ -170,6 +198,22 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
             />
           </Box>
         </Box>
+        ) : (
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              height: '300px',
+              border: '2px dashed #e0e0e0',
+              borderRadius: 2
+            }}
+          >
+            <Typography variant="h6" color="textSecondary">
+              Please select a loan type to view data
+            </Typography>
+          </Box>
+        )}
       </Box>
     </PageContainer>
   );

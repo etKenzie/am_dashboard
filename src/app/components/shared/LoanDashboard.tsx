@@ -1,7 +1,7 @@
 'use client';
 
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { CoverageUtilizationResponse, fetchCoverageUtilization, fetchLoanPurpose, fetchRepaymentRisk, LoanPurposeResponse, RepaymentRiskResponse } from '../../api/loan/LoanSlice';
 import PageContainer from '../container/PageContainer';
@@ -13,14 +13,12 @@ import RepaymentRiskSummary from '../kasbon/RepaymentRiskSummary';
 import UserCoverageUtilizationSummary from '../kasbon/UserCoverageUtilizationSummary';
 
 interface LoanDashboardProps {
-  loanType: 'kasbon' | 'extradana';
   title: string;
   description: string;
   requiredRoles: readonly string[];
 }
 
 const LoanDashboard: React.FC<LoanDashboardProps> = ({ 
-  loanType, 
   title, 
   description, 
   requiredRoles 
@@ -30,6 +28,9 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
   
   // Log access check result for debugging
   console.log(`${title} Access Check:`, accessCheck);
+
+  // Loan type state - mandatory selection, default to kasbon
+  const [loanType, setLoanType] = useState<'kasbon' | 'extradana' | ''>('kasbon');
 
   const [coverageUtilizationData, setCoverageUtilizationData] = useState<CoverageUtilizationResponse | null>(null);
   const [coverageUtilizationLoading, setCoverageUtilizationLoading] = useState(false);
@@ -63,8 +64,8 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
   const fetchLoanPurposeData = useCallback(async (currentFilters: KasbonFilterValues) => {
     setLoanPurposeLoading(true);
     try {
-      // Only fetch loan purpose if we have month and year (required)
-      if (currentFilters.month && currentFilters.year) {
+      // Only fetch loan purpose if we have month, year, and loan type (required)
+      if (currentFilters.month && currentFilters.year && loanType) {
         const response = await fetchLoanPurpose({
           employer: currentFilters.employer || undefined,
           sourced_to: currentFilters.placement || undefined,
@@ -88,8 +89,8 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
   const fetchCoverageUtilizationData = useCallback(async (currentFilters: KasbonFilterValues) => {
     setCoverageUtilizationLoading(true);
     try {
-      // Only fetch coverage utilization if we have month and year (required)
-      if (currentFilters.month && currentFilters.year) {
+      // Only fetch coverage utilization if we have month, year, and loan type (required)
+      if (currentFilters.month && currentFilters.year && loanType) {
         const response = await fetchCoverageUtilization({
           employer: currentFilters.employer || undefined,
           sourced_to: currentFilters.placement || undefined,
@@ -113,8 +114,8 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
   const fetchRepaymentRiskData = useCallback(async (currentFilters: KasbonFilterValues) => {
     setRepaymentRiskLoading(true);
     try {
-      // Only fetch repayment risk if we have month and year (required)
-      if (currentFilters.month && currentFilters.year) {
+      // Only fetch repayment risk if we have month, year, and loan type (required)
+      if (currentFilters.month && currentFilters.year && loanType) {
         const response = await fetchRepaymentRisk({
           employer: currentFilters.employer || undefined,
           sourced_to: currentFilters.placement || undefined,
@@ -143,15 +144,24 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
     fetchRepaymentRiskData(newFilters);
   }, [fetchLoanPurposeData, fetchCoverageUtilizationData, fetchRepaymentRiskData]);
 
+  const handleLoanTypeChange = (event: SelectChangeEvent<string>) => {
+    const newLoanType = event.target.value as 'kasbon' | 'extradana';
+    setLoanType(newLoanType);
+    // Clear data when loan type changes
+    setCoverageUtilizationData(null);
+    setRepaymentRiskData(null);
+    setLoanPurposeData(null);
+  };
+
   // Initial data fetch when component mounts and filters are initialized
   useEffect(() => {
-    // Only fetch data if month and year are set (after initialization)
-    if (filters.month && filters.year) {
+    // Only fetch data if month, year, and loan type are set (after initialization)
+    if (filters.month && filters.year && loanType) {
       fetchLoanPurposeData(filters);
       fetchCoverageUtilizationData(filters);
       fetchRepaymentRiskData(filters);
     }
-  }, [filters.month, filters.year]); // Only depend on month and year for initial load
+  }, [filters.month, filters.year, loanType]); // Depend on month, year, and loan type
 
   return (
     <PageContainer title={title} description={description}>
@@ -163,83 +173,121 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
           </Typography>
         </Box>
 
-        {/* Filters */}
+        {/* Loan Type Selector */}
         <Box mb={3}>
-          <KasbonFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-          />
+          <FormControl fullWidth>
+            <InputLabel>Loan Type *</InputLabel>
+            <Select
+              value={loanType}
+              label="Loan Type *"
+              onChange={handleLoanTypeChange}
+              required
+            >
+              <MenuItem value="kasbon">Kasbon</MenuItem>
+              <MenuItem value="extradana">Extradana</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
 
-        {/* User Coverage and Utilization Summary */}
-        <Box mb={3}>
-          <UserCoverageUtilizationSummary
-            coverageUtilizationData={coverageUtilizationData}
-            isLoading={coverageUtilizationLoading}
-          />
-        </Box>
-
-        {/* Coverage Utilization Chart */}
-        <Box mb={3}>
-          <CoverageUtilizationChart 
-            filters={{
-              employer: filters.employer,
-              placement: filters.placement,
-              project: filters.project,
-              month: filters.month,
-              year: filters.year,
-              loanType: loanType
-            }}
-          />
-        </Box>
-
-        {/* Loan Purpose Chart */}
-        <Box mb={3}>
-          {loanPurposeLoading ? (
-            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-              <CircularProgress />
-            </Box>
-          ) : loanPurposeData ? (
-            <LoanPurposeChart
-              filters={{
-                employer: filters.employer,
-                placement: filters.placement,
-                project: filters.project,
-                month: filters.month,
-                year: filters.year,
-                loanType: loanType
-              }}
+        {/* Filters - Only show when loan type is selected */}
+        {loanType && (
+          <Box mb={3}>
+            <KasbonFilters
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
             />
-          ) : (
-            <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-              <Typography variant="body1" color="textSecondary">
-                No data available
-              </Typography>
+          </Box>
+        )}
+
+        {/* Content - Only show when loan type is selected */}
+        {loanType ? (
+          <>
+            {/* User Coverage and Utilization Summary */}
+            <Box mb={3}>
+              <UserCoverageUtilizationSummary
+                coverageUtilizationData={coverageUtilizationData}
+                isLoading={coverageUtilizationLoading}
+              />
             </Box>
-          )}
-        </Box>
 
-        {/* Repayment Risk Summary */}
-        <Box mb={3}>
-          <RepaymentRiskSummary
-            repaymentRiskData={repaymentRiskData}
-            isLoading={repaymentRiskLoading}
-          />
-        </Box>
+            {/* Coverage Utilization Chart */}
+            <Box mb={3}>
+              <CoverageUtilizationChart 
+                filters={{
+                  employer: filters.employer,
+                  placement: filters.placement,
+                  project: filters.project,
+                  month: filters.month,
+                  year: filters.year,
+                  loanType: loanType
+                }}
+              />
+            </Box>
 
-        {/* Repayment Risk Chart */}
-        <Box mb={3}>
-          <RepaymentRiskChart 
-            filters={{
-              employer: filters.employer,
-              placement: filters.placement,
-              project: filters.project,
-              month: filters.month,
-              year: filters.year,
-              loanType: loanType
+            {/* Loan Purpose Chart */}
+            <Box mb={3}>
+              {loanPurposeLoading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+                  <CircularProgress />
+                </Box>
+              ) : loanPurposeData ? (
+                <LoanPurposeChart
+                  filters={{
+                    employer: filters.employer,
+                    placement: filters.placement,
+                    project: filters.project,
+                    month: filters.month,
+                    year: filters.year,
+                    loanType: loanType
+                  }}
+                />
+              ) : (
+                <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+                  <Typography variant="body1" color="textSecondary">
+                    No data available
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            {/* Repayment Risk Summary */}
+            <Box mb={3}>
+              <RepaymentRiskSummary
+                repaymentRiskData={repaymentRiskData}
+                isLoading={repaymentRiskLoading}
+              />
+            </Box>
+
+            {/* Repayment Risk Chart */}
+            <Box mb={3}>
+              <RepaymentRiskChart 
+                filters={{
+                  employer: filters.employer,
+                  placement: filters.placement,
+                  project: filters.project,
+                  month: filters.month,
+                  year: filters.year,
+                  loanType: loanType
+                }}
+              />
+            </Box>
+          </>
+        ) : (
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              height: '300px',
+              border: '2px dashed #e0e0e0',
+              borderRadius: 2
             }}
-          />
-        </Box>
+          >
+            <Typography variant="h6" color="textSecondary">
+              Please select a loan type to view data
+            </Typography>
+          </Box>
+        )}
       </Box>
     </PageContainer>
   );

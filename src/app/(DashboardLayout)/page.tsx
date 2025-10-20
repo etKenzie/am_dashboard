@@ -40,10 +40,10 @@ export default function Dashboard() {
 
   const allPages = [
     {
-      title: "Kasbon Overview",
-      description: "View kasbon performance overview and analytics",
+      title: "Loan Overview",
+      description: "View loan performance overview and analytics",
       icon: IconCalendarDollar,
-      href: "/kasbon/overview",
+      href: "/loan/overview",
       color: "primary",
       chip: "New"
     },
@@ -51,15 +51,15 @@ export default function Dashboard() {
       title: "Client Performance",
       description: "Analyze client performance metrics and trends",
       icon: IconCalendarDollar,
-      href: "/kasbon/client-performance",
+      href: "/loan/client-performance",
       color: "secondary",
       chip: "Analytics"
     },
     {
       title: "Non-Performing List",
-      description: "View and manage non-performing kasbon accounts",
+      description: "View and manage non-performing loan accounts",
       icon: IconCalendarDollar,
-      href: "/kasbon/non-performing-list",
+      href: "/loan/non-performing-list",
       color: "warning",
       chip: "Management"
     }

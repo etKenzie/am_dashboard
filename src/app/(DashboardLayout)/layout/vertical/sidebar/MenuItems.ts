@@ -51,47 +51,16 @@ const Menuitems: MenuitemsType[] = [
   },
   {
     id: uniqueId(),
-    title: "Kasbon",
-    icon: IconCalendarDollar,
-    href: "/kasbon",
-    
-    children: [
-      {
-        id: uniqueId(),
-        title: "Overview",
-        icon: IconDashboard,
-        href: "/kasbon/overview",
-        chip: "New",
-        chipColor: "secondary",
-      },
-      {
-        id: uniqueId(),
-        title: "Client Performance",
-        icon: IconGraph,
-        href: "/kasbon/client-performance",
-      },
-      {
-        id: uniqueId(),
-        title: "Non-Performing List",
-        icon: IconUserCancel,
-        href: "/kasbon/non-performing-list",
-      },
-      
-    ],
-  },
-
-  {
-    id: uniqueId(),
-    title: "Extradana",
+    title: "Loans",
     icon: IconCashBanknote,
-    href: "/extradana",
+    href: "/loan",
     
     children: [
       {
         id: uniqueId(),
         title: "Overview",
         icon: IconDashboard,
-        href: "/extradana/overview",
+        href: "/loan/overview",
         chip: "New",
         chipColor: "secondary",
       },
@@ -99,13 +68,13 @@ const Menuitems: MenuitemsType[] = [
         id: uniqueId(),
         title: "Client Performance",
         icon: IconGraph,
-        href: "/extradana/client-performance",
+        href: "/loan/client-performance",
       },
       {
         id: uniqueId(),
         title: "Non-Performing List",
         icon: IconUserCancel,
-        href: "/extradana/non-performing-list",
+        href: "/loan/non-performing-list",
       },
       
     ],
