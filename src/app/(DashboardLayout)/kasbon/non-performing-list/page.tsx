@@ -7,7 +7,6 @@ import LoanNonPerformingList from '../../../components/shared/LoanNonPerformingL
 const KasbonNonPerformingList = () => {
   return (
     <LoanNonPerformingList
-      loanType="kasbon"
       title="Kasbon Non-Performing List"
       description="List of kasbon non-performing loans and overdue accounts"
       requiredRoles={getPageRoles('KASBON_DASHBOARD')}

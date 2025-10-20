@@ -7,7 +7,6 @@ import LoanOverview from '../../../components/shared/LoanOverview';
 const ExtradanaOverview = () => {
   return (
     <LoanOverview
-      loanType="extradana"
       title="Extradana Overview"
       description="Overview of extradana data and analytics"
       requiredRoles={getPageRoles('KASBON_DASHBOARD')} // Using same roles for now

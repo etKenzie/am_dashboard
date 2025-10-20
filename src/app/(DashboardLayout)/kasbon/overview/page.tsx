@@ -7,7 +7,6 @@ import LoanOverview from '../../../components/shared/LoanOverview';
 const KasbonOverview = () => {
   return (
     <LoanOverview
-      loanType="kasbon"
       title="Kasbon Overview"
       description="Overview of kasbon data and analytics"
       requiredRoles={getPageRoles('KASBON_DASHBOARD')}

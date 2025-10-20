@@ -7,7 +7,6 @@ import LoanDashboard from '../../../components/shared/LoanDashboard';
 const KasbonDashboard = () => {
   return (
     <LoanDashboard
-      loanType="kasbon"
       title="Kasbon Dashboard"
       description="Manage kasbon data for employees"
       requiredRoles={getPageRoles('KASBON_DASHBOARD')}

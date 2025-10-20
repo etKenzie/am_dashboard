@@ -7,7 +7,6 @@ import LoanDashboard from '../../../components/shared/LoanDashboard';
 const ExtradanaDashboard = () => {
   return (
     <LoanDashboard
-      loanType="extradana"
       title="Extradana Dashboard"
       description="Manage extradana data for employees"
       requiredRoles={getPageRoles('KASBON_DASHBOARD')} // Using same roles for now
