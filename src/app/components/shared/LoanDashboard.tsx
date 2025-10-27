@@ -30,7 +30,7 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
   console.log(`${title} Access Check:`, accessCheck);
 
   // Loan type state - mandatory selection, default to kasbon
-  const [loanType, setLoanType] = useState<'kasbon' | 'extradana' | ''>('kasbon');
+  const [loanType, setLoanType] = useState<'kasbon' | 'extradana' | 'aku_cicil' | ''>('kasbon');
 
   const [coverageUtilizationData, setCoverageUtilizationData] = useState<CoverageUtilizationResponse | null>(null);
   const [coverageUtilizationLoading, setCoverageUtilizationLoading] = useState(false);
@@ -145,7 +145,7 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
   }, [fetchLoanPurposeData, fetchCoverageUtilizationData, fetchRepaymentRiskData]);
 
   const handleLoanTypeChange = (event: SelectChangeEvent<string>) => {
-    const newLoanType = event.target.value as 'kasbon' | 'extradana';
+    const newLoanType = event.target.value as 'kasbon' | 'extradana' | 'aku_cicil';
     setLoanType(newLoanType);
     // Clear data when loan type changes
     setCoverageUtilizationData(null);
@@ -185,6 +185,7 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
             >
               <MenuItem value="kasbon">Kasbon</MenuItem>
               <MenuItem value="extradana">Extradana</MenuItem>
+              <MenuItem value="aku_cicil">Aku Cicil</MenuItem>
             </Select>
           </FormControl>
         </Box>

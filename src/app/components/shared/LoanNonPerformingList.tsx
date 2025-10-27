@@ -25,7 +25,7 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
   console.log(`${title} Access Check:`, accessCheck);
   
   // Loan type state - mandatory selection, default to kasbon
-  const [loanType, setLoanType] = useState<'kasbon' | 'extradana' | ''>('kasbon');
+  const [loanType, setLoanType] = useState<'kasbon' | 'extradana' | 'aku_cicil' | ''>('kasbon');
   
   // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<KasbonFilterValues>({
@@ -57,7 +57,7 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
   };
 
   const handleLoanTypeChange = (event: SelectChangeEvent<string>) => {
-    const newLoanType = event.target.value as 'kasbon' | 'extradana';
+    const newLoanType = event.target.value as 'kasbon' | 'extradana' | 'aku_cicil';
     setLoanType(newLoanType);
   };
 
@@ -83,6 +83,7 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
             >
               <MenuItem value="kasbon">Kasbon</MenuItem>
               <MenuItem value="extradana">Extradana</MenuItem>
+              <MenuItem value="aku_cicil">Aku Cicil</MenuItem>
             </Select>
           </FormControl>
         </Box>

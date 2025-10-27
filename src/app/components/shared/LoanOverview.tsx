@@ -28,7 +28,7 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
   console.log(`${title} Access Check:`, accessCheck);
   
   // Loan type state - mandatory selection, default to kasbon
-  const [loanType, setLoanType] = useState<'kasbon' | 'extradana' | ''>('kasbon');
+  const [loanType, setLoanType] = useState<'kasbon' | 'extradana' | 'aku_cicil' | ''>('kasbon');
   
   // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<KasbonOverviewFilterValues>({
@@ -86,7 +86,7 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
   };
 
   const handleLoanTypeChange = (event: SelectChangeEvent<string>) => {
-    const newLoanType = event.target.value as 'kasbon' | 'extradana';
+    const newLoanType = event.target.value as 'kasbon' | 'extradana' | 'aku_cicil';
     setLoanType(newLoanType);
     // Clear data when loan type changes
     setClientSummaryData([]);
@@ -115,6 +115,7 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
             >
               <MenuItem value="kasbon">Kasbon</MenuItem>
               <MenuItem value="extradana">Extradana</MenuItem>
+              <MenuItem value="aku_cicil">Aku Cicil</MenuItem>
             </Select>
           </FormControl>
         </Box>
