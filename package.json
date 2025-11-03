@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:skip-fonts": "set NEXT_FONT_GOOGLE_SKIP_DOWNLOAD=true && next build",
     "start": "next start",
     "lint": "next lint"
   },

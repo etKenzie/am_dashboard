@@ -5,6 +5,7 @@ export const plus = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
   fallback: ["Helvetica", "Arial", "sans-serif"],
+  variable: '--font-plus-jakarta-sans',
 });
 
 const typography: any = {
