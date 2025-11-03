@@ -1,14 +1,13 @@
 'use client';
 
 import {
-  FormControl,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent
+    FormControl,
+    Grid,
+    InputLabel,
+    MenuItem,
+    Select,
+    SelectChangeEvent
 } from '@mui/material';
-import React from 'react';
 
 export interface InternalPayrollMonthYearFilterValues {
   month: string;
