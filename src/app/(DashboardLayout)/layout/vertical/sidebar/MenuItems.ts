@@ -1,9 +1,11 @@
 import {
-  IconCalendarDollar,
+  IconBuilding,
   IconCashBanknote,
   IconDashboard,
   IconGraph,
   IconHome,
+  IconMask,
+  IconPaywall,
   IconUserCancel
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
@@ -61,7 +63,6 @@ const Menuitems: MenuitemsType[] = [
         title: "Overview",
         icon: IconDashboard,
         href: "/loan/overview",
-        chip: "New",
         chipColor: "secondary",
       },
       {
@@ -75,6 +76,41 @@ const Menuitems: MenuitemsType[] = [
         title: "Non-Performing List",
         icon: IconUserCancel,
         href: "/loan/non-performing-list",
+      },
+      
+    ],
+  },
+  {
+    id: uniqueId(),
+    title: "Internal Payroll",
+    icon: IconPaywall,
+    href: "/loan",
+    chip: "New",
+    
+    children: [
+      {
+        id: uniqueId(),
+        title: "Overview",
+        icon: IconDashboard,
+        href: "/internal-payroll",
+        
+        chipColor: "secondary",
+      },
+      {
+        id: uniqueId(),
+        title: "Department",
+        icon: IconBuilding,
+        href: "/internal-payroll/department",
+    
+        chipColor: "secondary",
+      },
+      {
+        id: uniqueId(),
+        title: "Cost Owner",
+        icon: IconMask,
+        href: "/internal-payroll/cost-owner",
+    
+        chipColor: "secondary",
       },
       
     ],
