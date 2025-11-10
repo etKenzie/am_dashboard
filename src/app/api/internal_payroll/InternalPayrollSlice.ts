@@ -29,6 +29,7 @@ export interface TotalPayrollDisbursedParams {
   month: string;
   year: string;
   dept_id?: number | string; // Can be 0 for all departments
+  status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
 }
 
 // Types for Total Payroll Headcount API
@@ -48,6 +49,7 @@ export interface TotalPayrollHeadcountParams {
   month: string;
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
+  status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
 }
 
 // Types for Internal Payroll Monthly API
@@ -73,6 +75,7 @@ export interface InternalPayrollMonthlyParams {
   start_month: string; // Format: "MM-YYYY" (e.g., "08-2025")
   end_month: string; // Format: "MM-YYYY" (e.g., "10-2025")
   dept_id?: number | string; // Optional, can be 0 for all departments
+  status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
 }
 
 // Get API URL from environment variable with fallback
@@ -128,6 +131,11 @@ export const fetchTotalPayrollDisbursed = async (
     queryParams.append('dept_id', params.dept_id.toString());
   }
   
+  // Add status_kontrak if provided
+  if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
+    queryParams.append('status_kontrak', params.status_kontrak.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/total_payroll_disbursed?${queryParams.toString()}`;
   
   console.log('Fetching total payroll disbursed from:', url);
@@ -163,6 +171,11 @@ export const fetchTotalPayrollHeadcount = async (
     queryParams.append('dept_id', params.dept_id.toString());
   }
   
+  // Add status_kontrak if provided
+  if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
+    queryParams.append('status_kontrak', params.status_kontrak.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/total_payroll_headcount?${queryParams.toString()}`;
   
   console.log('Fetching total payroll headcount from:', url);
@@ -196,6 +209,11 @@ export const fetchInternalPayrollMonthly = async (
   // dept_id is optional
   if (params.dept_id !== undefined && params.dept_id !== null && params.dept_id !== '') {
     queryParams.append('dept_id', params.dept_id.toString());
+  }
+  
+  // Add status_kontrak if provided
+  if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
+    queryParams.append('status_kontrak', params.status_kontrak.toString());
   }
   
   const url = `${baseUrl}/internal_payroll/monthly?${queryParams.toString()}`;
@@ -241,6 +259,7 @@ export interface DepartmentSummaryResponse {
 export interface DepartmentSummaryParams {
   month: string;
   year: string;
+  status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
 }
 
 // Fetch Department Summary
@@ -254,6 +273,11 @@ export const fetchDepartmentSummary = async (
   
   queryParams.append('month', params.month);
   queryParams.append('year', params.year);
+  
+  // Add status_kontrak if provided
+  if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
+    queryParams.append('status_kontrak', params.status_kontrak.toString());
+  }
   
   const url = `${baseUrl}/internal_payroll/department_summary?${queryParams.toString()}`;
   
@@ -296,6 +320,7 @@ export interface CostOwnerSummaryResponse {
 export interface CostOwnerSummaryParams {
   month: string;
   year: string;
+  status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
 }
 
 // Fetch Cost Owner Summary
@@ -309,6 +334,11 @@ export const fetchCostOwnerSummary = async (
   
   queryParams.append('month', params.month);
   queryParams.append('year', params.year);
+  
+  // Add status_kontrak if provided
+  if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
+    queryParams.append('status_kontrak', params.status_kontrak.toString());
+  }
   
   const url = `${baseUrl}/internal_payroll/cost_owner_summary?${queryParams.toString()}`;
   
@@ -386,6 +416,7 @@ export interface TotalBPSJTKParams {
   month: string;
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
+  status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
 }
 
 // Types for Total Kesehatan API
@@ -402,6 +433,7 @@ export interface TotalKesehatanParams {
   month: string;
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
+  status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
 }
 
 // Types for Total Pensiun API
@@ -418,6 +450,7 @@ export interface TotalPensiunParams {
   month: string;
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
+  status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
 }
 
 // Fetch Total BPSJTK
@@ -435,6 +468,11 @@ export const fetchTotalBPSJTK = async (
   // Only pass dept_id if provided (not when "All Departments" is selected)
   if (params.dept_id !== undefined && params.dept_id !== null && params.dept_id !== '') {
     queryParams.append('dept_id', params.dept_id.toString());
+  }
+  
+  // Add status_kontrak if provided
+  if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
+    queryParams.append('status_kontrak', params.status_kontrak.toString());
   }
   
   const url = `${baseUrl}/internal_payroll/total_bpsjtk?${queryParams.toString()}`;
@@ -472,6 +510,11 @@ export const fetchTotalKesehatan = async (
     queryParams.append('dept_id', params.dept_id.toString());
   }
   
+  // Add status_kontrak if provided
+  if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
+    queryParams.append('status_kontrak', params.status_kontrak.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/total_kesehatan?${queryParams.toString()}`;
   
   console.log('Fetching total kesehatan from:', url);
@@ -505,6 +548,11 @@ export const fetchTotalPensiun = async (
   // Only pass dept_id if provided (not when "All Departments" is selected)
   if (params.dept_id !== undefined && params.dept_id !== null && params.dept_id !== '') {
     queryParams.append('dept_id', params.dept_id.toString());
+  }
+  
+  // Add status_kontrak if provided
+  if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
+    queryParams.append('status_kontrak', params.status_kontrak.toString());
   }
   
   const url = `${baseUrl}/internal_payroll/total_pensiun?${queryParams.toString()}`;

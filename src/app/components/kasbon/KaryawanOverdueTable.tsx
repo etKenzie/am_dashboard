@@ -187,7 +187,7 @@ const KaryawanOverdueTable = ({
     }
   });
 
-  const totalAmountOwed = filteredKaryawan.reduce((sum, k) => sum + k.total_amount_owed, 0);
+  const totalPayment = filteredKaryawan.reduce((sum, k) => sum + k.total_payment, 0);
   const totalDaysOverdue = filteredKaryawan.reduce((sum, k) => sum + k.days_overdue, 0);
 
   const prepareDataForExport = (karyawan: KaryawanOverdue[]) => {
@@ -305,10 +305,10 @@ const KaryawanOverdueTable = ({
         <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
             <Typography variant="h3" color="error" fontWeight="bold" mb={1}>
-              {formatCurrency(totalAmountOwed)}
+              {formatCurrency(totalPayment)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Total Amount Owed
+              Total Payment
             </Typography>
           </Box>
           <Box sx={{ textAlign: 'center', minWidth: '200px' }}>

@@ -26,6 +26,7 @@ interface InternalPayrollMonthlyChartProps {
     month: string;
     year: string;
     department: string;
+    status_kontrak?: string;
   };
 }
 
@@ -117,6 +118,11 @@ const InternalPayrollMonthlyChart = ({ filters }: InternalPayrollMonthlyChartPro
       if (filters.department) {
         params.dept_id = parseInt(filters.department);
       }
+      
+      // Add status_kontrak if provided
+      if (filters.status_kontrak) {
+        params.status_kontrak = parseInt(filters.status_kontrak);
+      }
 
       const response = await fetchInternalPayrollMonthly(params);
       setChartData(response);
@@ -132,7 +138,7 @@ const InternalPayrollMonthlyChart = ({ filters }: InternalPayrollMonthlyChartPro
     if (startMonthYear && endMonthYear) {
       fetchChartData();
     }
-  }, [startMonthYear, endMonthYear, filters.department, fetchChartData]);
+  }, [startMonthYear, endMonthYear, filters.department, filters.status_kontrak, fetchChartData]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);

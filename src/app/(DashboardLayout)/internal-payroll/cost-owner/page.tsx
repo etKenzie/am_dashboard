@@ -13,6 +13,7 @@ const InternalPayrollCostOwnerPage = () => {
   const [filters, setFilters] = useState<InternalPayrollMonthYearFilterValues>({
     month: '',
     year: '',
+    status_kontrak: '',
   });
 
   // Set initial date values in useEffect to avoid hydration issues
@@ -56,6 +57,7 @@ const InternalPayrollCostOwnerPage = () => {
               filters={{
                 month: filters.month,
                 year: filters.year,
+                status_kontrak: filters.status_kontrak,
               }}
             />
           </Box>

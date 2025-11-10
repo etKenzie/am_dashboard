@@ -9,12 +9,13 @@ import {
   SelectChangeEvent
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { fetchInternalPayrollFilters, Department } from '../../api/internal_payroll/InternalPayrollSlice';
+import { Department, fetchInternalPayrollFilters } from '../../api/internal_payroll/InternalPayrollSlice';
 
 export interface InternalPayrollFilterValues {
   month: string;
   year: string;
   department: string; // dept_id as string, empty for all
+  status_kontrak: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
 }
 
 interface InternalPayrollFiltersProps {
@@ -25,6 +26,16 @@ interface InternalPayrollFiltersProps {
 const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFiltersProps) => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Helper function to display department name in all capital letters
+  const getDepartmentDisplayName = (dept: Department): string => {
+    if (dept.dept_id === 0) {
+      return 'VALDO';
+    }
+    // Display department name in all capital letters
+    const deptName = dept.department_name || `Department ${dept.dept_id}`;
+    return deptName.toUpperCase();
+  };
 
   // Generate month options (01-12)
   const months = Array.from({ length: 12 }, (_, i) => {
@@ -115,7 +126,7 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
       </Grid>
 
       {/* Department Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Department</InputLabel>
           <Select
@@ -127,9 +138,28 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
             <MenuItem value="">All Departments</MenuItem>
             {departments.map((dept) => (
               <MenuItem key={dept.dept_id} value={dept.dept_id.toString()}>
-                {dept.dept_id === 0 ? 'Valdo' : (dept.department_name || `Department ${dept.dept_id}`)}
+                {getDepartmentDisplayName(dept)}
               </MenuItem>
             ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Contract Status Filter */}
+      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Contract</InputLabel>
+          <Select
+            value={filters.status_kontrak}
+            label="Contract"
+            onChange={handleFilterChange('status_kontrak')}
+            disabled={loading}
+          >
+            <MenuItem value="">All Contracts</MenuItem>
+            <MenuItem value="0">DW</MenuItem>
+            <MenuItem value="1">PKWTT</MenuItem>
+            <MenuItem value="2">PKWT</MenuItem>
+            <MenuItem value="3">MITRA</MenuItem>
           </Select>
         </FormControl>
       </Grid>

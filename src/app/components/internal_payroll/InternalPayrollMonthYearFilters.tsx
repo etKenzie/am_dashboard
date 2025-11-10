@@ -12,6 +12,7 @@ import {
 export interface InternalPayrollMonthYearFilterValues {
   month: string;
   year: string;
+  status_kontrak?: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
 }
 
 interface InternalPayrollMonthYearFiltersProps {
@@ -72,6 +73,24 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
                 {year}
               </MenuItem>
             ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Contract Status Filter */}
+      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Contract</InputLabel>
+          <Select
+            value={filters.status_kontrak || ''}
+            label="Contract"
+            onChange={handleFilterChange('status_kontrak')}
+          >
+            <MenuItem value="">All Contracts</MenuItem>
+            <MenuItem value="0">DW</MenuItem>
+            <MenuItem value="1">PKWTT</MenuItem>
+            <MenuItem value="2">PKWT</MenuItem>
+            <MenuItem value="3">MITRA</MenuItem>
           </Select>
         </FormControl>
       </Grid>

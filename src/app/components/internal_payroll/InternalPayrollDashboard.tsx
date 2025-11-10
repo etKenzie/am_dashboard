@@ -62,7 +62,8 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
   const [filters, setFilters] = useState<InternalPayrollFilterValues>({
     month: '',
     year: '',
-    department: ''
+    department: '',
+    status_kontrak: ''
   });
 
   // Set initial date values in useEffect to avoid hydration issues
@@ -94,6 +95,11 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
             params.dept_id = parseInt(currentFilters.department);
           }
           
+          // Add status_kontrak if provided
+          if (currentFilters.status_kontrak) {
+            params.status_kontrak = parseInt(currentFilters.status_kontrak);
+          }
+          
           const response = await fetchTotalPayrollDisbursed(params);
           setTotalPayrollDisbursedData(response);
         } else {
@@ -115,11 +121,20 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
       try {
         // Only fetch if we have month and year (required)
         if (currentFilters.month && currentFilters.year) {
-          const response = await fetchTotalPayrollHeadcount({
+          const params: any = {
             month: currentFilters.month,
             year: currentFilters.year,
-            dept_id: currentFilters.department ? parseInt(currentFilters.department) : undefined
-          });
+          };
+          
+          if (currentFilters.department) {
+            params.dept_id = parseInt(currentFilters.department);
+          }
+          
+          if (currentFilters.status_kontrak) {
+            params.status_kontrak = parseInt(currentFilters.status_kontrak);
+          }
+          
+          const response = await fetchTotalPayrollHeadcount(params);
           setTotalPayrollHeadcountData(response);
         } else {
           setTotalPayrollHeadcountData(null);
@@ -177,6 +192,11 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
         if (currentFilters.department) {
           params.dept_id = parseInt(currentFilters.department);
         }
+        
+        // Add status_kontrak if provided
+        if (currentFilters.status_kontrak) {
+          params.status_kontrak = parseInt(currentFilters.status_kontrak);
+        }
 
         // Fetch all three in parallel
         const [bpsjtkResponse, kesehatanResponse, pensiunResponse] = await Promise.all([
@@ -223,7 +243,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
       fetchTotalDepartmentCountData(filters);
       fetchBPSJTKKesehatanPensiunData(filters);
     }
-  }, [filters.month, filters.year, filters.department, fetchTotalPayrollDisbursedData, fetchTotalPayrollHeadcountData, fetchTotalDepartmentCountData, fetchBPSJTKKesehatanPensiunData]); // Depend on month, year, and department
+  }, [filters.month, filters.year, filters.department, filters.status_kontrak, fetchTotalPayrollDisbursedData, fetchTotalPayrollHeadcountData, fetchTotalDepartmentCountData, fetchBPSJTKKesehatanPensiunData]); // Depend on month, year, department, and status_kontrak
 
   // Create summary tiles
   const createSummaryTiles = () => {
@@ -318,7 +338,8 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
                 filters={{
                   month: filters.month,
                   year: filters.year,
-                  department: filters.department
+                  department: filters.department,
+                  status_kontrak: filters.status_kontrak
                 }}
               />
             </Box>
@@ -328,19 +349,19 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
               <SummaryTiles 
                 tiles={[
                   {
-                    title: 'Total BPSJTK',
+                    title: 'Total BPJSTK Company',
                     value: totalBPSJTKData?.total_bpsjtk || 0,
                     isCurrency: true,
                     isLoading: totalBPSJTKLoading
                   },
                   {
-                    title: 'Total Kesehatan',
+                    title: 'Total BPJS Kesehatan Company',
                     value: totalKesehatanData?.total_kesehatan || 0,
                     isCurrency: true,
                     isLoading: totalKesehatanLoading
                   },
                   {
-                    title: 'Total Pensiun',
+                    title: 'Total BPJS Pensiun Company',
                     value: totalPensiunData?.total_pensiun || 0,
                     isCurrency: true,
                     isLoading: totalPensiunLoading

@@ -4,6 +4,7 @@ import PageContainer from "@/app/components/container/PageContainer";
 import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getPageRoles } from '@/config/roles';
+import { createUrl } from '@/utils/basePath';
 import {
   Avatar,
   Box,
@@ -38,12 +39,13 @@ export default function Dashboard() {
   // Check access for allowed roles
   const accessCheck = useCheckRoles(getPageRoles('AUTHENTICATED_ONLY'));
 
-  const allPages = [
+  // Create pages with correct URLs based on environment
+  const allPages = useMemo(() => [
     {
       title: "Loan Overview",
       description: "View loan performance overview and analytics",
       icon: IconCalendarDollar,
-      href: "/loan/overview",
+      href: createUrl("/loan/overview"),
       color: "primary",
       chip: "New"
     },
@@ -51,7 +53,7 @@ export default function Dashboard() {
       title: "Client Performance",
       description: "Analyze client performance metrics and trends",
       icon: IconCalendarDollar,
-      href: "/loan/client-performance",
+      href: createUrl("/loan/client-performance"),
       color: "secondary",
       chip: "Analytics"
     },
@@ -59,11 +61,11 @@ export default function Dashboard() {
       title: "Non-Performing List",
       description: "View and manage non-performing loan accounts",
       icon: IconCalendarDollar,
-      href: "/loan/non-performing-list",
+      href: createUrl("/loan/non-performing-list"),
       color: "warning",
       chip: "Management"
     }
-  ];
+  ], []);
 
   // Filter pages based on search query
   const availablePages = useMemo(() => {

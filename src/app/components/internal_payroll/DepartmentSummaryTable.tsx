@@ -50,6 +50,7 @@ interface DepartmentSummaryTableProps {
   filters: {
     month: string;
     year: string;
+    status_kontrak?: string;
   };
   title?: string;
 }
@@ -73,10 +74,16 @@ const DepartmentSummaryTable = ({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetchDepartmentSummary({
+      const params: any = {
         month: filters.month,
         year: filters.year,
-      });
+      };
+      
+      if (filters.status_kontrak) {
+        params.status_kontrak = parseInt(filters.status_kontrak);
+      }
+      
+      const response = await fetchDepartmentSummary(params);
 
       setDepartments(response.departments);
     } catch (err) {
@@ -91,7 +98,7 @@ const DepartmentSummaryTable = ({
     if (filters.month && filters.year) {
       fetchDepartmentData();
     }
-  }, [filters.month, filters.year]);
+  }, [filters.month, filters.year, filters.status_kontrak]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -114,8 +121,8 @@ const DepartmentSummaryTable = ({
     const deptName = dept.dept_id === 0 ? 'Valdo' : (dept.department_name || `Department ${dept.dept_id}`);
     const searchableFields = [
       dept.dept_id.toString(),
-      deptName.toLowerCase(),
-      dept.cost_owner.toLowerCase(),
+      deptName,
+      dept.cost_owner,
       dept.total_headcount.toString(),
       dept.pkwtt_headcount.toString(),
       dept.pkwt_headcount.toString(),
@@ -124,8 +131,9 @@ const DepartmentSummaryTable = ({
       dept.total_disbursed.toString(),
     ];
 
+    const lowerQuery = query.toLowerCase();
     return searchableFields.some((field) =>
-      field.includes(query.toLowerCase())
+      field.toLowerCase().includes(lowerQuery)
     );
   };
 
