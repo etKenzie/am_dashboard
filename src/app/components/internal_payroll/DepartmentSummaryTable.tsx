@@ -51,6 +51,7 @@ interface DepartmentSummaryTableProps {
     month: string;
     year: string;
     status_kontrak?: string;
+    valdo_inc?: string;
   };
   title?: string;
 }
@@ -83,6 +84,10 @@ const DepartmentSummaryTable = ({
         params.status_kontrak = parseInt(filters.status_kontrak);
       }
       
+      if (filters.valdo_inc) {
+        params.valdo_inc = parseInt(filters.valdo_inc);
+      }
+      
       const response = await fetchDepartmentSummary(params);
 
       setDepartments(response.departments);
@@ -98,7 +103,7 @@ const DepartmentSummaryTable = ({
     if (filters.month && filters.year) {
       fetchDepartmentData();
     }
-  }, [filters.month, filters.year, filters.status_kontrak]);
+  }, [filters.month, filters.year, filters.status_kontrak, filters.valdo_inc]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';

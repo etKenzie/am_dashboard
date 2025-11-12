@@ -16,6 +16,7 @@ export interface InternalPayrollFilterValues {
   year: string;
   department: string; // dept_id as string, empty for all
   status_kontrak: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
+  valdo_inc: string; // 1=VI, 2=VSDM, empty for all
 }
 
 interface InternalPayrollFiltersProps {
@@ -88,7 +89,7 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
   return (
     <Grid container spacing={2}>
       {/* Month Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Month</InputLabel>
           <Select
@@ -107,7 +108,7 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
       </Grid>
 
       {/* Year Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Year</InputLabel>
           <Select
@@ -126,7 +127,7 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
       </Grid>
 
       {/* Department Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 3.2 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Department</InputLabel>
           <Select
@@ -160,6 +161,23 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
             <MenuItem value="1">PKWTT</MenuItem>
             <MenuItem value="2">PKWT</MenuItem>
             <MenuItem value="3">MITRA</MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Valdo Inc Filter */}
+      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Valdo Inc</InputLabel>
+          <Select
+            value={filters.valdo_inc}
+            label="Valdo Inc"
+            onChange={handleFilterChange('valdo_inc')}
+            disabled={loading}
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="1">VI</MenuItem>
+            <MenuItem value="2">VSDM</MenuItem>
           </Select>
         </FormControl>
       </Grid>

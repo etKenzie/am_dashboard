@@ -13,6 +13,7 @@ export interface InternalPayrollMonthYearFilterValues {
   month: string;
   year: string;
   status_kontrak?: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
+  valdo_inc?: string; // 1=VI, 2=VSDM, empty for all
 }
 
 interface InternalPayrollMonthYearFiltersProps {
@@ -78,7 +79,7 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
       </Grid>
 
       {/* Contract Status Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Contract</InputLabel>
           <Select
@@ -91,6 +92,22 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
             <MenuItem value="1">PKWTT</MenuItem>
             <MenuItem value="2">PKWT</MenuItem>
             <MenuItem value="3">MITRA</MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Valdo Inc Filter */}
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Valdo Inc</InputLabel>
+          <Select
+            value={filters.valdo_inc || ''}
+            label="Valdo Inc"
+            onChange={handleFilterChange('valdo_inc')}
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="1">VI</MenuItem>
+            <MenuItem value="2">VSDM</MenuItem>
           </Select>
         </FormControl>
       </Grid>
