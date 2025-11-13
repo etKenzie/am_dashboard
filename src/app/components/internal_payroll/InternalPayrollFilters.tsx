@@ -16,7 +16,7 @@ export interface InternalPayrollFilterValues {
   year: string;
   department: string; // dept_id as string, empty for all
   status_kontrak: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
-  valdo_inc: string; // 1=VI, 2=VSDM, empty for all
+  valdo_inc: string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN, empty for all
 }
 
 interface InternalPayrollFiltersProps {
@@ -178,6 +178,8 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
             <MenuItem value="">All</MenuItem>
             <MenuItem value="1">VI</MenuItem>
             <MenuItem value="2">VSDM</MenuItem>
+            <MenuItem value="31">VSI</MenuItem>
+            <MenuItem value="94">TOPAN</MenuItem>
           </Select>
         </FormControl>
       </Grid>

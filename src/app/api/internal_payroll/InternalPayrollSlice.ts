@@ -30,7 +30,7 @@ export interface TotalPayrollDisbursedParams {
   year: string;
   dept_id?: number | string; // Can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
-  valdo_inc?: number | string; // 1=VI, 2=VSDM
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Types for Total Payroll Headcount API
@@ -51,7 +51,7 @@ export interface TotalPayrollHeadcountParams {
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
-  valdo_inc?: number | string; // 1=VI, 2=VSDM
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Types for Internal Payroll Monthly API
@@ -78,7 +78,7 @@ export interface InternalPayrollMonthlyParams {
   end_month: string; // Format: "MM-YYYY" (e.g., "10-2025")
   dept_id?: number | string; // Optional, can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
-  valdo_inc?: number | string; // 1=VI, 2=VSDM
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Get API URL from environment variable with fallback
@@ -278,7 +278,7 @@ export interface DepartmentSummaryParams {
   month: string;
   year: string;
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
-  valdo_inc?: number | string; // 1=VI, 2=VSDM
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Fetch Department Summary
@@ -345,7 +345,7 @@ export interface CostOwnerSummaryParams {
   month: string;
   year: string;
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
-  valdo_inc?: number | string; // 1=VI, 2=VSDM
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Fetch Cost Owner Summary
@@ -400,7 +400,7 @@ export interface TotalDepartmentCountResponse {
 export interface TotalDepartmentCountParams {
   month: string;
   year: string;
-  valdo_inc?: number | string; // 1=VI, 2=VSDM
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Fetch Total Department Count
@@ -453,7 +453,7 @@ export interface TotalBPSJTKParams {
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
-  valdo_inc?: number | string; // 1=VI, 2=VSDM
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Types for Total Kesehatan API
@@ -471,7 +471,7 @@ export interface TotalKesehatanParams {
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
-  valdo_inc?: number | string; // 1=VI, 2=VSDM
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Types for Total Pensiun API
@@ -489,7 +489,7 @@ export interface TotalPensiunParams {
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
-  valdo_inc?: number | string; // 1=VI, 2=VSDM
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Fetch Total BPSJTK
