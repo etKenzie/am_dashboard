@@ -159,7 +159,7 @@ export default function ForgotPasswordPage() {
                   variant="text"
                   size="large"
                   component={Link}
-                  href={createUrl('/auth/login')}
+                  href="/auth/login"
                   sx={{ py: 1.5 }}
                 >
                   Back to Login
@@ -171,7 +171,7 @@ export default function ForgotPasswordPage() {
                 variant="contained"
                 size="large"
                 component={Link}
-                href={createUrl('/auth/login')}
+                href="/auth/login"
                 sx={{ py: 1.5 }}
               >
                 Back to Login

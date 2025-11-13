@@ -199,7 +199,7 @@ export default function LoginPage() {
                 />
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
                   <Link
-                    href={createUrl('/auth/forgot-password')}
+                    href="/auth/forgot-password"
                     style={{
                       textDecoration: 'none',
                       fontSize: '0.875rem',

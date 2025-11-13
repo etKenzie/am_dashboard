@@ -75,6 +75,7 @@ export default function ResetPasswordPage() {
             console.log('✅ Found recovery token in URL hash');
           }
         }
+        // 
         
         if (!hasTokenInUrl && search) {
           const searchParams = new URLSearchParams(search);
@@ -356,7 +357,7 @@ export default function ResetPasswordPage() {
                   variant="text"
                   size="large"
                   component={Link}
-                  href={createUrl('/auth/login')}
+                  href="/auth/login"
                   sx={{ py: 1.5 }}
                 >
                   Back to Login
@@ -368,7 +369,7 @@ export default function ResetPasswordPage() {
                 variant="contained"
                 size="large"
                 component={Link}
-                href={createUrl('/auth/login')}
+                href="/auth/login"
                 sx={{ py: 1.5 }}
               >
                 Go to Login
