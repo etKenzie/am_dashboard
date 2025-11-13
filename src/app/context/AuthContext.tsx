@@ -1,6 +1,6 @@
 'use client';
 
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, supabaseForPasswordReset } from '@/lib/supabaseClient';
 import { createUrl } from '@/utils/basePath';
 import { Session, User } from '@supabase/supabase-js';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
@@ -16,6 +16,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  resetPasswordWithToken: (newPassword: string) => Promise<void>;
   getUserRoles: (userId: string) => Promise<string[]>;
   refreshRoles: () => Promise<string[]>;
 }
@@ -321,6 +323,54 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      console.log('Sending password reset email to:', email);
+      
+      // Get the base URL for redirect
+      // Use window.location.origin to get the full URL including protocol and domain
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const basePath = createUrl('/auth/reset-password');
+      const redirectUrl = `${baseUrl}${basePath}`;
+      
+      console.log('Redirect URL:', redirectUrl);
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+        // Optional: Add email template customization
+        // emailRedirectTo: redirectUrl,
+      });
+      
+      if (error) {
+        console.error('Supabase reset password error:', error);
+        throw error;
+      }
+      
+      console.log('Password reset email sent successfully');
+    } catch (error: any) {
+      console.error('Error sending password reset email:', error);
+      throw error;
+    }
+  };
+
+  const resetPasswordWithToken = async (newPassword: string) => {
+    try {
+      console.log('Resetting password with token...');
+      
+      // Use the password reset client which has the session
+      const { error } = await supabaseForPasswordReset.auth.updateUser({
+        password: newPassword,
+      });
+      
+      if (error) throw error;
+      
+      console.log('Password reset successful');
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      throw error;
+    }
+  };
+
   const refreshRoles = async () => {
     if (user) {
       console.log('Manually refreshing roles for user:', user.id);
@@ -352,6 +402,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signIn,
     signUp,
     signOut,
+    resetPassword,
+    resetPasswordWithToken,
     getUserRoles,
     refreshRoles,
   };

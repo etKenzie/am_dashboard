@@ -18,7 +18,7 @@ import { Visibility, VisibilityOff, Email, LockOutlined } from '@mui/icons-mater
 import PageContainer from '@/app/components/container/PageContainer';
 import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
 import Image from 'next/image';
-import { createAssetUrl } from '@/utils/basePath';
+import { createAssetUrl, createUrl } from '@/utils/basePath';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -171,32 +171,47 @@ export default function LoginPage() {
                 }}
               />
 
-              <TextField
-                fullWidth
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                sx={{ mb: 4 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockOutlined color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
+              <Box sx={{ mb: 2 }}>
+                <TextField
+                  fullWidth
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LockOutlined color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                  <Link
+                    href={createUrl('/auth/forgot-password')}
+                    style={{
+                      textDecoration: 'none',
+                      fontSize: '0.875rem',
+                      color: 'inherit',
+                    }}
+                  >
+                    <Typography variant="body2" color="primary" sx={{ '&:hover': { textDecoration: 'underline' } }}>
+                      Forgot Password?
+                    </Typography>
+                  </Link>
+                </Box>
+              </Box>
 
               <Button
                 type="submit"
@@ -204,7 +219,7 @@ export default function LoginPage() {
                 variant="contained"
                 size="large"
                 disabled={loading}
-                sx={{ py: 1.5 }}
+                sx={{ py: 1.5, mb: 2 }}
               >
                 {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
               </Button>
