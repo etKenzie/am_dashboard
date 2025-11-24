@@ -45,7 +45,7 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
       {/* Month Filter */}
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <FormControl fullWidth size="small">
-          <InputLabel>Month</InputLabel>
+          <InputLabel shrink={!!filters.month}>Month</InputLabel>
           <Select
             value={filters.month}
             label="Month"
@@ -63,7 +63,7 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
       {/* Year Filter */}
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <FormControl fullWidth size="small">
-          <InputLabel>Year</InputLabel>
+          <InputLabel shrink={!!filters.year}>Year</InputLabel>
           <Select
             value={filters.year}
             label="Year"
@@ -81,7 +81,7 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
       {/* Contract Status Filter */}
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <FormControl fullWidth size="small">
-          <InputLabel>Contract</InputLabel>
+          <InputLabel shrink={!!filters.status_kontrak}>Contract</InputLabel>
           <Select
             value={filters.status_kontrak || ''}
             label="Contract"
@@ -99,7 +99,7 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
       {/* Valdo Inc Filter */}
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <FormControl fullWidth size="small">
-          <InputLabel>Valdo Inc</InputLabel>
+          <InputLabel shrink={!!filters.valdo_inc}>Valdo Inc</InputLabel>
           <Select
             value={filters.valdo_inc || ''}
             label="Valdo Inc"
