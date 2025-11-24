@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import Link from 'next/link';
@@ -13,74 +13,39 @@ import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import InputAdornment from '@mui/material/InputAdornment';
-import IconButton from '@mui/material/IconButton';
-import { Visibility, VisibilityOff, Email, LockOutlined } from '@mui/icons-material';
+import { Email } from '@mui/icons-material';
 import PageContainer from '@/app/components/container/PageContainer';
 import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
 import Image from 'next/image';
 import { createAssetUrl, createUrl } from '@/utils/basePath';
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  const { signIn, user, loading: authLoading } = useAuth();
+  const { resetPassword } = useAuth();
   const router = useRouter();
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!authLoading && user) {
-      router.push('/');
-    }
-  }, [user, authLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess(false);
     setLoading(true);
 
     try {
-      await signIn(email, password);
-      router.push('/');
+      await resetPassword(email);
+      setSuccess(true);
     } catch (error: any) {
-      setError(error.message || 'Failed to sign in');
+      setError(error.message || 'Failed to send password reset email');
     } finally {
       setLoading(false);
     }
   };
 
-  // Show loading while checking authentication
-  if (authLoading) {
-    return (
-      <PageContainer title="Login Page" description="this is Sample page">
-        <Grid container spacing={0} justifyContent="center" sx={{ height: '100vh' }}>
-          <Grid
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            size={{
-              xs: 12,
-              sm: 12,
-              lg: 5,
-              xl: 4
-            }}>
-            <Box p={4} textAlign="center">
-              <CircularProgress size={60} />
-              <Typography variant="h6" sx={{ mt: 2 }}>
-                Loading...
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
-      </PageContainer>
-    );
-  }
-
   return (
-    <PageContainer title="Login Page" description="this is Sample page">
+    <PageContainer title="Forgot Password Page" description="Reset your password">
       <Grid container spacing={0} justifyContent="center" sx={{ height: '100vh' }}>
         <Grid
           sx={{
@@ -141,10 +106,10 @@ export default function LoginPage() {
           }}>
           <Box p={4}>
             <Typography variant="h3" fontWeight="700" mb={1}>
-              Welcome Back
+              Forgot Password?
             </Typography>
             <Typography variant="subtitle1" color="textSecondary" mb={3}>
-              Sign in to your account
+              Enter your email address and we'll send you a link to reset your password.
             </Typography>
 
             {error && (
@@ -153,80 +118,69 @@ export default function LoginPage() {
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit}>
-              <TextField
-                fullWidth
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                sx={{ mb: 3 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Email color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
+            {success && (
+              <Alert severity="success" sx={{ mb: 3 }}>
+                Password reset email sent! Please check your inbox and follow the instructions to reset your password.
+              </Alert>
+            )}
 
-              <Box sx={{ mb: 2 }}>
+            {!success ? (
+              <form onSubmit={handleSubmit}>
                 <TextField
                   fullWidth
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  label="Email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
+                  sx={{ mb: 3 }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <LockOutlined color="action" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
+                        <Email color="action" />
                       </InputAdornment>
                     ),
                   }}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                  <Link
-                    href="/auth/forgot-password"
-                    style={{
-                      textDecoration: 'none',
-                      fontSize: '0.875rem',
-                      color: 'inherit',
-                    }}
-                  >
-                    <Typography variant="body2" color="primary" sx={{ '&:hover': { textDecoration: 'underline' } }}>
-                      Forgot Password?
-                    </Typography>
-                  </Link>
-                </Box>
-              </Box>
 
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  size="large"
+                  disabled={loading}
+                  sx={{ py: 1.5, mb: 2 }}
+                >
+                  {loading ? <CircularProgress size={24} color="inherit" /> : 'Send Reset Link'}
+                </Button>
+
+                <Button
+                  fullWidth
+                  variant="text"
+                  size="large"
+                  component={Link}
+                  href="/auth/login"
+                  sx={{ py: 1.5 }}
+                >
+                  Back to Login
+                </Button>
+              </form>
+            ) : (
               <Button
-                type="submit"
                 fullWidth
                 variant="contained"
                 size="large"
-                disabled={loading}
-                sx={{ py: 1.5, mb: 2 }}
+                component={Link}
+                href="/auth/login"
+                sx={{ py: 1.5 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+                Back to Login
               </Button>
-            </form>
+            )}
           </Box>
         </Grid>
       </Grid>
     </PageContainer>
   );
 }
+

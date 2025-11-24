@@ -25,3 +25,26 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     }
   }
 })
+
+// Separate Supabase client for password reset that enables session detection from URL
+// This is needed because Supabase redirects with token in hash, and we need to detect it
+export const supabaseForPasswordReset = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    storageKey: 'am-dashboard-auth',
+    autoRefreshToken: true,
+    detectSessionInUrl: true, // Enable for password reset to detect token from URL hash
+    flowType: 'pkce',
+    debug: true,
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'am-dashboard'
+    }
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+})

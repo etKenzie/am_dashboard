@@ -36,9 +36,6 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
   // Check access for allowed roles
   const accessCheck = useCheckRoles(requiredRoles);
 
-  // Log access check result for debugging
-  console.log(`${title} Access Check:`, accessCheck);
-
   const [totalPayrollDisbursedData, setTotalPayrollDisbursedData] =
     useState<TotalPayrollDisbursedResponse | null>(null);
   const [totalPayrollDisbursedLoading, setTotalPayrollDisbursedLoading] = useState(false);
