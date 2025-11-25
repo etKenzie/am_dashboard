@@ -4,7 +4,6 @@ import PageContainer from '@/app/components/container/PageContainer';
 import { useAuth } from '@/app/context/AuthContext';
 import config from "@/app/context/config";
 import { CustomizerContext } from "@/app/context/customizerContext";
-import { createAssetUrl } from '@/utils/basePath';
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -132,7 +131,7 @@ export default function RootLayout({
                 }}
               >
                 <Image
-                  src={createAssetUrl("/images/backgrounds/login-bg.svg")}
+                  src="/images/backgrounds/login-bg.svg"
                   alt="bg" width={500} height={500}
                   style={{
                     width: '100%',

@@ -17,7 +17,7 @@ import { Visibility, VisibilityOff, LockOutlined } from '@mui/icons-material';
 import PageContainer from '@/app/components/container/PageContainer';
 import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
 import Image from 'next/image';
-import { createAssetUrl, createUrl } from '@/utils/basePath';
+import { createUrl } from '@/utils/basePath';
 import { supabaseForPasswordReset } from '@/lib/supabaseClient';
 
 export default function ResetPasswordPage() {
@@ -244,7 +244,7 @@ export default function ResetPasswordPage() {
               }}
             >
               <Image
-                src={createAssetUrl("/images/backgrounds/login-bg.svg")}
+                src="/images/backgrounds/login-bg.svg"
                 alt="bg" width={500} height={500}
                 style={{
                   width: '100%',

@@ -1,6 +1,5 @@
 'use client'
 import { CustomizerContext } from "@/app/context/customizerContext";
-import { createAssetUrl } from '@/utils/basePath';
 import { Box, Breadcrumbs, Grid, Typography } from "@mui/material";
 import { IconCircle } from "@tabler/icons-react";
 import Image from "next/image";
@@ -95,7 +94,7 @@ const Breadcrumb = ({ subtitle, items, title, children }: BreadCrumbType) => {
             <>
               <Box sx={{ top: "0px", position: "absolute" }}>
                 <Image
-                  src={createAssetUrl("/images/breadcrumb/ChatBc.png")}
+                  src="/images/breadcrumb/ChatBc.png"
                   alt={"breadcrumbImg"}
                   style={{ width: "165px", height: "165px" }}
                   priority

@@ -14,13 +14,6 @@ export const createUrl = (path: string): string => {
   return `${basePath}${cleanPath}`;
 };
 
-// Create a full asset URL with the correct base path
-export const createAssetUrl = (assetPath: string): string => {
-  const basePath = getBasePath();
-  const cleanPath = assetPath.startsWith('/') ? assetPath : `/${assetPath}`;
-  return `${basePath}${cleanPath}`;
-};
-
 // Check if we're in production environment
 export const isProduction = (): boolean => {
   return process.env.NODE_ENV === 'production';

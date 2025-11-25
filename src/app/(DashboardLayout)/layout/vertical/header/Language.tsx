@@ -2,7 +2,6 @@ import { CustomizerContext } from '@/app/context/customizerContext';
 import { Avatar, IconButton, Menu, MenuItem, Typography } from '@mui/material';
 import React, { useContext } from 'react';
 
-import { createAssetUrl } from '@/utils/basePath';
 import { Stack } from '@mui/system';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,23 +10,23 @@ import { useTranslation } from 'react-i18next';
 const Languages = [
   {
     flagname: 'English (UK)',
-    icon: createAssetUrl("/images/flag/icon-flag-en.svg"),
+    icon: "/images/flag/icon-flag-en.svg",
     value: 'en',
   },
   {
     flagname: '中国人 (Chinese)',
-    icon: createAssetUrl("/images/flag/icon-flag-cn.svg"),
+    icon: "/images/flag/icon-flag-cn.svg",
     value: 'ch',
   },
   {
     flagname: 'français (French)',
-    icon: createAssetUrl("/images/flag/icon-flag-fr.svg"),
+    icon: "/images/flag/icon-flag-fr.svg",
     value: 'fr',
   },
 
   {
     flagname: 'عربي (Arabic)',
-    icon: createAssetUrl("/images/flag/icon-flag-sa.svg"),
+    icon: "/images/flag/icon-flag-sa.svg",
     value: 'ar',
   },
 ];

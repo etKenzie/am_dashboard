@@ -19,14 +19,3 @@ export const useCreateUrl = () => {
   };
 };
 
-/**
- * Hook to create asset URLs with the correct base path
- */
-export const useCreateAssetUrl = () => {
-  const basePath = useBasePath();
-  
-  return (assetPath: string): string => {
-    const cleanPath = assetPath.startsWith('/') ? assetPath : `/${assetPath}`;
-    return `${basePath}${cleanPath}`;
-  };
-};

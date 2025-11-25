@@ -1,7 +1,6 @@
 'use client'
 import config from '@/app/context/config';
 import { CustomizerContext } from "@/app/context/customizerContext";
-import { createAssetUrl } from '@/utils/basePath';
 import { styled } from "@mui/material/styles";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,7 +25,7 @@ const Logo = () => {
       <LinkStyled href="/">
         {activeMode === "dark" ? (
           <Image
-            src={createAssetUrl("/images/logos/valdo_logo.png")}
+            src="/images/logos/valdo_logo.png"
             alt="logo"
             height={logoHeight}
             width={180}
@@ -34,7 +33,7 @@ const Logo = () => {
           />
         ) : (
           <Image
-            src={createAssetUrl("/images/logos/valdo_logo.png")}
+            src="/images/logos/valdo_logo.png"
             alt="logo"
             height={logoHeight}
             width={180}
@@ -49,7 +48,7 @@ const Logo = () => {
     <LinkStyled href="/">
       {activeMode === "dark" ? (
         <Image
-          src={createAssetUrl("/images/logos/dark-rtl-logo.svg")}
+          src="/images/logos/dark-rtl-logo.svg"
           alt="logo"
           height={TopbarHeight}
           width={174}
@@ -57,7 +56,7 @@ const Logo = () => {
         />
       ) : (
         <Image
-          src={createAssetUrl("/images/logos/light-logo-rtl.svg")}
+          src="/images/logos/light-logo-rtl.svg"
           alt="logo"
           height={TopbarHeight}
           width={174}

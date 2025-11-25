@@ -1,4 +1,4 @@
-import { createAssetUrl, createUrl } from '@/utils/basePath';
+import { createUrl } from '@/utils/basePath';
 
 // Notifications dropdown
 
@@ -10,42 +10,42 @@ interface notificationType {
 
 const notifications: notificationType[] = [
   {
-    avatar: createAssetUrl("/images/profile/user-10.jpg"),
+    avatar: "/images/profile/user-10.jpg",
     title: "Roman Joined the Team!",
     subtitle: "Congratulate him",
   },
   {
-    avatar: createAssetUrl("/images/profile/user-2.jpg"),
+    avatar: "/images/profile/user-2.jpg",
     title: "New message received",
     subtitle: "Salma sent you new message",
   },
   {
-    avatar: createAssetUrl("/images/profile/user-3.jpg"),
+    avatar: "/images/profile/user-3.jpg",
     title: "New Payment received",
     subtitle: "Check your earnings",
   },
   {
-    avatar: createAssetUrl("/images/profile/user-4.jpg"),
+    avatar: "/images/profile/user-4.jpg",
     title: "Jolly completed tasks",
     subtitle: "Assign her new tasks",
   },
   {
-    avatar: createAssetUrl("/images/profile/user-5.jpg"),
+    avatar: "/images/profile/user-5.jpg",
     title: "Roman Joined the Team!",
     subtitle: "Congratulate him",
   },
   {
-    avatar: createAssetUrl("/images/profile/user-6.jpg"),
+    avatar: "/images/profile/user-6.jpg",
     title: "New message received",
     subtitle: "Salma sent you new message",
   },
   {
-    avatar: createAssetUrl("/images/profile/user-7.jpg"),
+    avatar: "/images/profile/user-7.jpg",
     title: "New Payment received",
     subtitle: "Check your earnings",
   },
   {
-    avatar: createAssetUrl("/images/profile/user-8.jpg"),
+    avatar: "/images/profile/user-8.jpg",
     title: "Jolly completed tasks",
     subtitle: "Assign her new tasks",
   },
@@ -65,19 +65,19 @@ const profile: ProfileType[] = [
     href: createUrl("/"),
     title: "My Profile",
     subtitle: "Account Settings",
-    icon: createAssetUrl("/images/svgs/icon-account.svg"),
+    icon: "/images/svgs/icon-account.svg",
   },
   {
     href: createUrl("/"),
     title: "My Inbox",
     subtitle: "Messages & Emails",
-    icon: createAssetUrl("/images/svgs/icon-inbox.svg"),
+    icon: "/images/svgs/icon-inbox.svg",
   },
   {
     href: createUrl("/"),
     title: "My Tasks",
     subtitle: "To-do and Daily Tasks",
-    icon: createAssetUrl("/images/svgs/icon-tasks.svg"),
+    icon: "/images/svgs/icon-tasks.svg",
   },
 ];
 
@@ -95,49 +95,49 @@ const appsLink: appsLinkType[] = [
     href: createUrl("/"),
     title: "Chat Application",
     subtext: "New messages arrived",
-    avatar: createAssetUrl("/images/svgs/icon-dd-chat.svg"),
+    avatar: "/images/svgs/icon-dd-chat.svg",
   },
   {
     href: createUrl("/"),
     title: "eCommerce App",
     subtext: "New stock available",
-    avatar: createAssetUrl("/images/svgs/icon-dd-cart.svg"),
+    avatar: "/images/svgs/icon-dd-cart.svg",
   },
   {
     href: createUrl("/"),
     title: "Notes App",
     subtext: "To-do and Daily tasks",
-    avatar: createAssetUrl("/images/svgs/icon-dd-invoice.svg"),
+    avatar: "/images/svgs/icon-dd-invoice.svg",
   },
   {
     href: createUrl("/"),
     title: "Calendar App",
     subtext: "Get dates",
-    avatar: createAssetUrl("/images/svgs/icon-dd-date.svg"),
+    avatar: "/images/svgs/icon-dd-date.svg",
   },
   {
     href: createUrl("/"),
     title: "Contact Application",
     subtext: "2 Unsaved Contacts",
-    avatar: createAssetUrl("/images/svgs/icon-dd-mobile.svg"),
+    avatar: "/images/svgs/icon-dd-mobile.svg",
   },
   {
     href: createUrl("/"),
     title: "Tickets App",
     subtext: "Submit tickets",
-    avatar: createAssetUrl("/images/svgs/icon-dd-lifebuoy.svg"),
+    avatar: "/images/svgs/icon-dd-lifebuoy.svg",
   },
   {
     href: createUrl("/"),
     title: "Email App",
     subtext: "Get new emails",
-    avatar: createAssetUrl("/images/svgs/icon-dd-message-box.svg"),
+    avatar: "/images/svgs/icon-dd-message-box.svg",
   },
   {
     href: createUrl("/"),
     title: "Blog App",
     subtext: "added new blog",
-    avatar: createAssetUrl("/images/svgs/icon-dd-application.svg"),
+    avatar: "/images/svgs/icon-dd-application.svg",
   },
 ];
 

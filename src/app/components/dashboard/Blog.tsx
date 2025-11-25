@@ -1,21 +1,21 @@
 
-import Link from "next/link";
+import BlankCard from "@/app/components/shared/BlankCard";
 import {
   CardContent,
-  Typography,
+  Fab,
   Grid,
   Rating,
   Tooltip,
-  Fab,
+  Typography,
 } from "@mui/material";
-import img1 from "/public/images/products/s4.jpg";
-import img2 from "/public/images/products/s5.jpg";
-import img3 from "/public/images/products/s7.jpg";
-import img4 from "/public/images/products/s11.jpg";
 import { Stack } from "@mui/system";
 import { IconBasket } from "@tabler/icons-react";
-import BlankCard from "@/app/components/shared/BlankCard";
 import Image from "next/image";
+import Link from "next/link";
+import img4 from "/images/products/s11.jpg";
+import img1 from "/images/products/s4.jpg";
+import img2 from "/images/products/s5.jpg";
+import img3 from "/images/products/s7.jpg";
 
 const ecoCard = [
   {
