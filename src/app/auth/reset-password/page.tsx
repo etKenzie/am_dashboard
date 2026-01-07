@@ -17,7 +17,6 @@ import { Visibility, VisibilityOff, LockOutlined } from '@mui/icons-material';
 import PageContainer from '@/app/components/container/PageContainer';
 import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
 import Image from 'next/image';
-import { createUrl } from '@/utils/basePath';
 import { supabaseForPasswordReset } from '@/lib/supabaseClient';
 
 export default function ResetPasswordPage() {
@@ -169,7 +168,7 @@ export default function ResetPasswordPage() {
       
       // Redirect to login after 2 seconds
       setTimeout(() => {
-        router.push(createUrl('/auth/login'));
+        router.push('/auth/login');
       }, 2000);
     } catch (error: any) {
       setError(error.message || 'Failed to reset password. Please try again.');

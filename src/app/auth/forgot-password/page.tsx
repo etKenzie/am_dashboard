@@ -17,7 +17,6 @@ import { Email } from '@mui/icons-material';
 import PageContainer from '@/app/components/container/PageContainer';
 import Logo from '@/app/(DashboardLayout)/layout/shared/logo/Logo';
 import Image from 'next/image';
-import { createUrl } from '@/utils/basePath';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');

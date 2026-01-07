@@ -1,7 +1,6 @@
 'use client';
 
 import { useAuth } from '@/app/context/AuthContext';
-import { createUrl } from '@/utils/basePath';
 import {
   AccountCircle,
   Close,
@@ -51,7 +50,7 @@ export default function UserProfile() {
     } catch (error) {
       console.error('Error signing out:', error);
       // Force redirect even if there's an error
-      window.location.href = createUrl('/auth/login');
+      window.location.href = '/auth/login';
     }
   };
 

@@ -1,4 +1,3 @@
-import { createUrl } from '@/utils/basePath';
 
 // Notifications dropdown
 
@@ -62,19 +61,19 @@ interface ProfileType {
 }
 const profile: ProfileType[] = [
   {
-    href: createUrl("/"),
+    href: "/",
     title: "My Profile",
     subtitle: "Account Settings",
     icon: "/images/svgs/icon-account.svg",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "My Inbox",
     subtitle: "Messages & Emails",
     icon: "/images/svgs/icon-inbox.svg",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "My Tasks",
     subtitle: "To-do and Daily Tasks",
     icon: "/images/svgs/icon-tasks.svg",
@@ -92,49 +91,49 @@ interface appsLinkType {
 
 const appsLink: appsLinkType[] = [
   {
-    href: createUrl("/"),
+    href: "/",
     title: "Chat Application",
     subtext: "New messages arrived",
     avatar: "/images/svgs/icon-dd-chat.svg",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "eCommerce App",
     subtext: "New stock available",
     avatar: "/images/svgs/icon-dd-cart.svg",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "Notes App",
     subtext: "To-do and Daily tasks",
     avatar: "/images/svgs/icon-dd-invoice.svg",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "Calendar App",
     subtext: "Get dates",
     avatar: "/images/svgs/icon-dd-date.svg",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "Contact Application",
     subtext: "2 Unsaved Contacts",
     avatar: "/images/svgs/icon-dd-mobile.svg",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "Tickets App",
     subtext: "Submit tickets",
     avatar: "/images/svgs/icon-dd-lifebuoy.svg",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "Email App",
     subtext: "Get new emails",
     avatar: "/images/svgs/icon-dd-message-box.svg",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "Blog App",
     subtext: "added new blog",
     avatar: "/images/svgs/icon-dd-application.svg",
@@ -148,35 +147,35 @@ interface LinkType {
 
 const pageLinks: LinkType[] = [
   {
-    href: createUrl("/"),
+    href: "/",
     title: "Pricing Page",
   },
   {
-    href: createUrl("/auth/auth1/login"),
+    href: "/auth/auth1/login",
     title: "Authentication Design",
   },
   {
-    href: createUrl("/auth/auth1/register"),
+    href: "/auth/auth1/register",
     title: "Register Now",
   },
   {
-    href: createUrl("/404"),
+    href: "/404",
     title: "404 Error Page",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "Notes App",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "User Application",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "Blog Design",
   },
   {
-    href: createUrl("/"),
+    href: "/",
     title: "Shopping Cart",
   },
 ];

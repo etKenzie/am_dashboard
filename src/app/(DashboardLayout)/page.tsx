@@ -4,7 +4,6 @@ import PageContainer from "@/app/components/container/PageContainer";
 import { useAuth } from '@/app/context/AuthContext';
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { getPageRoles } from '@/config/roles';
-import { createUrl } from '@/utils/basePath';
 import {
   Avatar,
   Box,
@@ -45,7 +44,7 @@ export default function Dashboard() {
       title: "Loan Overview",
       description: "View loan performance overview and analytics",
       icon: IconCalendarDollar,
-      href: createUrl("/loan/overview"),
+      href: "/loan/overview",
       color: "primary",
       chip: "New"
     },
@@ -53,7 +52,7 @@ export default function Dashboard() {
       title: "Client Performance",
       description: "Analyze client performance metrics and trends",
       icon: IconCalendarDollar,
-      href: createUrl("/loan/client-performance"),
+      href: "/loan/client-performance",
       color: "secondary",
       chip: "Analytics"
     },
@@ -61,7 +60,7 @@ export default function Dashboard() {
       title: "Non-Performing List",
       description: "View and manage non-performing loan accounts",
       icon: IconCalendarDollar,
-      href: createUrl("/loan/non-performing-list"),
+      href: "/loan/non-performing-list",
       color: "warning",
       chip: "Management"
     }

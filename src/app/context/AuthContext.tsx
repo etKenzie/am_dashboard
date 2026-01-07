@@ -1,7 +1,6 @@
 'use client';
 
 import { supabase, supabaseForPasswordReset } from '@/lib/supabaseClient';
-import { createUrl } from '@/utils/basePath';
 import { Session, User } from '@supabase/supabase-js';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
@@ -308,8 +307,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       console.log('Sign out completed');
       
-      // Force redirect to login page with correct base path
-      window.location.href = createUrl('/auth/login');
+      // Force redirect to login page
+      window.location.href = '/auth/login';
       
     } catch (error) {
       console.error('Unexpected error during sign out:', error);
@@ -319,7 +318,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setRoles([]);
       setAuthLoading(false);
       setRolesLoading(false);
-      window.location.href = createUrl('/auth/login');
+      window.location.href = '/auth/login';
     }
   };
 
@@ -330,8 +329,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Get the base URL for redirect
       // Use window.location.origin to get the full URL including protocol and domain
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-      const basePath = createUrl('/auth/reset-password');
-      const redirectUrl = `${baseUrl}${basePath}`;
+      const redirectUrl = `${baseUrl}/auth/reset-password`;
       
       console.log('Redirect URL:', redirectUrl);
       
