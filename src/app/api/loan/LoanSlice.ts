@@ -328,8 +328,8 @@ export interface ClientSummaryParams {
   loan_type?: string;
 }
 
-// Get API URL from environment variable with fallback
-const AM_API_URL = process.env.NEXT_PUBLIC_AM_API_URL;
+// Get API URL from environment variable with validation
+import { AM_API_URL } from '@/utils/config';
 
 
 // API service functions
@@ -339,7 +339,14 @@ export const fetchKaryawan = async (clientId?: string): Promise<KaryawanResponse
     ? `${baseUrl}/karyawan?klient=${clientId}`
     : `${baseUrl}/karyawan`;
   
-  console.log('Fetching from:', url);
+  // Enhanced logging for debugging production issues
+  console.log('🔗 API Request:', {
+    endpoint: 'fetchKaryawan',
+    baseUrl,
+    fullUrl: url,
+    clientId: clientId || 'none',
+    timestamp: new Date().toISOString(),
+  });
   
   const response = await fetch(url, {
     method: 'GET',

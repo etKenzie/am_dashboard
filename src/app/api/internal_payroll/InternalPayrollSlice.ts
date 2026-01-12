@@ -81,8 +81,8 @@ export interface InternalPayrollMonthlyParams {
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
-// Get API URL from environment variable with fallback
-const AM_API_URL = process.env.NEXT_PUBLIC_AM_API_URL;
+// Get API URL from environment variable with validation
+import { AM_API_URL } from '@/utils/config';
 
 // Fetch Internal Payroll Filters
 export const fetchInternalPayrollFilters = async (
@@ -100,7 +100,14 @@ export const fetchInternalPayrollFilters = async (
     ? `${baseUrl}/internal_payroll/filters?${queryParams.toString()}`
     : `${baseUrl}/internal_payroll/filters`;
   
-  console.log('Fetching internal payroll filters from:', url);
+  // Enhanced logging for debugging production issues
+  console.log('🔗 API Request:', {
+    endpoint: 'fetchInternalPayrollFilters',
+    baseUrl,
+    fullUrl: url,
+    params: params,
+    timestamp: new Date().toISOString(),
+  });
   
   const response = await fetch(url, {
     method: 'GET',

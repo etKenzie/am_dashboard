@@ -12,16 +12,14 @@ import { Stack } from "@mui/system";
 import { IconBasket } from "@tabler/icons-react";
 import Image from "next/image";
 import Link from "next/link";
-import img4 from "/images/products/s11.jpg";
-import img1 from "/images/products/s4.jpg";
-import img2 from "/images/products/s5.jpg";
-import img3 from "/images/products/s7.jpg";
 
+// Use string paths instead of imports for public folder images
+// This ensures images work correctly in both development and production
 const ecoCard = [
   {
     title: "Boat Headphone",
     subheader: "September 14, 2025",
-    photo: img1,
+    photo: "/images/products/s4.jpg",
     salesPrice: 375,
     price: 285,
     rating: 4,
@@ -29,7 +27,7 @@ const ecoCard = [
   {
     title: "MacBook Air Pro",
     subheader: "September 14, 2025",
-    photo: img2,
+    photo: "/images/products/s5.jpg",
     salesPrice: 650,
     price: 900,
     rating: 5,
@@ -37,7 +35,7 @@ const ecoCard = [
   {
     title: "Red Valvet Dress",
     subheader: "September 14, 2025",
-    photo: img3,
+    photo: "/images/products/s7.jpg",
     salesPrice: 150,
     price: 200,
     rating: 3,
@@ -45,7 +43,7 @@ const ecoCard = [
   {
     title: "Cute Soft Teddybear",
     subheader: "September 14, 2025",
-    photo: img4,
+    photo: "/images/products/s11.jpg",
     salesPrice: 285,
     price: 345,
     rating: 2,
