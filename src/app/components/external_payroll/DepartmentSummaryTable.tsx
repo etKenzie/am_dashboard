@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { DepartmentSummary, fetchDepartmentSummary } from '../../api/internal_payroll/InternalPayrollSlice';
+import { DepartmentSummary, fetchDepartmentSummary } from '../../api/external_payroll/ExternalPayrollSlice';
 
 type Order = 'asc' | 'desc';
 type SortableField = keyof DepartmentSummary;
@@ -418,4 +418,3 @@ const DepartmentSummaryTable = ({
 };
 
 export default DepartmentSummaryTable;
-

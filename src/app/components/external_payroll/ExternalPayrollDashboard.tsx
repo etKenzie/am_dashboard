@@ -16,19 +16,19 @@ import {
   TotalPayrollDisbursedResponse,
   TotalPayrollHeadcountResponse,
   TotalPensiunResponse
-} from '../../api/internal_payroll/InternalPayrollSlice';
+} from '../../api/external_payroll/ExternalPayrollSlice';
 import PageContainer from '../container/PageContainer';
 import SummaryTiles from '../shared/SummaryTiles';
-import InternalPayrollFilters, { InternalPayrollFilterValues } from './InternalPayrollFilters';
-import InternalPayrollMonthlyChart from './InternalPayrollMonthlyChart';
+import ExternalPayrollFilters, { ExternalPayrollFilterValues } from './ExternalPayrollFilters';
+import ExternalPayrollMonthlyChart from './ExternalPayrollMonthlyChart';
 
-interface InternalPayrollDashboardProps {
+interface ExternalPayrollDashboardProps {
   title: string;
   description: string;
   requiredRoles: readonly string[];
 }
 
-const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
+const ExternalPayrollDashboard: React.FC<ExternalPayrollDashboardProps> = ({
   title,
   description,
   requiredRoles
@@ -56,7 +56,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
   const [totalPensiunLoading, setTotalPensiunLoading] = useState(false);
 
   // Initialize filters with empty values to avoid hydration mismatch
-  const [filters, setFilters] = useState<InternalPayrollFilterValues>({
+  const [filters, setFilters] = useState<ExternalPayrollFilterValues>({
     month: '',
     year: '',
     department: '',
@@ -78,7 +78,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
   }, []);
 
   const fetchTotalPayrollDisbursedData = useCallback(
-    async (currentFilters: InternalPayrollFilterValues) => {
+    async (currentFilters: ExternalPayrollFilterValues) => {
       setTotalPayrollDisbursedLoading(true);
       try {
         // Only fetch if we have month and year (required)
@@ -119,7 +119,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
   );
 
   const fetchTotalPayrollHeadcountData = useCallback(
-    async (currentFilters: InternalPayrollFilterValues) => {
+    async (currentFilters: ExternalPayrollFilterValues) => {
       setTotalPayrollHeadcountLoading(true);
       try {
         // Only fetch if we have month and year (required)
@@ -157,7 +157,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
   );
 
   const fetchTotalDepartmentCountData = useCallback(
-    async (currentFilters: InternalPayrollFilterValues) => {
+    async (currentFilters: ExternalPayrollFilterValues) => {
       setTotalDepartmentCountLoading(true);
       try {
         // Only fetch if we have month and year (required) and NO specific department is selected
@@ -189,7 +189,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
   );
 
   const fetchBPSJTKKesehatanPensiunData = useCallback(
-    async (currentFilters: InternalPayrollFilterValues) => {
+    async (currentFilters: ExternalPayrollFilterValues) => {
       if (!currentFilters.month || !currentFilters.year) return;
 
       setTotalBPSJTKLoading(true);
@@ -242,7 +242,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
   );
 
   const handleFiltersChange = useCallback(
-    (newFilters: InternalPayrollFilterValues) => {
+    (newFilters: ExternalPayrollFilterValues) => {
       console.log('Filters changed:', newFilters);
       setFilters(newFilters);
       fetchTotalPayrollDisbursedData(newFilters);
@@ -341,7 +341,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
 
         {/* Filters */}
         <Box mb={3}>
-          <InternalPayrollFilters filters={filters} onFiltersChange={handleFiltersChange} />
+          <ExternalPayrollFilters filters={filters} onFiltersChange={handleFiltersChange} />
         </Box>
 
         {/* Summary Tiles */}
@@ -353,7 +353,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
 
             {/* Monthly Chart */}
             <Box mb={3}>
-              <InternalPayrollMonthlyChart
+              <ExternalPayrollMonthlyChart
                 filters={{
                   month: filters.month,
                   year: filters.year,
@@ -412,5 +412,4 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
   );
 };
 
-export default InternalPayrollDashboard;
-
+export default ExternalPayrollDashboard;

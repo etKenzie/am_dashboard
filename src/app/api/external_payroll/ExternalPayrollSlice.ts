@@ -1,16 +1,16 @@
-// Types for Internal Payroll Filters API
+// Types for External Payroll Filters API
 export interface Department {
   dept_id: number;
   department_name: string | null;
 }
 
-export interface InternalPayrollFiltersResponse {
+export interface ExternalPayrollFiltersResponse {
   status: string;
   departments: Department[];
 }
 
-// Types for Internal Payroll Filters Query Parameters
-export interface InternalPayrollFiltersParams {
+// Types for External Payroll Filters Query Parameters
+export interface ExternalPayrollFiltersParams {
   month?: string;
   year?: string;
 }
@@ -54,7 +54,7 @@ export interface TotalPayrollHeadcountParams {
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
-// Types for Internal Payroll Monthly API
+// Types for External Payroll Monthly API
 export interface MonthlySummary {
   total_disbursed: number;
   total_headcount: number;
@@ -63,7 +63,7 @@ export interface MonthlySummary {
   mitra_headcount: number;
 }
 
-export interface InternalPayrollMonthlyResponse {
+export interface ExternalPayrollMonthlyResponse {
   status: string;
   summaries: Record<string, MonthlySummary>; // Key is month name like "August 2025"
   start_month: number;
@@ -73,7 +73,7 @@ export interface InternalPayrollMonthlyResponse {
   message: string | null;
 }
 
-export interface InternalPayrollMonthlyParams {
+export interface ExternalPayrollMonthlyParams {
   start_month: string; // Format: "MM-YYYY" (e.g., "08-2025")
   end_month: string; // Format: "MM-YYYY" (e.g., "10-2025")
   dept_id?: number | string; // Optional, can be 0 for all departments
@@ -84,10 +84,10 @@ export interface InternalPayrollMonthlyParams {
 // Get API URL from environment variable with validation
 import { AM_API_URL } from '@/utils/config';
 
-// Fetch Internal Payroll Filters
-export const fetchInternalPayrollFilters = async (
-  params: InternalPayrollFiltersParams
-): Promise<InternalPayrollFiltersResponse> => {
+// Fetch External Payroll Filters
+export const fetchExternalPayrollFilters = async (
+  params: ExternalPayrollFiltersParams
+): Promise<ExternalPayrollFiltersResponse> => {
   const baseUrl = AM_API_URL;
   
   // Build query string from parameters
@@ -97,12 +97,12 @@ export const fetchInternalPayrollFilters = async (
   if (params.year) queryParams.append('year', params.year);
   
   const url = queryParams.toString()
-    ? `${baseUrl}/internal_payroll/filters?${queryParams.toString()}`
-    : `${baseUrl}/internal_payroll/filters`;
+    ? `${baseUrl}/external_payroll/filters?${queryParams.toString()}`
+    : `${baseUrl}/external_payroll/filters`;
   
   // Enhanced logging for debugging production issues
   console.log('🔗 API Request:', {
-    endpoint: 'fetchInternalPayrollFilters',
+    endpoint: 'fetchExternalPayrollFilters',
     baseUrl,
     fullUrl: url,
     params: params,
@@ -117,7 +117,7 @@ export const fetchInternalPayrollFilters = async (
   });
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch internal payroll filters: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to fetch external payroll filters: ${response.status} ${response.statusText}`);
   }
   
   return response.json();
@@ -151,7 +151,7 @@ export const fetchTotalPayrollDisbursed = async (
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
   
-  const url = `${baseUrl}/internal_payroll/total_payroll_disbursed?${queryParams.toString()}`;
+  const url = `${baseUrl}/external_payroll/total_payroll_disbursed?${queryParams.toString()}`;
   
   console.log('Fetching total payroll disbursed from:', url);
   
@@ -196,7 +196,7 @@ export const fetchTotalPayrollHeadcount = async (
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
   
-  const url = `${baseUrl}/internal_payroll/total_payroll_headcount?${queryParams.toString()}`;
+  const url = `${baseUrl}/external_payroll/total_payroll_headcount?${queryParams.toString()}`;
   
   console.log('Fetching total payroll headcount from:', url);
   
@@ -214,10 +214,10 @@ export const fetchTotalPayrollHeadcount = async (
   return response.json();
 };
 
-// Fetch Internal Payroll Monthly
-export const fetchInternalPayrollMonthly = async (
-  params: InternalPayrollMonthlyParams
-): Promise<InternalPayrollMonthlyResponse> => {
+// Fetch External Payroll Monthly
+export const fetchExternalPayrollMonthly = async (
+  params: ExternalPayrollMonthlyParams
+): Promise<ExternalPayrollMonthlyResponse> => {
   const baseUrl = AM_API_URL;
   
   // Build query string from parameters
@@ -241,9 +241,9 @@ export const fetchInternalPayrollMonthly = async (
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
   
-  const url = `${baseUrl}/internal_payroll/monthly?${queryParams.toString()}`;
+  const url = `${baseUrl}/external_payroll/monthly?${queryParams.toString()}`;
   
-  console.log('Fetching internal payroll monthly from:', url);
+  console.log('Fetching external payroll monthly from:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -253,7 +253,7 @@ export const fetchInternalPayrollMonthly = async (
   });
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch internal payroll monthly: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to fetch external payroll monthly: ${response.status} ${response.statusText}`);
   }
   
   return response.json();
@@ -310,7 +310,7 @@ export const fetchDepartmentSummary = async (
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
   
-  const url = `${baseUrl}/internal_payroll/department_summary?${queryParams.toString()}`;
+  const url = `${baseUrl}/external_payroll/department_summary?${queryParams.toString()}`;
   
   console.log('Fetching department summary from:', url);
   
@@ -377,7 +377,7 @@ export const fetchCostOwnerSummary = async (
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
   
-  const url = `${baseUrl}/internal_payroll/cost_owner_summary?${queryParams.toString()}`;
+  const url = `${baseUrl}/external_payroll/cost_owner_summary?${queryParams.toString()}`;
   
   console.log('Fetching cost owner summary from:', url);
   
@@ -427,7 +427,7 @@ export const fetchTotalDepartmentCount = async (
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
   
-  const url = `${baseUrl}/internal_payroll/total_department_count?${queryParams.toString()}`;
+  const url = `${baseUrl}/external_payroll/total_department_count?${queryParams.toString()}`;
   
   console.log('Fetching total department count from:', url);
   
@@ -526,7 +526,7 @@ export const fetchTotalBPSJTK = async (
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
   
-  const url = `${baseUrl}/internal_payroll/total_bpsjtk?${queryParams.toString()}`;
+  const url = `${baseUrl}/external_payroll/total_bpsjtk?${queryParams.toString()}`;
   
   console.log('Fetching total BPSJTK from:', url);
   
@@ -571,7 +571,7 @@ export const fetchTotalKesehatan = async (
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
   
-  const url = `${baseUrl}/internal_payroll/total_kesehatan?${queryParams.toString()}`;
+  const url = `${baseUrl}/external_payroll/total_kesehatan?${queryParams.toString()}`;
   
   console.log('Fetching total kesehatan from:', url);
   
@@ -616,7 +616,7 @@ export const fetchTotalPensiun = async (
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
   
-  const url = `${baseUrl}/internal_payroll/total_pensiun?${queryParams.toString()}`;
+  const url = `${baseUrl}/external_payroll/total_pensiun?${queryParams.toString()}`;
   
   console.log('Fetching total pensiun from:', url);
   

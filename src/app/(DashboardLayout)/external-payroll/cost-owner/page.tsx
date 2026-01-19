@@ -3,14 +3,14 @@
 import { getPageRoles } from '@/config/roles';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import PageContainer from '../../../components/container/PageContainer';
-import CostOwnerSummaryTable from '../../../components/internal_payroll/CostOwnerSummaryTable';
-import InternalPayrollMonthYearFilters, { InternalPayrollMonthYearFilterValues } from '../../../components/internal_payroll/InternalPayrollMonthYearFilters';
+import CostOwnerSummaryTable from '../../../components/external_payroll/CostOwnerSummaryTable';
+import ExternalPayrollMonthYearFilters, { ExternalPayrollMonthYearFilterValues } from '../../../components/external_payroll/ExternalPayrollMonthYearFilters';
 import { Box, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 
-const InternalPayrollCostOwnerPage = () => {
+const ExternalPayrollCostOwnerPage = () => {
   // Initialize filters with empty values to avoid hydration mismatch
-  const [filters, setFilters] = useState<InternalPayrollMonthYearFilterValues>({
+  const [filters, setFilters] = useState<ExternalPayrollMonthYearFilterValues>({
     month: '',
     year: '',
     status_kontrak: '',
@@ -29,7 +29,7 @@ const InternalPayrollCostOwnerPage = () => {
     });
   }, []);
 
-  const handleFiltersChange = (newFilters: InternalPayrollMonthYearFilterValues) => {
+  const handleFiltersChange = (newFilters: ExternalPayrollMonthYearFilterValues) => {
     setFilters(newFilters);
   };
 
@@ -45,7 +45,7 @@ const InternalPayrollCostOwnerPage = () => {
 
         {/* Filters */}
         <Box mb={3}>
-          <InternalPayrollMonthYearFilters
+          <ExternalPayrollMonthYearFilters
             filters={filters}
             onFiltersChange={handleFiltersChange}
           />
@@ -84,11 +84,10 @@ const InternalPayrollCostOwnerPage = () => {
   );
 };
 
-export default function ProtectedInternalPayrollCostOwner() {
+export default function ProtectedExternalPayrollCostOwner() {
   return (
     <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
-      <InternalPayrollCostOwnerPage />
+      <ExternalPayrollCostOwnerPage />
     </ProtectedRoute>
   );
 }
-

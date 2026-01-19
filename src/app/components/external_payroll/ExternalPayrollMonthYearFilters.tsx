@@ -9,19 +9,19 @@ import {
     SelectChangeEvent
 } from '@mui/material';
 
-export interface InternalPayrollMonthYearFilterValues {
+export interface ExternalPayrollMonthYearFilterValues {
   month: string;
   year: string;
   status_kontrak?: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
   valdo_inc?: string; // 1=VI, 2=VSDM, empty for all
 }
 
-interface InternalPayrollMonthYearFiltersProps {
-  filters: InternalPayrollMonthYearFilterValues;
-  onFiltersChange: (filters: InternalPayrollMonthYearFilterValues) => void;
+interface ExternalPayrollMonthYearFiltersProps {
+  filters: ExternalPayrollMonthYearFilterValues;
+  onFiltersChange: (filters: ExternalPayrollMonthYearFilterValues) => void;
 }
 
-const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalPayrollMonthYearFiltersProps) => {
+const ExternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: ExternalPayrollMonthYearFiltersProps) => {
   // Generate month options (01-12)
   const months = Array.from({ length: 12 }, (_, i) => {
     const monthNum = (i + 1).toString().padStart(2, '0');
@@ -33,7 +33,7 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => (currentYear - i).toString());
 
-  const handleFilterChange = (field: keyof InternalPayrollMonthYearFilterValues) => (
+  const handleFilterChange = (field: keyof ExternalPayrollMonthYearFilterValues) => (
     event: SelectChangeEvent<string>
   ) => {
     const newFilters = { ...filters, [field]: event.target.value };
@@ -115,5 +115,4 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
   );
 };
 
-export default InternalPayrollMonthYearFilters;
-
+export default ExternalPayrollMonthYearFilters;

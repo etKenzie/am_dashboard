@@ -16,12 +16,12 @@ import { useTheme } from '@mui/material/styles';
 import dynamic from "next/dynamic";
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  InternalPayrollMonthlyResponse,
-  fetchInternalPayrollMonthly
-} from '../../api/internal_payroll/InternalPayrollSlice';
+  ExternalPayrollMonthlyResponse,
+  fetchExternalPayrollMonthly
+} from '../../api/external_payroll/ExternalPayrollSlice';
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-interface InternalPayrollMonthlyChartProps {
+interface ExternalPayrollMonthlyChartProps {
   filters: {
     month: string;
     year: string;
@@ -33,8 +33,8 @@ interface InternalPayrollMonthlyChartProps {
 
 type ChartType = 'disbursed' | 'headcount';
 
-const InternalPayrollMonthlyChart = ({ filters }: InternalPayrollMonthlyChartProps) => {
-  const [chartData, setChartData] = useState<InternalPayrollMonthlyResponse | null>(null);
+const ExternalPayrollMonthlyChart = ({ filters }: ExternalPayrollMonthlyChartProps) => {
+  const [chartData, setChartData] = useState<ExternalPayrollMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [chartType, setChartType] = useState<ChartType>('disbursed');
   const [startMonthYear, setStartMonthYear] = useState<string>('');
@@ -130,7 +130,7 @@ const InternalPayrollMonthlyChart = ({ filters }: InternalPayrollMonthlyChartPro
         params.valdo_inc = parseInt(filters.valdo_inc);
       }
 
-      const response = await fetchInternalPayrollMonthly(params);
+      const response = await fetchExternalPayrollMonthly(params);
       setChartData(response);
     } catch (err) {
       console.error('Failed to fetch monthly chart data:', err);
@@ -412,5 +412,4 @@ const InternalPayrollMonthlyChart = ({ filters }: InternalPayrollMonthlyChartPro
   );
 };
 
-export default React.memo(InternalPayrollMonthlyChart);
-
+export default React.memo(ExternalPayrollMonthlyChart);

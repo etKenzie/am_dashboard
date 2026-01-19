@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { fetchCostOwnerSummary, CostOwnerSummary } from '../../api/internal_payroll/InternalPayrollSlice';
+import { fetchCostOwnerSummary, CostOwnerSummary } from '../../api/external_payroll/ExternalPayrollSlice';
 
 type Order = 'asc' | 'desc';
 type SortableField = keyof CostOwnerSummary;
@@ -396,4 +396,3 @@ const CostOwnerSummaryTable = ({
 };
 
 export default CostOwnerSummaryTable;
-

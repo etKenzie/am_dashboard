@@ -9,9 +9,9 @@ import {
   SelectChangeEvent
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { Department, fetchInternalPayrollFilters } from '../../api/internal_payroll/InternalPayrollSlice';
+import { Department, fetchExternalPayrollFilters } from '../../api/external_payroll/ExternalPayrollSlice';
 
-export interface InternalPayrollFilterValues {
+export interface ExternalPayrollFilterValues {
   month: string;
   year: string;
   department: string; // dept_id as string, empty for all
@@ -19,12 +19,12 @@ export interface InternalPayrollFilterValues {
   valdo_inc: string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN, empty for all
 }
 
-interface InternalPayrollFiltersProps {
-  filters: InternalPayrollFilterValues;
-  onFiltersChange: (filters: InternalPayrollFilterValues) => void;
+interface ExternalPayrollFiltersProps {
+  filters: ExternalPayrollFilterValues;
+  onFiltersChange: (filters: ExternalPayrollFilterValues) => void;
 }
 
-const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFiltersProps) => {
+const ExternalPayrollFilters = ({ filters, onFiltersChange }: ExternalPayrollFiltersProps) => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -52,7 +52,7 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
   const fetchDepartmentFilters = async () => {
     setLoading(true);
     try {
-      const response = await fetchInternalPayrollFilters({
+      const response = await fetchExternalPayrollFilters({
         month: filters.month || undefined,
         year: filters.year || undefined,
       });
@@ -77,11 +77,11 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
     }
   }, [filters.month, filters.year]);
 
-  const handleFilterChange = (field: keyof InternalPayrollFilterValues) => (
+  const handleFilterChange = (field: keyof ExternalPayrollFilterValues) => (
     event: SelectChangeEvent<string>
   ) => {
     const newFilters = { ...filters, [field]: event.target.value };
-    console.log('Filter changed in InternalPayrollFilters:', field, 'to', event.target.value);
+    console.log('Filter changed in ExternalPayrollFilters:', field, 'to', event.target.value);
     console.log('New filters:', newFilters);
     onFiltersChange(newFilters);
   };
@@ -187,5 +187,4 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
   );
 };
 
-export default InternalPayrollFilters;
-
+export default ExternalPayrollFilters;

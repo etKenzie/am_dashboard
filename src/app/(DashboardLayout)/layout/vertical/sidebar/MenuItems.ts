@@ -82,9 +82,9 @@ const Menuitems: MenuitemsType[] = [
   },
   {
     id: uniqueId(),
-    title: "Internal Payroll",
+    title: "External Payroll",
     icon: IconPaywall,
-    href: "/loan",
+    href: "/external-payroll",
     chip: "New",
     
     children: [
@@ -92,7 +92,7 @@ const Menuitems: MenuitemsType[] = [
         id: uniqueId(),
         title: "Overview",
         icon: IconDashboard,
-        href: "/internal-payroll",
+        href: "/external-payroll",
         
         chipColor: "secondary",
       },
@@ -100,7 +100,7 @@ const Menuitems: MenuitemsType[] = [
         id: uniqueId(),
         title: "Department",
         icon: IconBuilding,
-        href: "/internal-payroll/department",
+        href: "/external-payroll/department",
     
         chipColor: "secondary",
       },
@@ -108,7 +108,7 @@ const Menuitems: MenuitemsType[] = [
         id: uniqueId(),
         title: "Cost Owner",
         icon: IconMask,
-        href: "/internal-payroll/cost-owner",
+        href: "/external-payroll/cost-owner",
     
         chipColor: "secondary",
       },
