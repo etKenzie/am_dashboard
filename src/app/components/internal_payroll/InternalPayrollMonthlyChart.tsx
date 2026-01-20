@@ -16,25 +16,23 @@ import { useTheme } from '@mui/material/styles';
 import dynamic from "next/dynamic";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ExternalPayrollMonthlyResponse,
-  fetchExternalPayrollMonthly
-} from '../../api/external_payroll/ExternalPayrollSlice';
+  InternalPayrollMonthlyResponse,
+  fetchInternalPayrollMonthly
+} from '../../api/internal_payroll/InternalPayrollSlice';
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-interface ExternalPayrollMonthlyChartProps {
+interface InternalPayrollMonthlyChartProps {
   filters: {
     month: string;
     year: string;
-    department: string;
     status_kontrak?: string;
-    valdo_inc?: string;
   };
 }
 
 type ChartType = 'disbursed' | 'headcount';
 
-const ExternalPayrollMonthlyChart = ({ filters }: ExternalPayrollMonthlyChartProps) => {
-  const [chartData, setChartData] = useState<ExternalPayrollMonthlyResponse | null>(null);
+const InternalPayrollMonthlyChart = ({ filters }: InternalPayrollMonthlyChartProps) => {
+  const [chartData, setChartData] = useState<InternalPayrollMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [chartType, setChartType] = useState<ChartType>('disbursed');
   const [startMonthYear, setStartMonthYear] = useState<string>('');
@@ -114,23 +112,13 @@ const ExternalPayrollMonthlyChart = ({ filters }: ExternalPayrollMonthlyChartPro
         start_month: startMonthYear,
         end_month: endMonthYear,
       };
-
-      // Only add dept_id if a specific department is selected (not "All Departments")
-      if (filters.department) {
-        params.dept_id = parseInt(filters.department);
-      }
       
       // Add status_kontrak if provided
       if (filters.status_kontrak) {
         params.status_kontrak = parseInt(filters.status_kontrak);
       }
-      
-      // Add valdo_inc if provided
-      if (filters.valdo_inc) {
-        params.valdo_inc = parseInt(filters.valdo_inc);
-      }
 
-      const response = await fetchExternalPayrollMonthly(params);
+      const response = await fetchInternalPayrollMonthly(params);
       setChartData(response);
     } catch (err) {
       console.error('Failed to fetch monthly chart data:', err);
@@ -138,13 +126,13 @@ const ExternalPayrollMonthlyChart = ({ filters }: ExternalPayrollMonthlyChartPro
     } finally {
       setLoading(false);
     }
-  }, [startMonthYear, endMonthYear, filters.department]);
+  }, [startMonthYear, endMonthYear, filters.status_kontrak]);
 
   useEffect(() => {
     if (startMonthYear && endMonthYear) {
       fetchChartData();
     }
-  }, [startMonthYear, endMonthYear, filters.department, filters.status_kontrak, filters.valdo_inc, fetchChartData]);
+  }, [startMonthYear, endMonthYear, filters.status_kontrak, fetchChartData]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);
@@ -417,4 +405,5 @@ const ExternalPayrollMonthlyChart = ({ filters }: ExternalPayrollMonthlyChartPro
   );
 };
 
-export default React.memo(ExternalPayrollMonthlyChart);
+export default React.memo(InternalPayrollMonthlyChart);
+

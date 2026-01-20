@@ -1,4 +1,5 @@
 import {
+  IconBox,
   IconBuilding,
   IconCashBanknote,
   IconDashboard,
@@ -77,6 +78,41 @@ const Menuitems: MenuitemsType[] = [
         icon: IconUserCancel,
         href: "/loan/non-performing-list",
       },
+      
+    ],
+  },
+  {
+    id: uniqueId(),
+    title: "Internal Payroll",
+    icon: IconBox,
+    href: "/internal-payroll",
+    chip: "New",
+    
+    children: [
+      {
+        id: uniqueId(),
+        title: "Overview",
+        icon: IconDashboard,
+        href: "/internal-payroll",
+        
+        chipColor: "secondary",
+      },
+      // {
+      //   id: uniqueId(),
+      //   title: "Department",
+      //   icon: IconBuilding,
+      //   href: "/internal-payroll/department",
+    
+      //   chipColor: "secondary",
+      // },
+      // {
+      //   id: uniqueId(),
+      //   title: "Cost Owner",
+      //   icon: IconMask,
+      //   href: "/internal-payroll/cost-owner",
+    
+      //   chipColor: "secondary",
+      // },
       
     ],
   },
