@@ -25,9 +25,7 @@ interface ExternalPayrollMonthlyChartProps {
   filters: {
     month: string;
     year: string;
-    department: string;
     status_kontrak?: string;
-    valdo_inc?: string;
   };
 }
 
@@ -114,20 +112,10 @@ const ExternalPayrollMonthlyChart = ({ filters }: ExternalPayrollMonthlyChartPro
         start_month: startMonthYear,
         end_month: endMonthYear,
       };
-
-      // Only add dept_id if a specific department is selected (not "All Departments")
-      if (filters.department) {
-        params.dept_id = parseInt(filters.department);
-      }
       
       // Add status_kontrak if provided
       if (filters.status_kontrak) {
         params.status_kontrak = parseInt(filters.status_kontrak);
-      }
-      
-      // Add valdo_inc if provided
-      if (filters.valdo_inc) {
-        params.valdo_inc = parseInt(filters.valdo_inc);
       }
 
       const response = await fetchExternalPayrollMonthly(params);
@@ -138,13 +126,13 @@ const ExternalPayrollMonthlyChart = ({ filters }: ExternalPayrollMonthlyChartPro
     } finally {
       setLoading(false);
     }
-  }, [startMonthYear, endMonthYear, filters.department]);
+  }, [startMonthYear, endMonthYear, filters.status_kontrak]);
 
   useEffect(() => {
     if (startMonthYear && endMonthYear) {
       fetchChartData();
     }
-  }, [startMonthYear, endMonthYear, filters.department, filters.status_kontrak, filters.valdo_inc, fetchChartData]);
+  }, [startMonthYear, endMonthYear, filters.status_kontrak, fetchChartData]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);
@@ -418,3 +406,4 @@ const ExternalPayrollMonthlyChart = ({ filters }: ExternalPayrollMonthlyChartPro
 };
 
 export default React.memo(ExternalPayrollMonthlyChart);
+

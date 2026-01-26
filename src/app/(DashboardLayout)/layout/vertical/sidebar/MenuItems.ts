@@ -97,22 +97,22 @@ const Menuitems: MenuitemsType[] = [
         
         chipColor: "secondary",
       },
-      // {
-      //   id: uniqueId(),
-      //   title: "Department",
-      //   icon: IconBuilding,
-      //   href: "/internal-payroll/department",
+      {
+        id: uniqueId(),
+        title: "Department",
+        icon: IconBuilding,
+        href: "/internal-payroll/department",
     
-      //   chipColor: "secondary",
-      // },
-      // {
-      //   id: uniqueId(),
-      //   title: "Cost Owner",
-      //   icon: IconMask,
-      //   href: "/internal-payroll/cost-owner",
+        chipColor: "secondary",
+      },
+      {
+        id: uniqueId(),
+        title: "Cost Owner",
+        icon: IconMask,
+        href: "/internal-payroll/cost-owner",
     
-      //   chipColor: "secondary",
-      // },
+        chipColor: "secondary",
+      },
       
     ],
   },
@@ -132,22 +132,22 @@ const Menuitems: MenuitemsType[] = [
         
         chipColor: "secondary",
       },
-      {
-        id: uniqueId(),
-        title: "Department",
-        icon: IconBuilding,
-        href: "/external-payroll/department",
+      // {
+      //   id: uniqueId(),
+      //   title: "Department",
+      //   icon: IconBuilding,
+      //   href: "/external-payroll/department",
     
-        chipColor: "secondary",
-      },
-      {
-        id: uniqueId(),
-        title: "Cost Owner",
-        icon: IconMask,
-        href: "/external-payroll/cost-owner",
+      //   chipColor: "secondary",
+      // },
+      // {
+      //   id: uniqueId(),
+      //   title: "Cost Owner",
+      //   icon: IconMask,
+      //   href: "/external-payroll/cost-owner",
     
-        chipColor: "secondary",
-      },
+      //   chipColor: "secondary",
+      // },
       
     ],
   },

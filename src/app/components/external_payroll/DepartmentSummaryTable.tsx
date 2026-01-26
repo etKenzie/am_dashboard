@@ -51,7 +51,6 @@ interface DepartmentSummaryTableProps {
     month: string;
     year: string;
     status_kontrak?: string;
-    valdo_inc?: string;
   };
   title?: string;
 }
@@ -84,10 +83,6 @@ const DepartmentSummaryTable = ({
         params.status_kontrak = parseInt(filters.status_kontrak);
       }
       
-      if (filters.valdo_inc) {
-        params.valdo_inc = parseInt(filters.valdo_inc);
-      }
-      
       const response = await fetchDepartmentSummary(params);
 
       setDepartments(response.departments);
@@ -103,7 +98,7 @@ const DepartmentSummaryTable = ({
     if (filters.month && filters.year) {
       fetchDepartmentData();
     }
-  }, [filters.month, filters.year, filters.status_kontrak, filters.valdo_inc]);
+  }, [filters.month, filters.year, filters.status_kontrak]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -123,7 +118,11 @@ const DepartmentSummaryTable = ({
   const searchFields = (dept: DepartmentSummary, query: string): boolean => {
     if (!query) return true;
 
-    const deptName = dept.dept_id === 0 ? 'Valdo' : (dept.department_name || `Department ${dept.dept_id}`);
+    let deptName = dept.dept_id === 0 ? 'Valdo' : (dept.department_name || `Department ${dept.dept_id}`);
+    // Remove "Internal - " prefix if present
+    if (deptName.startsWith('Internal - ')) {
+      deptName = deptName.substring(11);
+    }
     const searchableFields = [
       dept.dept_id.toString(),
       deptName,
@@ -172,7 +171,11 @@ const DepartmentSummaryTable = ({
 
   const prepareDataForExport = (departments: DepartmentSummary[]) => {
     return departments.map((d) => {
-      const deptName = d.dept_id === 0 ? 'Valdo' : (d.department_name || `Department ${d.dept_id}`);
+      let deptName = d.dept_id === 0 ? 'Valdo' : (d.department_name || `Department ${d.dept_id}`);
+      // Remove "Internal - " prefix if present
+      if (deptName.startsWith('Internal - ')) {
+        deptName = deptName.substring(11);
+      }
       return {
         'Dept ID': d.dept_id,
         'Department': deptName,
@@ -248,7 +251,9 @@ const DepartmentSummaryTable = ({
     if (dept.dept_id === 0) {
       return 'Valdo';
     }
-    return dept.department_name || `Department ${dept.dept_id}`;
+    const deptName = dept.department_name || `Department ${dept.dept_id}`;
+    // Remove "Internal - " prefix if present
+    return deptName.startsWith('Internal - ') ? deptName.substring(11) : deptName;
   };
 
   return (

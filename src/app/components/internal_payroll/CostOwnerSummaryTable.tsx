@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { fetchCostOwnerSummary, CostOwnerSummary } from '../../api/internal_payroll/InternalPayrollSlice';
+import { CostOwnerSummary, fetchCostOwnerSummary } from '../../api/internal_payroll/InternalPayrollSlice';
 
 type Order = 'asc' | 'desc';
 type SortableField = keyof CostOwnerSummary;
@@ -49,6 +49,7 @@ interface CostOwnerSummaryTableProps {
     month: string;
     year: string;
     status_kontrak?: string;
+    valdo_inc?: string;
   };
   title?: string;
 }
@@ -81,6 +82,10 @@ const CostOwnerSummaryTable = ({
         params.status_kontrak = parseInt(filters.status_kontrak);
       }
       
+      if (filters.valdo_inc) {
+        params.valdo_inc = parseInt(filters.valdo_inc);
+      }
+      
       const response = await fetchCostOwnerSummary(params);
 
       setCostOwners(response.cost_owners);
@@ -96,7 +101,7 @@ const CostOwnerSummaryTable = ({
     if (filters.month && filters.year) {
       fetchCostOwnerData();
     }
-  }, [filters.month, filters.year, filters.status_kontrak]);
+  }, [filters.month, filters.year, filters.status_kontrak, filters.valdo_inc]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';

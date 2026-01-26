@@ -1,12 +1,12 @@
 'use client';
 
 import { getPageRoles } from '@/config/roles';
+import { Box, Typography } from '@mui/material';
+import { useEffect, useState } from 'react';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
 import PageContainer from '../../../components/container/PageContainer';
 import CostOwnerSummaryTable from '../../../components/external_payroll/CostOwnerSummaryTable';
 import ExternalPayrollMonthYearFilters, { ExternalPayrollMonthYearFilterValues } from '../../../components/external_payroll/ExternalPayrollMonthYearFilters';
-import { Box, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
 
 const ExternalPayrollCostOwnerPage = () => {
   // Initialize filters with empty values to avoid hydration mismatch
@@ -14,7 +14,6 @@ const ExternalPayrollCostOwnerPage = () => {
     month: '',
     year: '',
     status_kontrak: '',
-    valdo_inc: '',
   });
 
   // Set initial date values in useEffect to avoid hydration issues
@@ -59,7 +58,6 @@ const ExternalPayrollCostOwnerPage = () => {
                 month: filters.month,
                 year: filters.year,
                 status_kontrak: filters.status_kontrak,
-                valdo_inc: filters.valdo_inc,
               }}
             />
           </Box>

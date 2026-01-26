@@ -25,7 +25,9 @@ interface InternalPayrollMonthlyChartProps {
   filters: {
     month: string;
     year: string;
+    department: string;
     status_kontrak?: string;
+    valdo_inc?: string;
   };
 }
 
@@ -112,12 +114,22 @@ const InternalPayrollMonthlyChart = ({ filters }: InternalPayrollMonthlyChartPro
         start_month: startMonthYear,
         end_month: endMonthYear,
       };
+
+      // Only add dept_id if a specific department is selected (not "All Departments")
+      if (filters.department) {
+        params.dept_id = parseInt(filters.department);
+      }
       
       // Add status_kontrak if provided
       if (filters.status_kontrak) {
         params.status_kontrak = parseInt(filters.status_kontrak);
       }
-
+      
+      // Add valdo_inc if provided
+      if (filters.valdo_inc) {
+        params.valdo_inc = parseInt(filters.valdo_inc);
+      }
+      
       const response = await fetchInternalPayrollMonthly(params);
       setChartData(response);
     } catch (err) {
@@ -126,13 +138,13 @@ const InternalPayrollMonthlyChart = ({ filters }: InternalPayrollMonthlyChartPro
     } finally {
       setLoading(false);
     }
-  }, [startMonthYear, endMonthYear, filters.status_kontrak]);
+  }, [startMonthYear, endMonthYear, filters.department, filters.status_kontrak, filters.valdo_inc]);
 
   useEffect(() => {
     if (startMonthYear && endMonthYear) {
       fetchChartData();
     }
-  }, [startMonthYear, endMonthYear, filters.status_kontrak, fetchChartData]);
+  }, [startMonthYear, endMonthYear, filters.department, filters.status_kontrak, filters.valdo_inc, fetchChartData]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);
@@ -406,4 +418,3 @@ const InternalPayrollMonthlyChart = ({ filters }: InternalPayrollMonthlyChartPro
 };
 
 export default React.memo(InternalPayrollMonthlyChart);
-

@@ -14,7 +14,6 @@ const ExternalPayrollDepartmentPage = () => {
     month: '',
     year: '',
     status_kontrak: '',
-    valdo_inc: '',
   });
 
   // Set initial date values in useEffect to avoid hydration issues
@@ -59,7 +58,6 @@ const ExternalPayrollDepartmentPage = () => {
                 month: filters.month,
                 year: filters.year,
                 status_kontrak: filters.status_kontrak,
-                valdo_inc: filters.valdo_inc,
               }}
             />
           </Box>

@@ -9,7 +9,7 @@ export interface InternalPayrollFiltersResponse {
   departments: Department[];
 }
 
-// Types for Internal Payroll Filters Query Parameters
+// Types for External Payroll Filters Query Parameters
 export interface InternalPayrollFiltersParams {
   month?: string;
   year?: string;
@@ -21,13 +21,16 @@ export interface TotalPayrollDisbursedResponse {
   total_payroll_disbursed: number;
   month: number;
   year: number;
+  dept_id: number | null;
   message: string | null;
 }
 
 export interface TotalPayrollDisbursedParams {
   month: string;
   year: string;
+  dept_id?: number | string; // Can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Types for Total Payroll Headcount API
@@ -39,16 +42,19 @@ export interface TotalPayrollHeadcountResponse {
   mitra_headcount: number;
   month: number;
   year: number;
+  dept_id: number | null;
   message: string | null;
 }
 
 export interface TotalPayrollHeadcountParams {
   month: string;
   year: string;
+  dept_id?: number | string; // Optional, can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
-// Types for Internal Payroll Monthly API
+// Types for External Payroll Monthly API
 export interface MonthlySummary {
   total_disbursed: number;
   total_headcount: number;
@@ -63,13 +69,16 @@ export interface InternalPayrollMonthlyResponse {
   start_month: number;
   end_month: number;
   year: number;
+  dept_id: number | null;
   message: string | null;
 }
 
 export interface InternalPayrollMonthlyParams {
   start_month: string; // Format: "MM-YYYY" (e.g., "08-2025")
   end_month: string; // Format: "MM-YYYY" (e.g., "10-2025")
+  dept_id?: number | string; // Optional, can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Get API URL from environment variable with validation
@@ -108,7 +117,7 @@ export const fetchInternalPayrollFilters = async (
   });
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch internal payroll filters: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to fetch external payroll filters: ${response.status} ${response.statusText}`);
   }
   
   return response.json();
@@ -126,20 +135,25 @@ export const fetchTotalPayrollDisbursed = async (
   queryParams.append('month', params.month);
   queryParams.append('year', params.year);
   
+  // Only pass dept_id if provided (not when "All Departments" is selected)
+  // dept_id=0 represents "Valdo" department, so we shouldn't pass it for "All"
+  if (params.dept_id !== undefined && params.dept_id !== null && params.dept_id !== '') {
+    queryParams.append('dept_id', params.dept_id.toString());
+  }
+  
   // Add status_kontrak if provided
   if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
     queryParams.append('status_kontrak', params.status_kontrak.toString());
   }
   
+  // Add valdo_inc if provided
+  if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
+    queryParams.append('valdo_inc', params.valdo_inc.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/total_payroll_disbursed?${queryParams.toString()}`;
   
-  console.log('🔗 API Request:', {
-    endpoint: 'fetchTotalPayrollDisbursed',
-    baseUrl,
-    fullUrl: url,
-    params: params,
-    timestamp: new Date().toISOString(),
-  });
+  console.log('Fetching total payroll disbursed from:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -167,20 +181,24 @@ export const fetchTotalPayrollHeadcount = async (
   queryParams.append('month', params.month);
   queryParams.append('year', params.year);
   
+  // dept_id is optional for headcount endpoint
+  if (params.dept_id !== undefined && params.dept_id !== null && params.dept_id !== '') {
+    queryParams.append('dept_id', params.dept_id.toString());
+  }
+  
   // Add status_kontrak if provided
   if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
     queryParams.append('status_kontrak', params.status_kontrak.toString());
   }
   
+  // Add valdo_inc if provided
+  if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
+    queryParams.append('valdo_inc', params.valdo_inc.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/total_payroll_headcount?${queryParams.toString()}`;
   
-  console.log('🔗 API Request:', {
-    endpoint: 'fetchTotalPayrollHeadcount',
-    baseUrl,
-    fullUrl: url,
-    params: params,
-    timestamp: new Date().toISOString(),
-  });
+  console.log('Fetching total payroll headcount from:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -196,7 +214,7 @@ export const fetchTotalPayrollHeadcount = async (
   return response.json();
 };
 
-// Fetch Internal Payroll Monthly
+// Fetch External Payroll Monthly
 export const fetchInternalPayrollMonthly = async (
   params: InternalPayrollMonthlyParams
 ): Promise<InternalPayrollMonthlyResponse> => {
@@ -208,20 +226,24 @@ export const fetchInternalPayrollMonthly = async (
   queryParams.append('start_month', params.start_month); // Format: "MM-YYYY"
   queryParams.append('end_month', params.end_month); // Format: "MM-YYYY"
   
+  // dept_id is optional
+  if (params.dept_id !== undefined && params.dept_id !== null && params.dept_id !== '') {
+    queryParams.append('dept_id', params.dept_id.toString());
+  }
+  
   // Add status_kontrak if provided
   if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
     queryParams.append('status_kontrak', params.status_kontrak.toString());
   }
   
+  // Add valdo_inc if provided
+  if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
+    queryParams.append('valdo_inc', params.valdo_inc.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/monthly?${queryParams.toString()}`;
   
-  console.log('🔗 API Request:', {
-    endpoint: 'fetchInternalPayrollMonthly',
-    baseUrl,
-    fullUrl: url,
-    params: params,
-    timestamp: new Date().toISOString(),
-  });
+  console.log('Fetching external payroll monthly from:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -231,7 +253,7 @@ export const fetchInternalPayrollMonthly = async (
   });
   
   if (!response.ok) {
-    throw new Error(`Failed to fetch internal payroll monthly: ${response.status} ${response.statusText}`);
+    throw new Error(`Failed to fetch external payroll monthly: ${response.status} ${response.statusText}`);
   }
   
   return response.json();
@@ -263,6 +285,7 @@ export interface DepartmentSummaryParams {
   month: string;
   year: string;
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Fetch Department Summary
@@ -282,15 +305,14 @@ export const fetchDepartmentSummary = async (
     queryParams.append('status_kontrak', params.status_kontrak.toString());
   }
   
+  // Add valdo_inc if provided
+  if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
+    queryParams.append('valdo_inc', params.valdo_inc.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/department_summary?${queryParams.toString()}`;
   
-  console.log('🔗 API Request:', {
-    endpoint: 'fetchDepartmentSummary',
-    baseUrl,
-    fullUrl: url,
-    params: params,
-    timestamp: new Date().toISOString(),
-  });
+  console.log('Fetching department summary from:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -330,6 +352,7 @@ export interface CostOwnerSummaryParams {
   month: string;
   year: string;
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Fetch Cost Owner Summary
@@ -349,15 +372,14 @@ export const fetchCostOwnerSummary = async (
     queryParams.append('status_kontrak', params.status_kontrak.toString());
   }
   
+  // Add valdo_inc if provided
+  if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
+    queryParams.append('valdo_inc', params.valdo_inc.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/cost_owner_summary?${queryParams.toString()}`;
   
-  console.log('🔗 API Request:', {
-    endpoint: 'fetchCostOwnerSummary',
-    baseUrl,
-    fullUrl: url,
-    params: params,
-    timestamp: new Date().toISOString(),
-  });
+  console.log('Fetching cost owner summary from:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -385,6 +407,7 @@ export interface TotalDepartmentCountResponse {
 export interface TotalDepartmentCountParams {
   month: string;
   year: string;
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Fetch Total Department Count
@@ -399,15 +422,14 @@ export const fetchTotalDepartmentCount = async (
   queryParams.append('month', params.month);
   queryParams.append('year', params.year);
   
+  // Add valdo_inc if provided
+  if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
+    queryParams.append('valdo_inc', params.valdo_inc.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/total_department_count?${queryParams.toString()}`;
   
-  console.log('🔗 API Request:', {
-    endpoint: 'fetchTotalDepartmentCount',
-    baseUrl,
-    fullUrl: url,
-    params: params,
-    timestamp: new Date().toISOString(),
-  });
+  console.log('Fetching total department count from:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -429,13 +451,16 @@ export interface TotalBPSJTKResponse {
   total_bpsjtk: number;
   month: number;
   year: number;
+  dept_id: number | null;
   message: string | null;
 }
 
 export interface TotalBPSJTKParams {
   month: string;
   year: string;
+  dept_id?: number | string; // Optional, can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Types for Total Kesehatan API
@@ -444,13 +469,16 @@ export interface TotalKesehatanResponse {
   total_kesehatan: number;
   month: number;
   year: number;
+  dept_id: number | null;
   message: string | null;
 }
 
 export interface TotalKesehatanParams {
   month: string;
   year: string;
+  dept_id?: number | string; // Optional, can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Types for Total Pensiun API
@@ -459,13 +487,16 @@ export interface TotalPensiunResponse {
   total_pensiun: number;
   month: number;
   year: number;
+  dept_id: number | null;
   message: string | null;
 }
 
 export interface TotalPensiunParams {
   month: string;
   year: string;
+  dept_id?: number | string; // Optional, can be 0 for all departments
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
+  valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
 // Fetch Total BPSJTK
@@ -480,20 +511,24 @@ export const fetchTotalBPSJTK = async (
   queryParams.append('month', params.month);
   queryParams.append('year', params.year);
   
+  // Only pass dept_id if provided (not when "All Departments" is selected)
+  if (params.dept_id !== undefined && params.dept_id !== null && params.dept_id !== '') {
+    queryParams.append('dept_id', params.dept_id.toString());
+  }
+  
   // Add status_kontrak if provided
   if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
     queryParams.append('status_kontrak', params.status_kontrak.toString());
   }
   
+  // Add valdo_inc if provided
+  if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
+    queryParams.append('valdo_inc', params.valdo_inc.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/total_bpsjtk?${queryParams.toString()}`;
   
-  console.log('🔗 API Request:', {
-    endpoint: 'fetchTotalBPSJTK',
-    baseUrl,
-    fullUrl: url,
-    params: params,
-    timestamp: new Date().toISOString(),
-  });
+  console.log('Fetching total BPSJTK from:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -521,20 +556,24 @@ export const fetchTotalKesehatan = async (
   queryParams.append('month', params.month);
   queryParams.append('year', params.year);
   
+  // Only pass dept_id if provided (not when "All Departments" is selected)
+  if (params.dept_id !== undefined && params.dept_id !== null && params.dept_id !== '') {
+    queryParams.append('dept_id', params.dept_id.toString());
+  }
+  
   // Add status_kontrak if provided
   if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
     queryParams.append('status_kontrak', params.status_kontrak.toString());
   }
   
+  // Add valdo_inc if provided
+  if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
+    queryParams.append('valdo_inc', params.valdo_inc.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/total_kesehatan?${queryParams.toString()}`;
   
-  console.log('🔗 API Request:', {
-    endpoint: 'fetchTotalKesehatan',
-    baseUrl,
-    fullUrl: url,
-    params: params,
-    timestamp: new Date().toISOString(),
-  });
+  console.log('Fetching total kesehatan from:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -562,20 +601,24 @@ export const fetchTotalPensiun = async (
   queryParams.append('month', params.month);
   queryParams.append('year', params.year);
   
+  // Only pass dept_id if provided (not when "All Departments" is selected)
+  if (params.dept_id !== undefined && params.dept_id !== null && params.dept_id !== '') {
+    queryParams.append('dept_id', params.dept_id.toString());
+  }
+  
   // Add status_kontrak if provided
   if (params.status_kontrak !== undefined && params.status_kontrak !== null && params.status_kontrak !== '') {
     queryParams.append('status_kontrak', params.status_kontrak.toString());
   }
   
+  // Add valdo_inc if provided
+  if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
+    queryParams.append('valdo_inc', params.valdo_inc.toString());
+  }
+  
   const url = `${baseUrl}/internal_payroll/total_pensiun?${queryParams.toString()}`;
   
-  console.log('🔗 API Request:', {
-    endpoint: 'fetchTotalPensiun',
-    baseUrl,
-    fullUrl: url,
-    params: params,
-    timestamp: new Date().toISOString(),
-  });
+  console.log('Fetching total pensiun from:', url);
   
   const response = await fetch(url, {
     method: 'GET',
@@ -590,3 +633,4 @@ export const fetchTotalPensiun = async (
   
   return response.json();
 };
+

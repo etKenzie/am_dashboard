@@ -13,6 +13,7 @@ export interface InternalPayrollMonthYearFilterValues {
   month: string;
   year: string;
   status_kontrak?: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
+  valdo_inc?: string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN, empty for all
 }
 
 interface InternalPayrollMonthYearFiltersProps {
@@ -94,9 +95,26 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
           </Select>
         </FormControl>
       </Grid>
+
+      {/* Valdo Inc Filter */}
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel shrink={!!filters.valdo_inc}>Valdo Inc</InputLabel>
+          <Select
+            value={filters.valdo_inc || ''}
+            label="Valdo Inc"
+            onChange={handleFilterChange('valdo_inc')}
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="1">VI</MenuItem>
+            <MenuItem value="2">VSDM</MenuItem>
+            <MenuItem value="31">VSI</MenuItem>
+            <MenuItem value="94">TOPAN</MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
     </Grid>
   );
 };
 
 export default InternalPayrollMonthYearFilters;
-

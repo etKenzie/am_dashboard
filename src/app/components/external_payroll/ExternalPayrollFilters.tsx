@@ -14,9 +14,7 @@ import { Department, fetchExternalPayrollFilters } from '../../api/external_payr
 export interface ExternalPayrollFilterValues {
   month: string;
   year: string;
-  department: string; // dept_id as string, empty for all
   status_kontrak: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
-  valdo_inc: string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN, empty for all
 }
 
 interface ExternalPayrollFiltersProps {
@@ -27,16 +25,6 @@ interface ExternalPayrollFiltersProps {
 const ExternalPayrollFilters = ({ filters, onFiltersChange }: ExternalPayrollFiltersProps) => {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Helper function to display department name in all capital letters
-  const getDepartmentDisplayName = (dept: Department): string => {
-    if (dept.dept_id === 0) {
-      return 'VALDO';
-    }
-    // Display department name in all capital letters
-    const deptName = dept.department_name || `Department ${dept.dept_id}`;
-    return deptName.toUpperCase();
-  };
 
   // Generate month options (01-12)
   const months = Array.from({ length: 12 }, (_, i) => {
@@ -89,7 +77,7 @@ const ExternalPayrollFilters = ({ filters, onFiltersChange }: ExternalPayrollFil
   return (
     <Grid container spacing={2}>
       {/* Month Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Month</InputLabel>
           <Select
@@ -108,7 +96,7 @@ const ExternalPayrollFilters = ({ filters, onFiltersChange }: ExternalPayrollFil
       </Grid>
 
       {/* Year Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Year</InputLabel>
           <Select
@@ -126,28 +114,8 @@ const ExternalPayrollFilters = ({ filters, onFiltersChange }: ExternalPayrollFil
         </FormControl>
       </Grid>
 
-      {/* Department Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 3.2 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Department</InputLabel>
-          <Select
-            value={filters.department}
-            label="Department"
-            onChange={handleFilterChange('department')}
-            disabled={loading}
-          >
-            <MenuItem value="">All Departments</MenuItem>
-            {departments.map((dept) => (
-              <MenuItem key={dept.dept_id} value={dept.dept_id.toString()}>
-                {getDepartmentDisplayName(dept)}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Grid>
-
       {/* Contract Status Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Contract</InputLabel>
           <Select
@@ -164,27 +132,9 @@ const ExternalPayrollFilters = ({ filters, onFiltersChange }: ExternalPayrollFil
           </Select>
         </FormControl>
       </Grid>
-
-      {/* Valdo Inc Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Valdo Inc</InputLabel>
-          <Select
-            value={filters.valdo_inc}
-            label="Valdo Inc"
-            onChange={handleFilterChange('valdo_inc')}
-            disabled={loading}
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="1">VI</MenuItem>
-            <MenuItem value="2">VSDM</MenuItem>
-            <MenuItem value="31">VSI</MenuItem>
-            <MenuItem value="94">TOPAN</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
     </Grid>
   );
 };
 
 export default ExternalPayrollFilters;
+
