@@ -4,18 +4,18 @@ import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { Box, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  fetchTotalBPSJTK,
-  fetchTotalDepartmentCount,
-  fetchTotalKesehatan,
-  fetchTotalPayrollDisbursed,
-  fetchTotalPayrollHeadcount,
-  fetchTotalPensiun,
-  TotalBPSJTKResponse,
-  TotalDepartmentCountResponse,
-  TotalKesehatanResponse,
-  TotalPayrollDisbursedResponse,
-  TotalPayrollHeadcountResponse,
-  TotalPensiunResponse
+    fetchTotalBPSJTK,
+    fetchTotalDepartmentCount,
+    fetchTotalKesehatan,
+    fetchTotalPayrollDisbursed,
+    fetchTotalPayrollHeadcount,
+    fetchTotalPensiun,
+    TotalBPSJTKResponse,
+    TotalDepartmentCountResponse,
+    TotalKesehatanResponse,
+    TotalPayrollDisbursedResponse,
+    TotalPayrollHeadcountResponse,
+    TotalPensiunResponse
 } from '../../api/internal_payroll/InternalPayrollSlice';
 import PageContainer from '../container/PageContainer';
 import SummaryTiles from '../shared/SummaryTiles';
