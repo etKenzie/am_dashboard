@@ -13,56 +13,50 @@ const Logo = () => {
 
   const LinkStyled = styled(Link)(() => ({
     height: TopbarHeight,
-
     width: isCollapse == "mini-sidebar" && !isSidebarHover ? '40px' : '180px',
     overflow: "hidden",
     display: "block",
+    position: "relative",
+    flexShrink: 0,
   }));
-  const logoHeight = TopbarHeight - 12
+
+  const imageSx = {
+    objectFit: 'contain' as const,
+    objectPosition: 'left center',
+  };
+
+  const isShrunk = isCollapse === "mini-sidebar" && !isSidebarHover;
 
   if (activeDir === "ltr") {
+    const logoSrc = isShrunk
+      ? "/images/logos/logo-small.png"
+      : activeMode === "dark"
+        ? "/images/logos/valdo_logo.png"
+        : "/images/logos/logo.png";
     return (
       <LinkStyled href="/">
-        {activeMode === "dark" ? (
-          <Image
-            src="/images/logos/valdo_logo.png"
-            alt="logo"
-            height={logoHeight}
-            width={180}
-            priority
-          />
-        ) : (
-          <Image
-            src="/images/logos/valdo_logo.png"
-            alt="logo"
-            height={logoHeight}
-            width={180}
-            priority
-          />
-        )}
+        <Image
+          src={logoSrc}
+          alt="logo"
+          fill
+          priority
+          style={imageSx}
+          sizes={isShrunk ? "40px" : "(max-width: 40px) 40px, 180px"}
+        />
       </LinkStyled>
     );
   }
 
   return (
     <LinkStyled href="/">
-      {activeMode === "dark" ? (
-        <Image
-          src="/images/logos/dark-rtl-logo.svg"
-          alt="logo"
-          height={TopbarHeight}
-          width={174}
-          priority
-        />
-      ) : (
-        <Image
-          src="/images/logos/light-logo-rtl.svg"
-          alt="logo"
-          height={TopbarHeight}
-          width={174}
-          priority
-        />
-      )}
+      <Image
+        src={isShrunk ? "/images/logos/logo-small.png" : activeMode === "dark" ? "/images/logos/dark-rtl-logo.svg" : "/images/logos/logo.svg"}
+        alt="logo"
+        fill
+        priority
+        style={imageSx}
+        sizes={isShrunk ? "40px" : "174px"}
+      />
     </LinkStyled>
   );
 };
