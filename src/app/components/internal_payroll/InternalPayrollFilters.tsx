@@ -126,6 +126,25 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
         </FormControl>
       </Grid>
 
+      {/* Valdo Inc Filter */}
+      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Valdo Inc</InputLabel>
+          <Select
+            value={filters.valdo_inc}
+            label="Valdo Inc"
+            onChange={handleFilterChange('valdo_inc')}
+            disabled={loading}
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="1">VI</MenuItem>
+            <MenuItem value="2">VSDM</MenuItem>
+            <MenuItem value="31">VSI</MenuItem>
+            <MenuItem value="94">TOPAN</MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
+
       {/* Department Filter */}
       <Grid size={{ xs: 12, sm: 6, md: 3.2 }}>
         <FormControl fullWidth size="small">
@@ -161,25 +180,6 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
             <MenuItem value="1">PKWTT</MenuItem>
             <MenuItem value="2">PKWT</MenuItem>
             <MenuItem value="3">MITRA</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-
-      {/* Valdo Inc Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel>Valdo Inc</InputLabel>
-          <Select
-            value={filters.valdo_inc}
-            label="Valdo Inc"
-            onChange={handleFilterChange('valdo_inc')}
-            disabled={loading}
-          >
-            <MenuItem value="">All</MenuItem>
-            <MenuItem value="1">VI</MenuItem>
-            <MenuItem value="2">VSDM</MenuItem>
-            <MenuItem value="31">VSI</MenuItem>
-            <MenuItem value="94">TOPAN</MenuItem>
           </Select>
         </FormControl>
       </Grid>

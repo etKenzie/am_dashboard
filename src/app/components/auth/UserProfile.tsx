@@ -129,16 +129,9 @@ export default function UserProfile() {
           </ListItemIcon>
           <ListItemText>Profile</ListItemText>
         </MenuItem>
-        
-        <MenuItem onClick={handleMenuClose}>
-          <ListItemIcon>
-            <Settings fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Settings</ListItemText>
-        </MenuItem>
-        
+
         <Divider />
-        
+
         <MenuItem onClick={handleSignOut}>
           <ListItemIcon>
             <Logout fontSize="small" />

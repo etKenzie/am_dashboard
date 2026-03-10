@@ -78,24 +78,6 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
         </FormControl>
       </Grid>
 
-      {/* Contract Status Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-        <FormControl fullWidth size="small">
-          <InputLabel shrink={!!filters.status_kontrak}>Contract</InputLabel>
-          <Select
-            value={filters.status_kontrak || ''}
-            label="Contract"
-            onChange={handleFilterChange('status_kontrak')}
-          >
-            <MenuItem value="">All Contracts</MenuItem>
-            <MenuItem value="0">DW</MenuItem>
-            <MenuItem value="1">PKWTT</MenuItem>
-            <MenuItem value="2">PKWT</MenuItem>
-            <MenuItem value="3">MITRA</MenuItem>
-          </Select>
-        </FormControl>
-      </Grid>
-
       {/* Valdo Inc Filter */}
       <Grid size={{ xs: 12, sm: 6, md: 3 }}>
         <FormControl fullWidth size="small">
@@ -110,6 +92,24 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
             <MenuItem value="2">VSDM</MenuItem>
             <MenuItem value="31">VSI</MenuItem>
             <MenuItem value="94">TOPAN</MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Contract Status Filter */}
+      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel shrink={!!filters.status_kontrak}>Contract</InputLabel>
+          <Select
+            value={filters.status_kontrak || ''}
+            label="Contract"
+            onChange={handleFilterChange('status_kontrak')}
+          >
+            <MenuItem value="">All Contracts</MenuItem>
+            <MenuItem value="0">DW</MenuItem>
+            <MenuItem value="1">PKWTT</MenuItem>
+            <MenuItem value="2">PKWT</MenuItem>
+            <MenuItem value="3">MITRA</MenuItem>
           </Select>
         </FormControl>
       </Grid>

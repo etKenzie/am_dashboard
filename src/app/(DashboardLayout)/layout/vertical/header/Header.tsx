@@ -10,10 +10,7 @@ import config from '@/app/context/config'
 import { CustomizerContext } from '@/app/context/customizerContext';
 
 import { IconMenu2, IconMoon, IconSun } from '@tabler/icons-react';
-import Notifications from './Notification';
 import Profile from './Profile';
-import Search from './Search';
-import Language from './Language';
 import Navigation from './Navigation';
 import MobileRightSidebar from './MobileRightSidebar';
 
@@ -61,10 +58,6 @@ const Header = () => {
           <IconMenu2 size="20" />
         </IconButton>
 
-        {/* ------------------------------------------- */}
-        {/* Search Dropdown */}
-        {/* ------------------------------------------- */}
-        <Search />
         {lgUp ? (
           <>
             {/* <Navigation /> */}
@@ -73,12 +66,6 @@ const Header = () => {
 
         <Box flexGrow={1} />
         <Stack spacing={1} direction="row" alignItems="center">
-          <Language />
-
-          {/* ------------------------------------------- */}
-          {/* End Ecommerce Dropdown */}
-          {/* ------------------------------------------- */}
-
           <IconButton size="large" color="inherit">
             {activeMode === "light" ? (
               <IconMoon
