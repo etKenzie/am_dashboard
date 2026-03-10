@@ -10,12 +10,16 @@ export const ROLES = {
   MANAGER: 'manager',
   ANALYST: 'analyst',
   VIEWER: 'viewer',
+  LOAN: 'LOAN',
+  PAYROLL: 'PAYROLL',
 } as const;
 
 // Role definitions for different pages/features
 export const PAGE_ROLES = {
   // Dashboard pages
   KASBON_DASHBOARD: [ROLES.ADMIN],
+  LOAN_DASHBOARD: [ROLES.ADMIN, ROLES.LOAN],
+  PAYROLL_DASHBOARD: [ROLES.ADMIN, ROLES.PAYROLL],
   ANALYTICS_DASHBOARD: [ROLES.ANALYST, ROLES.ADMIN],
   
   // Admin pages

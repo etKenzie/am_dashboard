@@ -9,14 +9,14 @@ const LoanClientPerformancePage = () => {
     <LoanDashboard
       title="Loan Client Performance"
       description="Manage loan data for employees"
-      requiredRoles={getPageRoles('KASBON_DASHBOARD')} // Using same roles for now
+      requiredRoles={getPageRoles('LOAN_DASHBOARD')}
     />
   );
 };
 
 export default function ProtectedLoanClientPerformance() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('LOAN_DASHBOARD')}>
       <LoanClientPerformancePage />
     </ProtectedRoute>
   );

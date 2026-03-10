@@ -9,14 +9,14 @@ const KasbonDashboard = () => {
     <LoanDashboard
       title="Kasbon Dashboard"
       description="Manage kasbon data for employees"
-      requiredRoles={getPageRoles('KASBON_DASHBOARD')}
+      requiredRoles={getPageRoles('LOAN_DASHBOARD')}
     />
   );
 };
 
 export default function ProtectedKasbonDashboard() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('LOAN_DASHBOARD')}>
       <KasbonDashboard />
     </ProtectedRoute>
   );

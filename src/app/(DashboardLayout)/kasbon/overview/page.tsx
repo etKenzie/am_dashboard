@@ -9,14 +9,14 @@ const KasbonOverview = () => {
     <LoanOverview
       title="Kasbon Overview"
       description="Overview of kasbon data and analytics"
-      requiredRoles={getPageRoles('KASBON_DASHBOARD')}
+      requiredRoles={getPageRoles('LOAN_DASHBOARD')}
     />
   );
 };
 
 export default function ProtectedKasbonOverview() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('LOAN_DASHBOARD')}>
       <KasbonOverview />
     </ProtectedRoute>
   );

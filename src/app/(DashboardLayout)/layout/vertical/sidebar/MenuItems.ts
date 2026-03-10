@@ -10,6 +10,7 @@ import {
   IconUserCancel
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
+import { ROLES } from "@/config/roles";
 
 interface MenuitemsType {
   [x: string]: any;
@@ -24,6 +25,8 @@ interface MenuitemsType {
   chipColor?: string;
   variant?: string;
   external?: boolean;
+  /** Roles that can see this item (user needs at least one). Omit = visible to all authenticated users. */
+  requiredRoles?: string[];
 }
 
 const Menuitems: MenuitemsType[] = [
@@ -57,7 +60,7 @@ const Menuitems: MenuitemsType[] = [
     title: "Loans",
     icon: IconCashBanknote,
     href: "/loan",
-    
+    requiredRoles: [ROLES.ADMIN, ROLES.LOAN],
     children: [
       {
         id: uniqueId(),
@@ -87,7 +90,7 @@ const Menuitems: MenuitemsType[] = [
     icon: IconBox,
     href: "/internal-payroll",
     chip: "New",
-    
+    requiredRoles: [ROLES.ADMIN, ROLES.PAYROLL],
     children: [
       {
         id: uniqueId(),
@@ -122,7 +125,7 @@ const Menuitems: MenuitemsType[] = [
     icon: IconPaywall,
     href: "/external-payroll",
     chip: "New",
-    
+    requiredRoles: [ROLES.ADMIN, ROLES.PAYROLL],
     children: [
       {
         id: uniqueId(),

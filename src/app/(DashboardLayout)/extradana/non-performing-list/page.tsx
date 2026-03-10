@@ -9,14 +9,14 @@ const ExtradanaNonPerformingList = () => {
     <LoanNonPerformingList
       title="Extradana Non-Performing List"
       description="List of extradana non-performing loans and overdue accounts"
-      requiredRoles={getPageRoles('KASBON_DASHBOARD')} // Using same roles for now
+      requiredRoles={getPageRoles('LOAN_DASHBOARD')} // Using same roles for now
     />
   );
 };
 
 export default function ProtectedExtradanaNonPerformingList() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('LOAN_DASHBOARD')}>
       <ExtradanaNonPerformingList />
     </ProtectedRoute>
   );

@@ -9,14 +9,14 @@ const KasbonNonPerformingList = () => {
     <LoanNonPerformingList
       title="Kasbon Non-Performing List"
       description="List of kasbon non-performing loans and overdue accounts"
-      requiredRoles={getPageRoles('KASBON_DASHBOARD')}
+      requiredRoles={getPageRoles('LOAN_DASHBOARD')}
     />
   );
 };
 
 export default function ProtectedKasbonNonPerformingList() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('LOAN_DASHBOARD')}>
       <KasbonNonPerformingList />
     </ProtectedRoute>
   );

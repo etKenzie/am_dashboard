@@ -84,7 +84,7 @@ const ExternalPayrollDepartmentPage = () => {
 
 export default function ProtectedExternalPayrollDepartment() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('PAYROLL_DASHBOARD')}>
       <ExternalPayrollDepartmentPage />
     </ProtectedRoute>
   );

@@ -9,14 +9,14 @@ const ExtradanaOverview = () => {
     <LoanOverview
       title="Extradana Overview"
       description="Overview of extradana data and analytics"
-      requiredRoles={getPageRoles('KASBON_DASHBOARD')} // Using same roles for now
+      requiredRoles={getPageRoles('LOAN_DASHBOARD')} // Using same roles for now
     />
   );
 };
 
 export default function ProtectedExtradanaOverview() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('LOAN_DASHBOARD')}>
       <ExtradanaOverview />
     </ProtectedRoute>
   );

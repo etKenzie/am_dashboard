@@ -86,7 +86,7 @@ const InternalPayrollDepartmentPage = () => {
 
 export default function ProtectedInternalPayrollDepartment() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('PAYROLL_DASHBOARD')}>
       <InternalPayrollDepartmentPage />
     </ProtectedRoute>
   );

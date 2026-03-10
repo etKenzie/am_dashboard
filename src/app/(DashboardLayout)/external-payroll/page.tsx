@@ -9,14 +9,14 @@ const ExternalPayrollPage = () => {
     <ExternalPayrollDashboard
       title="External Payroll"
       description="View external payroll metrics and analytics"
-      requiredRoles={getPageRoles('KASBON_DASHBOARD')} // Using same roles for now
+      requiredRoles={getPageRoles('PAYROLL_DASHBOARD')}
     />
   );
 };
 
 export default function ProtectedExternalPayroll() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('PAYROLL_DASHBOARD')}>
       <ExternalPayrollPage />
     </ProtectedRoute>
   );

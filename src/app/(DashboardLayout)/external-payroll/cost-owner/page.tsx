@@ -84,7 +84,7 @@ const ExternalPayrollCostOwnerPage = () => {
 
 export default function ProtectedExternalPayrollCostOwner() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('PAYROLL_DASHBOARD')}>
       <ExternalPayrollCostOwnerPage />
     </ProtectedRoute>
   );
