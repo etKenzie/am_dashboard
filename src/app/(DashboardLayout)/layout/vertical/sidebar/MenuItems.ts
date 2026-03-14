@@ -121,6 +121,29 @@ const Menuitems: MenuitemsType[] = [
   },
   {
     id: uniqueId(),
+    title: "Temp Internal Payroll",
+    icon: IconBox,
+    href: "/temp-internal-payroll",
+    chip: "New",
+    children: [
+      {
+        id: uniqueId(),
+        title: "Overview",
+        icon: IconDashboard,
+        href: "/temp-internal-payroll",
+        chipColor: "secondary",
+      },
+      {
+        id: uniqueId(),
+        title: "Client",
+        icon: IconBuilding,
+        href: "/temp-internal-payroll/client",
+        chipColor: "secondary",
+      },
+    ],
+  },
+  {
+    id: uniqueId(),
     title: "External Payroll",
     icon: IconPaywall,
     href: "/external-payroll",
