@@ -23,35 +23,13 @@ import {
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface TempInternalPayrollPaidUnpaidChartProps {
-  filters: { month: string; year: string };
+  filters: { month: string; year: string; employer?: string; productType?: string; customerSegment?: string };
 }
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
-
-function getPlaceholderPaidUnpaidData(
-  startMonthYear: string,
-  endMonthYear: string
-): TempInternalPayrollPaidUnpaidResponse {
-  const [startMM, startYYYY] = startMonthYear.split('-').map(Number);
-  const [endMM, endYYYY] = endMonthYear.split('-').map(Number);
-  const start = new Date(startYYYY, startMM - 1);
-  const end = new Date(endYYYY, endMM - 1);
-  const summaries: Record<string, { paid: number; unpaid: number }> = {};
-  const cursor = new Date(start.getFullYear(), start.getMonth());
-  while (cursor <= end) {
-    const key = `${MONTH_NAMES[cursor.getMonth()]} ${cursor.getFullYear()}`;
-    const base = 40_000_000 + cursor.getMonth() * 3_000_000;
-    summaries[key] = {
-      paid: base + Math.floor(Math.random() * 15_000_000),
-      unpaid: Math.floor(Math.random() * 20_000_000) + 5_000_000,
-    };
-    cursor.setMonth(cursor.getMonth() + 1);
-  }
-  return { status: 'ok', summaries };
-}
 
 const TempInternalPayrollPaidUnpaidChart = ({ filters }: TempInternalPayrollPaidUnpaidChartProps) => {
   const [chartData, setChartData] = useState<TempInternalPayrollPaidUnpaidResponse | null>(null);
@@ -109,11 +87,13 @@ const TempInternalPayrollPaidUnpaidChart = ({ filters }: TempInternalPayrollPaid
       const response = await fetchTempInternalPayrollPaidUnpaid({
         start_month: startMonthYear,
         end_month: endMonthYear,
+        employer: filters.employer,
+        product_type: filters.productType,
+        customer_segment: filters.customerSegment,
       });
       setChartData(response);
-    } catch (err) {
-      console.warn('Temp internal payroll paid/unpaid API not available, using placeholder:', err);
-      setChartData(getPlaceholderPaidUnpaidData(startMonthYear, endMonthYear));
+    } catch {
+      setChartData({ status: 'ok', summaries: {} });
     } finally {
       setLoading(false);
     }

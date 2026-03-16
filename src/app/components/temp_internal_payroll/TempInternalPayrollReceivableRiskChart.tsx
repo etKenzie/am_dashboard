@@ -19,18 +19,7 @@ import {
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface TempInternalPayrollReceivableRiskChartProps {
-  filters: { month: string; year: string };
-}
-
-function getPlaceholderReceivableRisk(
-  month: string,
-  year: string
-): TempInternalPayrollReceivableRiskResponse {
-  const buckets: Record<string, number> = {};
-  RECEIVABLE_RISK_BUCKETS.forEach((key, i) => {
-    buckets[key] = (6 - i) * 15_000_000 + Math.floor(Math.random() * 10_000_000);
-  });
-  return { status: 'ok', month, year, buckets };
+  filters: { month: string; year: string; employer?: string; productType?: string; customerSegment?: string };
 }
 
 const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayrollReceivableRiskChartProps) => {
@@ -45,11 +34,18 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
       const response = await fetchTempInternalPayrollReceivableRisk({
         month: filters.month,
         year: filters.year,
+        employer: filters.employer,
+        product_type: filters.productType,
+        customer_segment: filters.customerSegment,
       });
       setChartData(response);
-    } catch (err) {
-      console.warn('Receivable risk API not available, using placeholder:', err);
-      setChartData(getPlaceholderReceivableRisk(filters.month, filters.year));
+    } catch {
+      setChartData({
+        status: 'ok',
+        month: filters.month,
+        year: filters.year,
+        buckets: Object.fromEntries(RECEIVABLE_RISK_BUCKETS.map((k) => [k, 0])),
+      });
     } finally {
       setLoading(false);
     }
@@ -60,6 +56,7 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
   }, [fetchData]);
 
   const categories = [...RECEIVABLE_RISK_BUCKETS];
+  const categoryLabels = categories.map((k) => (k === 'current' ? 'Current' : k));
   const seriesData = chartData?.buckets
     ? categories.map((key) => chartData.buckets[key] ?? 0)
     : categories.map(() => 0);
@@ -89,10 +86,10 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
         xaxis: { lines: { show: false } },
       },
       xaxis: {
-        categories: [...RECEIVABLE_RISK_BUCKETS],
+        categories: categoryLabels,
         labels: { style: { colors: theme.palette.mode === 'dark' ? '#adb0bb' : '#5e5873' } },
         axisBorder: { show: false },
-        title: { text: 'Days overdue' },
+        title: { text: 'Aging (Current / Days overdue)' },
       },
       yaxis: {
         labels: {

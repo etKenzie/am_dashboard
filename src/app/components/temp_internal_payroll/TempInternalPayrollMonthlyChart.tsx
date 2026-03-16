@@ -23,32 +23,13 @@ import {
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface TempInternalPayrollMonthlyChartProps {
-  filters: { month: string; year: string };
+  filters: { month: string; year: string; employer?: string; productType?: string; customerSegment?: string };
 }
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
-
-/** Generate placeholder monthly data (e.g. when API is not ready) */
-function getPlaceholderMonthlyData(startMonthYear: string, endMonthYear: string): TempInternalPayrollMonthlyResponse {
-  const [startMM, startYYYY] = startMonthYear.split('-').map(Number);
-  const [endMM, endYYYY] = endMonthYear.split('-').map(Number);
-  const start = new Date(startYYYY, startMM - 1);
-  const end = new Date(endYYYY, endMM - 1);
-  const summaries: Record<string, { nilai_invoice: number; jumlah_invoice: number }> = {};
-  const cursor = new Date(start.getFullYear(), start.getMonth());
-  while (cursor <= end) {
-    const key = `${MONTH_NAMES[cursor.getMonth()]} ${cursor.getFullYear()}`;
-    summaries[key] = {
-      nilai_invoice: 50_000_000 + Math.floor(Math.random() * 30_000_000) + cursor.getMonth() * 2_000_000,
-      jumlah_invoice: 10 + cursor.getMonth() + Math.floor(Math.random() * 5),
-    };
-    cursor.setMonth(cursor.getMonth() + 1);
-  }
-  return { status: 'ok', summaries };
-}
 
 const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthlyChartProps) => {
   const [chartData, setChartData] = useState<TempInternalPayrollMonthlyResponse | null>(null);
@@ -106,11 +87,13 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
       const response = await fetchTempInternalPayrollMonthly({
         start_month: startMonthYear,
         end_month: endMonthYear,
+        employer: filters.employer,
+        product_type: filters.productType,
+        customer_segment: filters.customerSegment,
       });
       setChartData(response);
-    } catch (err) {
-      console.warn('Temp internal payroll monthly API not available, using placeholder:', err);
-      setChartData(getPlaceholderMonthlyData(startMonthYear, endMonthYear));
+    } catch {
+      setChartData({ status: 'ok', summaries: {} });
     } finally {
       setLoading(false);
     }

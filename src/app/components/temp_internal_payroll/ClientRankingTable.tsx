@@ -47,7 +47,6 @@ const ClientRankingTable = ({
     return sortedData.map((item, index) => ({
       Rank: index + 1,
       'Sourced To': item.sourced_to,
-      Project: item.project ?? '',
       [displayFieldLabel]: formatValue(item[sortBy] as number),
     }));
   };
@@ -59,7 +58,7 @@ const ClientRankingTable = ({
     const exportData = prepareDataForExport();
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(exportData);
-    ws['!cols'] = [{ wch: 8 }, { wch: 35 }, { wch: 25 }, { wch: 20 }];
+    ws['!cols'] = [{ wch: 8 }, { wch: 40 }, { wch: 20 }];
     XLSX.utils.book_append_sheet(wb, ws, title.replace(/\s+/g, '').slice(0, 31));
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -91,35 +90,33 @@ const ClientRankingTable = ({
             <TableRow>
               <TableCell sx={{ fontWeight: 'bold', width: '80px' }}>Rank</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>Sourced To</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Project</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }} align="right">{displayFieldLabel}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={3} align="center">
                   <CircularProgress size={24} />
                 </TableCell>
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={3} align="center">
                   <Typography variant="body2" color="error">{error}</Typography>
                 </TableCell>
               </TableRow>
             ) : sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={3} align="center">
                   <Typography variant="body2" color="textSecondary">No data found</Typography>
                 </TableCell>
               </TableRow>
             ) : (
               sortedData.map((row, index) => (
-                <TableRow key={`${row.sourced_to}-${row.project ?? index}`} hover>
+                <TableRow key={`${row.sourced_to}-${index}`} hover>
                   <TableCell sx={{ fontWeight: 'bold' }}>{index + 1}</TableCell>
                   <TableCell>{row.sourced_to}</TableCell>
-                  <TableCell>{row.project ?? '—'}</TableCell>
                   <TableCell align="right" sx={{ fontWeight: 'bold' }}>
                     {formatValue(row[sortBy] as number)}
                   </TableCell>

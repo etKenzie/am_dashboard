@@ -79,6 +79,19 @@ export function validateApiUrl(): { isValid: boolean; url: string | null; error?
 // This will throw an error immediately if the env var is missing
 export const AM_API_URL = getApiUrl();
 
+/** Collection API (client-side). Used for temp internal payroll charts. Optional. */
+export function getCollectionApiUrl(): string {
+  const url = process.env.NEXT_PUBLIC_COLLECTION_API_URL ?? '';
+  return url.replace(/\/$/, '');
+}
+
+export function getCollectionApiToken(): string {
+  return process.env.NEXT_PUBLIC_COLLECTION_API_TOKEN ?? '';
+}
+
+export const COLLECTION_API_URL = getCollectionApiUrl();
+export const COLLECTION_API_TOKEN = getCollectionApiToken();
+
 // Log API URL at module load (only once, helps with debugging)
 if (typeof window === 'undefined') {
   // Server-side: log once

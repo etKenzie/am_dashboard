@@ -30,9 +30,9 @@ const PLACEHOLDER_SUMMARY: TempInternalPayrollSummaryResponse = {
   total_outstanding_invoice: 0,
   total_overview_invoice: 0,
   jumlah_invoice: 0,
-  collection_rate: 60,
+  collection_rate: 0,
   average_days_to_payment: 0,
-  on_time_payment_rate: 85, // simulated default for demo
+  on_time_payment_rate: 0,
 };
 
 function formatCurrency(value: number): string {
@@ -48,27 +48,61 @@ function formatNumber(value: number): string {
   return value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
+const EMPLOYER_OPTIONS = [
+  { value: '0', label: 'All' },
+  { value: '1', label: 'PT Valdo International' },
+  { value: '2', label: 'PT Valdo Sumber Daya Mandiri' },
+  { value: '94', label: 'PT Toko Pandai' },
+];
+
+const PRODUCT_TYPE_OPTIONS = [
+  { value: '0', label: 'All' },
+  { value: '1', label: 'BPO Bundling' },
+  { value: '2', label: 'People' },
+  { value: '3', label: 'Infra & Technology' },
+  { value: '4', label: 'AkuMaju' },
+];
+
+const CUSTOMER_SEGMENT_OPTIONS = [
+  { value: '0', label: 'All' },
+  { value: '1', label: 'Non BFSI Logistic' },
+  { value: '2', label: 'Non BFSI F&B' },
+  { value: '3', label: 'BFSI Bank' },
+  { value: '4', label: 'Non BFSI Others' },
+  { value: '5', label: 'Non BFSI Distribution' },
+  { value: '6', label: 'Non BFSI E-commerce' },
+  { value: '7', label: 'BFSI Insurance' },
+  { value: '8', label: 'BFSI Multi Finance' },
+  { value: '9', label: 'BFSI Others' },
+];
+
 export default function TempInternalPayrollOverview() {
   const [summary, setSummary] = useState<TempInternalPayrollSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
+  const [employer, setEmployer] = useState('0');
+  const [productType, setProductType] = useState('0');
+  const [customerSegment, setCustomerSegment] = useState('0');
 
   const loadSummary = useCallback(async () => {
     setLoading(true);
     try {
-      const params: { month?: string; year?: string } = {};
-      if (month) params.month = month;
-      if (year) params.year = year;
+      const params = {
+        month: month || undefined,
+        year: year || undefined,
+        employer,
+        product_type: productType,
+        customer_segment: customerSegment,
+      };
       const data = await fetchTempInternalPayrollSummary(params);
       setSummary(data);
-    } catch (err) {
-      console.warn('Temp internal payroll summary API not available, using placeholder:', err);
+    } catch {
       setSummary(PLACEHOLDER_SUMMARY);
     } finally {
       setLoading(false);
     }
-  }, [month, year]);
+  }, [month, year, employer, productType, customerSegment]);
 
   useEffect(() => {
     loadSummary();
@@ -91,18 +125,17 @@ export default function TempInternalPayrollOverview() {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => (currentYear - i).toString());
 
-  const handleMonthChange = (e: SelectChangeEvent<string>) => {
-    setMonth(e.target.value);
-  };
-  const handleYearChange = (e: SelectChangeEvent<string>) => {
-    setYear(e.target.value);
-  };
+  const handleMonthChange = (e: SelectChangeEvent<string>) => setMonth(e.target.value);
+  const handleYearChange = (e: SelectChangeEvent<string>) => setYear(e.target.value);
+  const handleEmployerChange = (e: SelectChangeEvent<string>) => setEmployer(e.target.value);
+  const handleProductTypeChange = (e: SelectChangeEvent<string>) => setProductType(e.target.value);
+  const handleCustomerSegmentChange = (e: SelectChangeEvent<string>) => setCustomerSegment(e.target.value);
 
   const summaryCards = [
     { title: 'Total Nilai Invoice Released', value: data.total_nilai_invoice_released, isCurrency: true },
     { title: 'Total Invoice Paid', value: data.total_invoice_paid, isCurrency: true },
     { title: 'Total Outstanding Invoice', value: data.total_outstanding_invoice, isCurrency: true },
-    { title: 'Total Overview Invoice', value: data.total_overview_invoice, isCurrency: true },
+    { title: 'Total Overdue Invoice', value: data.total_overview_invoice, isCurrency: true },
     { title: 'Jumlah Invoice', value: data.jumlah_invoice, isCurrency: false },
   ];
 
@@ -116,28 +149,58 @@ export default function TempInternalPayrollOverview() {
           Invoice summary and collection rate. This view will eventually replace the internal payroll overview.
         </Typography>
 
-        <Box mb={3} display="flex" gap={2} flexWrap="wrap">
-          <FormControl size="small" sx={{ minWidth: 140 }}>
-            <InputLabel>Month</InputLabel>
-            <Select value={month} label="Month" onChange={handleMonthChange}>
-              {months.map((m) => (
-                <MenuItem key={m.value} value={m.value}>
-                  {m.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl size="small" sx={{ minWidth: 100 }}>
-            <InputLabel>Year</InputLabel>
-            <Select value={year} label="Year" onChange={handleYearChange}>
-              {years.map((y) => (
-                <MenuItem key={y} value={y}>
-                  {y}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
+        <Grid container spacing={2} sx={{ mb: 3 }} width="100%">
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Month</InputLabel>
+              <Select value={month} label="Month" onChange={handleMonthChange}>
+                {months.map((m) => (
+                  <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Year</InputLabel>
+              <Select value={year} label="Year" onChange={handleYearChange}>
+                {years.map((y) => (
+                  <MenuItem key={y} value={y}>{y}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Employer</InputLabel>
+              <Select value={employer} label="Employer" onChange={handleEmployerChange}>
+                {EMPLOYER_OPTIONS.map((o) => (
+                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Product Type</InputLabel>
+              <Select value={productType} label="Product Type" onChange={handleProductTypeChange}>
+                {PRODUCT_TYPE_OPTIONS.map((o) => (
+                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Customer Segment</InputLabel>
+              <Select value={customerSegment} label="Customer Segment" onChange={handleCustomerSegmentChange}>
+                {CUSTOMER_SEGMENT_OPTIONS.map((o) => (
+                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
 
         <Grid container spacing={3} alignItems="stretch">
           {summaryCards.map((card) => (
@@ -179,7 +242,7 @@ export default function TempInternalPayrollOverview() {
         </Grid>
 
         <Box mt={3}>
-          <TempInternalPayrollMonthlyChart filters={{ month, year }} />
+          <TempInternalPayrollMonthlyChart filters={{ month, year, employer, productType, customerSegment }} />
         </Box>
 
         <Grid container spacing={3} alignItems="stretch" sx={{ mt: 3 }}>
@@ -218,11 +281,11 @@ export default function TempInternalPayrollOverview() {
         </Grid>
 
         <Box mt={3}>
-          <TempInternalPayrollPaidUnpaidChart filters={{ month, year }} />
+          <TempInternalPayrollPaidUnpaidChart filters={{ month, year, employer, productType, customerSegment }} />
         </Box>
 
         <Box mt={3}>
-          <TempInternalPayrollReceivableRiskChart filters={{ month, year }} />
+          <TempInternalPayrollReceivableRiskChart filters={{ month, year, employer, productType, customerSegment }} />
         </Box>
       </Box>
     </PageContainer>
