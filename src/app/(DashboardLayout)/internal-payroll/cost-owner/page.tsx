@@ -13,6 +13,7 @@ const InternalPayrollCostOwnerPage = () => {
   const [filters, setFilters] = useState<InternalPayrollMonthYearFilterValues>({
     month: '',
     year: '',
+    dept_code: '',
     status_kontrak: '',
     valdo_inc: '',
   });
@@ -23,10 +24,11 @@ const InternalPayrollCostOwnerPage = () => {
     const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
     const currentYear = currentDate.getFullYear().toString();
 
-    setFilters({
+    setFilters((prev) => ({
+      ...prev,
       month: currentMonth,
       year: currentYear,
-    });
+    }));
   }, []);
 
   const handleFiltersChange = (newFilters: InternalPayrollMonthYearFilterValues) => {
@@ -58,6 +60,7 @@ const InternalPayrollCostOwnerPage = () => {
               filters={{
                 month: filters.month,
                 year: filters.year,
+                dept_code: filters.dept_code,
                 status_kontrak: filters.status_kontrak,
                 valdo_inc: filters.valdo_inc,
               }}

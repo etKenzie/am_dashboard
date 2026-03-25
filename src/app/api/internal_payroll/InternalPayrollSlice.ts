@@ -1,3 +1,17 @@
+/** td_karyawan.dept_code — sent as query param `dept_code` when filtering internal payroll */
+export const INTERNAL_PAYROLL_DEPT_CODE_OPTIONS = [
+  { value: '1', label: 'BFSI' },
+  { value: '2', label: 'Non-BFSI' },
+  { value: '3', label: 'Corporate' },
+  { value: '4', label: 'Outsource' },
+] as const;
+
+function appendDeptCode(queryParams: URLSearchParams, dept_code?: number | string | null) {
+  if (dept_code !== undefined && dept_code !== null && dept_code !== '') {
+    queryParams.append('dept_code', dept_code.toString());
+  }
+}
+
 // Types for Internal Payroll Filters API
 export interface Department {
   dept_id: number;
@@ -29,6 +43,7 @@ export interface TotalPayrollDisbursedParams {
   month: string;
   year: string;
   dept_id?: number | string; // Can be 0 for all departments
+  dept_code?: number | string; // td_karyawan.dept_code: 1 BFSI, 2 Non-BFSI, 3 Corporate, 4 Outsource
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
@@ -50,6 +65,7 @@ export interface TotalPayrollHeadcountParams {
   month: string;
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
+  dept_code?: number | string;
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
@@ -77,6 +93,7 @@ export interface InternalPayrollMonthlyParams {
   start_month: string; // Format: "MM-YYYY" (e.g., "08-2025")
   end_month: string; // Format: "MM-YYYY" (e.g., "10-2025")
   dept_id?: number | string; // Optional, can be 0 for all departments
+  dept_code?: number | string;
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
@@ -150,7 +167,9 @@ export const fetchTotalPayrollDisbursed = async (
   if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
-  
+
+  appendDeptCode(queryParams, params.dept_code);
+
   const url = `${baseUrl}/internal_payroll/total_payroll_disbursed?${queryParams.toString()}`;
   
   console.log('Fetching total payroll disbursed from:', url);
@@ -195,7 +214,9 @@ export const fetchTotalPayrollHeadcount = async (
   if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
-  
+
+  appendDeptCode(queryParams, params.dept_code);
+
   const url = `${baseUrl}/internal_payroll/total_payroll_headcount?${queryParams.toString()}`;
   
   console.log('Fetching total payroll headcount from:', url);
@@ -240,7 +261,9 @@ export const fetchInternalPayrollMonthly = async (
   if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
-  
+
+  appendDeptCode(queryParams, params.dept_code);
+
   const url = `${baseUrl}/internal_payroll/monthly?${queryParams.toString()}`;
   
   console.log('Fetching external payroll monthly from:', url);
@@ -284,6 +307,7 @@ export interface DepartmentSummaryResponse {
 export interface DepartmentSummaryParams {
   month: string;
   year: string;
+  dept_code?: number | string;
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
@@ -309,7 +333,9 @@ export const fetchDepartmentSummary = async (
   if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
-  
+
+  appendDeptCode(queryParams, params.dept_code);
+
   const url = `${baseUrl}/internal_payroll/department_summary?${queryParams.toString()}`;
   
   console.log('Fetching department summary from:', url);
@@ -351,6 +377,7 @@ export interface CostOwnerSummaryResponse {
 export interface CostOwnerSummaryParams {
   month: string;
   year: string;
+  dept_code?: number | string;
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
@@ -376,7 +403,9 @@ export const fetchCostOwnerSummary = async (
   if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
-  
+
+  appendDeptCode(queryParams, params.dept_code);
+
   const url = `${baseUrl}/internal_payroll/cost_owner_summary?${queryParams.toString()}`;
   
   console.log('Fetching cost owner summary from:', url);
@@ -407,6 +436,7 @@ export interface TotalDepartmentCountResponse {
 export interface TotalDepartmentCountParams {
   month: string;
   year: string;
+  dept_code?: number | string;
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
 
@@ -426,7 +456,9 @@ export const fetchTotalDepartmentCount = async (
   if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
-  
+
+  appendDeptCode(queryParams, params.dept_code);
+
   const url = `${baseUrl}/internal_payroll/total_department_count?${queryParams.toString()}`;
   
   console.log('Fetching total department count from:', url);
@@ -459,6 +491,7 @@ export interface TotalBPSJTKParams {
   month: string;
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
+  dept_code?: number | string;
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
@@ -477,6 +510,7 @@ export interface TotalKesehatanParams {
   month: string;
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
+  dept_code?: number | string;
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
@@ -495,6 +529,7 @@ export interface TotalPensiunParams {
   month: string;
   year: string;
   dept_id?: number | string; // Optional, can be 0 for all departments
+  dept_code?: number | string;
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }
@@ -525,7 +560,9 @@ export const fetchTotalBPSJTK = async (
   if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
-  
+
+  appendDeptCode(queryParams, params.dept_code);
+
   const url = `${baseUrl}/internal_payroll/total_bpsjtk?${queryParams.toString()}`;
   
   console.log('Fetching total BPSJTK from:', url);
@@ -570,7 +607,9 @@ export const fetchTotalKesehatan = async (
   if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
-  
+
+  appendDeptCode(queryParams, params.dept_code);
+
   const url = `${baseUrl}/internal_payroll/total_kesehatan?${queryParams.toString()}`;
   
   console.log('Fetching total kesehatan from:', url);
@@ -615,7 +654,9 @@ export const fetchTotalPensiun = async (
   if (params.valdo_inc !== undefined && params.valdo_inc !== null && params.valdo_inc !== '') {
     queryParams.append('valdo_inc', params.valdo_inc.toString());
   }
-  
+
+  appendDeptCode(queryParams, params.dept_code);
+
   const url = `${baseUrl}/internal_payroll/total_pensiun?${queryParams.toString()}`;
   
   console.log('Fetching total pensiun from:', url);

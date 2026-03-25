@@ -8,10 +8,12 @@ import {
     Select,
     SelectChangeEvent
 } from '@mui/material';
+import { INTERNAL_PAYROLL_DEPT_CODE_OPTIONS } from '../../api/internal_payroll/InternalPayrollSlice';
 
 export interface InternalPayrollMonthYearFilterValues {
   month: string;
   year: string;
+  dept_code?: string;
   status_kontrak?: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
   valdo_inc?: string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN, empty for all
 }
@@ -41,9 +43,9 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
   };
 
   return (
-    <Grid container spacing={2}>
-      {/* Month Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+    <Grid container spacing={1} sx={{ flexWrap: { md: 'nowrap' } }}>
+      {/* Month Filter — narrow */}
+      <Grid size={{ xs: 12, sm: 6, md: 1.5 }}>
         <FormControl fullWidth size="small">
           <InputLabel shrink={!!filters.month}>Month</InputLabel>
           <Select
@@ -61,7 +63,7 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
       </Grid>
 
       {/* Year Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 1.5 }}>
         <FormControl fullWidth size="small">
           <InputLabel shrink={!!filters.year}>Year</InputLabel>
           <Select
@@ -78,8 +80,27 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
         </FormControl>
       </Grid>
 
+      {/* Department Code (td_karyawan.dept_code) */}
+      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel shrink={!!filters.dept_code}>Department Code</InputLabel>
+          <Select
+            value={filters.dept_code || ''}
+            label="Department Code"
+            onChange={handleFilterChange('dept_code')}
+          >
+            <MenuItem value="">All</MenuItem>
+            {INTERNAL_PAYROLL_DEPT_CODE_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
       {/* Valdo Inc Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
         <FormControl fullWidth size="small">
           <InputLabel shrink={!!filters.valdo_inc}>Valdo Inc</InputLabel>
           <Select
@@ -97,7 +118,7 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
       </Grid>
 
       {/* Contract Status Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 5 }}>
         <FormControl fullWidth size="small">
           <InputLabel shrink={!!filters.status_kontrak}>Contract</InputLabel>
           <Select

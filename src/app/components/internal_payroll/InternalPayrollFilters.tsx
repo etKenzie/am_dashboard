@@ -9,12 +9,17 @@ import {
   SelectChangeEvent
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { Department, fetchInternalPayrollFilters } from '../../api/internal_payroll/InternalPayrollSlice';
+import {
+  Department,
+  fetchInternalPayrollFilters,
+  INTERNAL_PAYROLL_DEPT_CODE_OPTIONS,
+} from '../../api/internal_payroll/InternalPayrollSlice';
 
 export interface InternalPayrollFilterValues {
   month: string;
   year: string;
-  department: string; // dept_id as string, empty for all
+  department: string; // org unit dept_id from API, empty for all
+  dept_code: string; // td_karyawan.dept_code: 1–4, empty for all
   status_kontrak: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
   valdo_inc: string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN, empty for all
 }
@@ -87,9 +92,9 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
   };
 
   return (
-    <Grid container spacing={2}>
-      {/* Month Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+    <Grid container spacing={1} sx={{ flexWrap: { md: 'nowrap' } }}>
+      {/* Month Filter — narrow columns (1.5/12 each) */}
+      <Grid size={{ xs: 12, sm: 6, md: 1.5 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Month</InputLabel>
           <Select
@@ -108,7 +113,7 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
       </Grid>
 
       {/* Year Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 1.5 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Year</InputLabel>
           <Select
@@ -120,6 +125,25 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
             {years.map((year) => (
               <MenuItem key={year} value={year}>
                 {year}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      {/* Department Code (td_karyawan.dept_code) — static options, not blocked by department list load */}
+      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel>Department Code</InputLabel>
+          <Select
+            value={filters.dept_code}
+            label="Department Code"
+            onChange={handleFilterChange('dept_code')}
+          >
+            <MenuItem value="">All</MenuItem>
+            {INTERNAL_PAYROLL_DEPT_CODE_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
               </MenuItem>
             ))}
           </Select>
@@ -145,8 +169,8 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
         </FormControl>
       </Grid>
 
-      {/* Department Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 3.2 }}>
+      {/* Department (dept_id from payroll filters API) */}
+      <Grid size={{ xs: 12, sm: 6, md: 2.5 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Department</InputLabel>
           <Select
@@ -166,7 +190,7 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
       </Grid>
 
       {/* Contract Status Filter */}
-      <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+      <Grid size={{ xs: 12, sm: 6, md: 2.5 }}>
         <FormControl fullWidth size="small">
           <InputLabel>Contract</InputLabel>
           <Select

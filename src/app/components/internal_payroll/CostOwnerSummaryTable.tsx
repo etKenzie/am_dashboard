@@ -48,6 +48,7 @@ interface CostOwnerSummaryTableProps {
   filters: {
     month: string;
     year: string;
+    dept_code?: string;
     status_kontrak?: string;
     valdo_inc?: string;
   };
@@ -85,7 +86,11 @@ const CostOwnerSummaryTable = ({
       if (filters.valdo_inc) {
         params.valdo_inc = parseInt(filters.valdo_inc);
       }
-      
+
+      if (filters.dept_code) {
+        params.dept_code = parseInt(filters.dept_code);
+      }
+
       const response = await fetchCostOwnerSummary(params);
 
       setCostOwners(response.cost_owners);
@@ -101,7 +106,7 @@ const CostOwnerSummaryTable = ({
     if (filters.month && filters.year) {
       fetchCostOwnerData();
     }
-  }, [filters.month, filters.year, filters.status_kontrak, filters.valdo_inc]);
+  }, [filters.month, filters.year, filters.dept_code, filters.status_kontrak, filters.valdo_inc]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';

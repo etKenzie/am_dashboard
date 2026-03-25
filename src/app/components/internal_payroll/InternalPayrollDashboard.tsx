@@ -60,6 +60,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
     month: '',
     year: '',
     department: '',
+    dept_code: '',
     status_kontrak: '',
     valdo_inc: ''
   });
@@ -102,7 +103,11 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
           if (currentFilters.valdo_inc) {
             params.valdo_inc = parseInt(currentFilters.valdo_inc);
           }
-          
+
+          if (currentFilters.dept_code) {
+            params.dept_code = parseInt(currentFilters.dept_code);
+          }
+
           const response = await fetchTotalPayrollDisbursed(params);
           setTotalPayrollDisbursedData(response);
         } else {
@@ -141,7 +146,11 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
           if (currentFilters.valdo_inc) {
             params.valdo_inc = parseInt(currentFilters.valdo_inc);
           }
-          
+
+          if (currentFilters.dept_code) {
+            params.dept_code = parseInt(currentFilters.dept_code);
+          }
+
           const response = await fetchTotalPayrollHeadcount(params);
           setTotalPayrollHeadcountData(response);
         } else {
@@ -168,7 +177,11 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
             month: currentFilters.month,
             year: currentFilters.year,
           };
-          
+
+          if (currentFilters.dept_code) {
+            params.dept_code = parseInt(currentFilters.dept_code);
+          }
+
           const response = await fetchTotalDepartmentCount(params);
           setTotalDepartmentCountData(response);
         } else {
@@ -211,6 +224,10 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
         // Add valdo_inc if provided
         if (currentFilters.valdo_inc) {
           params.valdo_inc = parseInt(currentFilters.valdo_inc);
+        }
+
+        if (currentFilters.dept_code) {
+          params.dept_code = parseInt(currentFilters.dept_code);
         }
 
         // Fetch all three in parallel
@@ -258,7 +275,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
       fetchTotalDepartmentCountData(filters);
       fetchBPSJTKKesehatanPensiunData(filters);
     }
-  }, [filters.month, filters.year, filters.department, filters.status_kontrak, filters.valdo_inc, fetchTotalPayrollDisbursedData, fetchTotalPayrollHeadcountData, fetchTotalDepartmentCountData, fetchBPSJTKKesehatanPensiunData]); // Depend on month, year, department, status_kontrak, and valdo_inc
+  }, [filters.month, filters.year, filters.department, filters.dept_code, filters.status_kontrak, filters.valdo_inc, fetchTotalPayrollDisbursedData, fetchTotalPayrollHeadcountData, fetchTotalDepartmentCountData, fetchBPSJTKKesehatanPensiunData]); // Depend on month, year, department, dept_code, status_kontrak, and valdo_inc
 
   // Create summary tiles
   const createSummaryTiles = () => {
@@ -354,6 +371,7 @@ const InternalPayrollDashboard: React.FC<InternalPayrollDashboardProps> = ({
                   month: filters.month,
                   year: filters.year,
                   department: filters.department,
+                  dept_code: filters.dept_code,
                   status_kontrak: filters.status_kontrak,
                   valdo_inc: filters.valdo_inc
                 }}

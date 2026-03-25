@@ -26,6 +26,7 @@ interface InternalPayrollMonthlyChartProps {
     month: string;
     year: string;
     department: string;
+    dept_code?: string;
     status_kontrak?: string;
     valdo_inc?: string;
   };
@@ -129,7 +130,11 @@ const InternalPayrollMonthlyChart = ({ filters }: InternalPayrollMonthlyChartPro
       if (filters.valdo_inc) {
         params.valdo_inc = parseInt(filters.valdo_inc);
       }
-      
+
+      if (filters.dept_code) {
+        params.dept_code = parseInt(filters.dept_code);
+      }
+
       const response = await fetchInternalPayrollMonthly(params);
       setChartData(response);
     } catch (err) {
@@ -138,13 +143,13 @@ const InternalPayrollMonthlyChart = ({ filters }: InternalPayrollMonthlyChartPro
     } finally {
       setLoading(false);
     }
-  }, [startMonthYear, endMonthYear, filters.department, filters.status_kontrak, filters.valdo_inc]);
+  }, [startMonthYear, endMonthYear, filters.department, filters.dept_code, filters.status_kontrak, filters.valdo_inc]);
 
   useEffect(() => {
     if (startMonthYear && endMonthYear) {
       fetchChartData();
     }
-  }, [startMonthYear, endMonthYear, filters.department, filters.status_kontrak, filters.valdo_inc, fetchChartData]);
+  }, [startMonthYear, endMonthYear, filters.department, filters.dept_code, filters.status_kontrak, filters.valdo_inc, fetchChartData]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);
