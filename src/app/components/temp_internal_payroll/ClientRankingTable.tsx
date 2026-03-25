@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Divider,
   Paper,
   Table,
   TableBody,
@@ -71,8 +72,16 @@ const ClientRankingTable = ({
   };
 
   return (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+    <Paper variant="outlined" sx={{ overflow: 'hidden' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          px: 2,
+          py: 1.5,
+        }}
+      >
         <Typography variant="h6">{title}</Typography>
         <Button
           variant="outlined"
@@ -84,13 +93,14 @@ const ClientRankingTable = ({
           Export Excel
         </Button>
       </Box>
-      <TableContainer component={Paper} variant="outlined" sx={{ height: '350px' }}>
+      <Divider />
+      <TableContainer sx={{ height: '350px' }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold', width: '80px' }}>Rank</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Sourced To</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }} align="right">{displayFieldLabel}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', width: '80px', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }}>Rank</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }}>Sourced To</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }} align="right">{displayFieldLabel}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -126,7 +136,7 @@ const ClientRankingTable = ({
           </TableBody>
         </Table>
       </TableContainer>
-    </Box>
+    </Paper>
   );
 };
 

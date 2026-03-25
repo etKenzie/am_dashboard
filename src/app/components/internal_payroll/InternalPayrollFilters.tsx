@@ -131,13 +131,13 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
         </FormControl>
       </Grid>
 
-      {/* Department Code (td_karyawan.dept_code) — static options, not blocked by department list load */}
+      {/* Segment (td_karyawan.dept_code) — static options, not blocked by department list load */}
       <Grid size={{ xs: 12, sm: 6, md: 2 }}>
         <FormControl fullWidth size="small">
-          <InputLabel>Department Code</InputLabel>
+          <InputLabel>Segment</InputLabel>
           <Select
             value={filters.dept_code}
-            label="Department Code"
+            label="Segment"
             onChange={handleFilterChange('dept_code')}
           >
             <MenuItem value="">All</MenuItem>

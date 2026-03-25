@@ -80,13 +80,13 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
         </FormControl>
       </Grid>
 
-      {/* Department Code (td_karyawan.dept_code) */}
+      {/* Segment (td_karyawan.dept_code) */}
       <Grid size={{ xs: 12, sm: 6, md: 2 }}>
         <FormControl fullWidth size="small">
-          <InputLabel shrink={!!filters.dept_code}>Department Code</InputLabel>
+          <InputLabel shrink={!!filters.dept_code}>Segment</InputLabel>
           <Select
             value={filters.dept_code || ''}
-            label="Department Code"
+            label="Segment"
             onChange={handleFilterChange('dept_code')}
           >
             <MenuItem value="">All</MenuItem>

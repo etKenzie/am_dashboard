@@ -13,11 +13,14 @@ import {
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import {
+  fetchCustomerInsight,
   fetchTempInternalPayrollSummary,
+  TempInternalPayrollClientRankingRow,
   TempInternalPayrollSummaryResponse,
 } from '../../api/temp_internal_payroll/TempInternalPayrollSlice';
 import PageContainer from '../container/PageContainer';
 import DashboardCard from '../shared/DashboardCard';
+import ClientRankingTable from './ClientRankingTable';
 import CollectionRateCard from './CollectionRateCard';
 import TempInternalPayrollMonthlyChart from './TempInternalPayrollMonthlyChart';
 import TempInternalPayrollPaidUnpaidChart from './TempInternalPayrollPaidUnpaidChart';
@@ -79,6 +82,10 @@ const CUSTOMER_SEGMENT_OPTIONS = [
 export default function TempInternalPayrollOverview() {
   const [summary, setSummary] = useState<TempInternalPayrollSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [byInvoice, setByInvoice] = useState<TempInternalPayrollClientRankingRow[]>([]);
+  const [byOutstanding, setByOutstanding] = useState<TempInternalPayrollClientRankingRow[]>([]);
+  const [byOverdue, setByOverdue] = useState<TempInternalPayrollClientRankingRow[]>([]);
+  const [clientLoading, setClientLoading] = useState(false);
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
   const [employer, setEmployer] = useState('0');
@@ -107,6 +114,33 @@ export default function TempInternalPayrollOverview() {
   useEffect(() => {
     loadSummary();
   }, [loadSummary]);
+
+  const loadClientTables = useCallback(async () => {
+    if (!month || !year) return;
+    setClientLoading(true);
+    try {
+      const res = await fetchCustomerInsight({
+        month,
+        year,
+        employer,
+        product_type: productType,
+        customer_segment: customerSegment,
+      });
+      setByInvoice(res.byInvoice ?? []);
+      setByOutstanding(res.byOutstanding ?? []);
+      setByOverdue(res.byOverdue ?? []);
+    } catch {
+      setByInvoice([]);
+      setByOutstanding([]);
+      setByOverdue([]);
+    } finally {
+      setClientLoading(false);
+    }
+  }, [month, year, employer, productType, customerSegment]);
+
+  useEffect(() => {
+    loadClientTables();
+  }, [loadClientTables]);
 
   // Initialize month/year on client to avoid hydration mismatch
   useEffect(() => {
@@ -140,13 +174,13 @@ export default function TempInternalPayrollOverview() {
   ];
 
   return (
-    <PageContainer title="Temp Internal Payroll" description="Internal payroll invoice summary (temp)">
+    <PageContainer title="Invoice" description="Invoice summary and collection insights">
       <Box>
         <Typography variant="h3" fontWeight="bold" mb={1}>
-          Temp Internal Payroll
+          Invoice
         </Typography>
         <Typography variant="body2" color="text.secondary" mb={3}>
-          Invoice summary and collection rate. This view will eventually replace the internal payroll overview.
+          Invoice summary and collection rate.
         </Typography>
 
         <Grid container spacing={2} sx={{ mb: 3 }} width="100%">
@@ -285,7 +319,46 @@ export default function TempInternalPayrollOverview() {
         </Box>
 
         <Box mt={3}>
+          <ClientRankingTable
+            data={byInvoice}
+            loading={clientLoading}
+            error={null}
+            title="Clients by Invoice"
+            sortBy="total_invoice"
+            displayFieldLabel="Total Invoice"
+            formatValue={formatCurrency}
+          />
+        </Box>
+
+        <Box mt={3}>
           <TempInternalPayrollReceivableRiskChart filters={{ month, year, employer, productType, customerSegment }} />
+        </Box>
+
+        <Box mt={4} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <ClientRankingTable
+                data={byOutstanding}
+                loading={clientLoading}
+                error={null}
+                title="Clients by Outstanding Invoice"
+                sortBy="outstanding_invoice"
+                displayFieldLabel="Total Invoice"
+                formatValue={formatCurrency}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <ClientRankingTable
+                data={byOverdue}
+                loading={clientLoading}
+                error={null}
+                title="Clients by Overdue Invoice"
+                sortBy="overdue_invoice"
+                displayFieldLabel="Total Invoice"
+                formatValue={formatCurrency}
+              />
+            </Grid>
+          </Grid>
         </Box>
       </Box>
     </PageContainer>
