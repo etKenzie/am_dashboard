@@ -8,6 +8,7 @@ import {
     Select,
     SelectChangeEvent
 } from '@mui/material';
+import { useEffect } from 'react';
 import { INTERNAL_PAYROLL_DEPT_CODE_OPTIONS } from '../../api/internal_payroll/InternalPayrollSlice';
 
 export interface InternalPayrollMonthYearFilterValues {
@@ -15,7 +16,7 @@ export interface InternalPayrollMonthYearFilterValues {
   year: string;
   dept_code?: string;
   status_kontrak?: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
-  valdo_inc?: string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN, empty for all
+  valdo_inc?: string; // 1=VI, 2=VSDM, empty for all (internal payroll UI)
 }
 
 interface InternalPayrollMonthYearFiltersProps {
@@ -41,6 +42,19 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
     const newFilters = { ...filters, [field]: event.target.value };
     onFiltersChange(newFilters);
   };
+
+  useEffect(() => {
+    const v = filters.valdo_inc ?? '';
+    if (v === '31' || v === '94') {
+      onFiltersChange({ ...filters, valdo_inc: '' });
+    }
+  }, [filters, onFiltersChange]);
+
+  useEffect(() => {
+    if (filters.dept_code === '4') {
+      onFiltersChange({ ...filters, dept_code: '' });
+    }
+  }, [filters, onFiltersChange]);
 
   return (
     <Grid container spacing={1} sx={{ flexWrap: { md: 'nowrap' } }}>
@@ -111,8 +125,6 @@ const InternalPayrollMonthYearFilters = ({ filters, onFiltersChange }: InternalP
             <MenuItem value="">All</MenuItem>
             <MenuItem value="1">VI</MenuItem>
             <MenuItem value="2">VSDM</MenuItem>
-            <MenuItem value="31">VSI</MenuItem>
-            <MenuItem value="94">TOPAN</MenuItem>
           </Select>
         </FormControl>
       </Grid>

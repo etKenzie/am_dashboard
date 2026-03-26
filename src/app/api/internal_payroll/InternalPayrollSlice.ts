@@ -3,7 +3,6 @@ export const INTERNAL_PAYROLL_DEPT_CODE_OPTIONS = [
   { value: '1', label: 'BFSI' },
   { value: '2', label: 'Non-BFSI' },
   { value: '3', label: 'Corporate' },
-  { value: '4', label: 'Outsource' },
 ] as const;
 
 function appendDeptCode(queryParams: URLSearchParams, dept_code?: number | string | null) {
@@ -43,7 +42,7 @@ export interface TotalPayrollDisbursedParams {
   month: string;
   year: string;
   dept_id?: number | string; // Can be 0 for all departments
-  dept_code?: number | string; // td_karyawan.dept_code: 1 BFSI, 2 Non-BFSI, 3 Corporate, 4 Outsource
+  dept_code?: number | string; // td_karyawan.dept_code: 1 BFSI, 2 Non-BFSI, 3 Corporate (UI omits Outsource/4)
   status_kontrak?: number | string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA
   valdo_inc?: number | string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN
 }

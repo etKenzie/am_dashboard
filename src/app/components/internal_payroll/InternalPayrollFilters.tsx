@@ -19,9 +19,9 @@ export interface InternalPayrollFilterValues {
   month: string;
   year: string;
   department: string; // org unit dept_id from API, empty for all
-  dept_code: string; // td_karyawan.dept_code: 1–4, empty for all
+  dept_code: string; // td_karyawan.dept_code: 1–3 in UI, empty for all
   status_kontrak: string; // 0=DW, 1=PKWTT, 2=PKWT, 3=MITRA, empty for all
-  valdo_inc: string; // 1=VI, 2=VSDM, 31=VSI, 94=TOPAN, empty for all
+  valdo_inc: string; // 1=VI, 2=VSDM, empty for all (internal payroll UI)
 }
 
 interface InternalPayrollFiltersProps {
@@ -81,6 +81,20 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
       fetchDepartmentFilters();
     }
   }, [filters.month, filters.year]);
+
+  // Valdo Inc UI only allows VI/VSDM; clear legacy VSI/TOPAN if present
+  useEffect(() => {
+    if (filters.valdo_inc === '31' || filters.valdo_inc === '94') {
+      onFiltersChange({ ...filters, valdo_inc: '' });
+    }
+  }, [filters, onFiltersChange]);
+
+  // Segment UI omits Outsource (4); clear if present
+  useEffect(() => {
+    if (filters.dept_code === '4') {
+      onFiltersChange({ ...filters, dept_code: '' });
+    }
+  }, [filters, onFiltersChange]);
 
   const handleFilterChange = (field: keyof InternalPayrollFilterValues) => (
     event: SelectChangeEvent<string>
@@ -163,8 +177,6 @@ const InternalPayrollFilters = ({ filters, onFiltersChange }: InternalPayrollFil
             <MenuItem value="">All</MenuItem>
             <MenuItem value="1">VI</MenuItem>
             <MenuItem value="2">VSDM</MenuItem>
-            <MenuItem value="31">VSI</MenuItem>
-            <MenuItem value="94">TOPAN</MenuItem>
           </Select>
         </FormControl>
       </Grid>
