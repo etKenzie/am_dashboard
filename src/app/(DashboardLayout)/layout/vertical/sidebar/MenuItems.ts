@@ -6,7 +6,7 @@ import {
   IconGraph,
   IconHome,
   IconMask,
-  IconPaywall,
+  // IconPaywall,
   IconUserCancel
 } from "@tabler/icons-react";
 import { uniqueId } from "lodash";
@@ -119,43 +119,42 @@ const Menuitems: MenuitemsType[] = [
       
     ],
   },
-  {
-    id: uniqueId(),
-    title: "External Payroll",
-    icon: IconPaywall,
-    href: "/external-payroll",
-    chip: "New",
-    requiredRoles: [ROLES.ADMIN, ROLES.PAYROLL],
-    children: [
-      {
-        id: uniqueId(),
-        title: "Overview",
-        icon: IconDashboard,
-        href: "/external-payroll",
-        
-        chipColor: "secondary",
-      },
-      // {
-      //   id: uniqueId(),
-      //   title: "Department",
-      //   icon: IconBuilding,
-      //   href: "/external-payroll/department",
-    
-      //   chipColor: "secondary",
-      // },
-      // {
-      //   id: uniqueId(),
-      //   title: "Cost Owner",
-      //   icon: IconMask,
-      //   href: "/external-payroll/cost-owner",
-    
-      //   chipColor: "secondary",
-      // },
-      
-    ],
-  },
+  // {
+  //   id: uniqueId(),
+  //   title: "External Payroll",
+  //   icon: IconPaywall,
+  //   href: "/external-payroll",
+  //   chip: "New",
+  //   requiredRoles: [ROLES.ADMIN, ROLES.PAYROLL],
+  //   children: [
+  //     {
+  //       id: uniqueId(),
+  //       title: "Overview",
+  //       icon: IconDashboard,
+  //       href: "/external-payroll",
+  //
+  //       chipColor: "secondary",
+  //     },
+  //     // {
+  //     //   id: uniqueId(),
+  //     //   title: "Department",
+  //     //   icon: IconBuilding,
+  //     //   href: "/external-payroll/department",
+  //     //
+  //     //   chipColor: "secondary",
+  //     // },
+  //     // {
+  //     //   id: uniqueId(),
+  //     //   title: "Cost Owner",
+  //     //   icon: IconMask,
+  //     //   href: "/external-payroll/cost-owner",
+  //     //
+  //     //   chipColor: "secondary",
+  //     // },
+  //
+  //   ],
+  // },
 
-  // Keep Invoice (temp internal payroll) directly below External Payroll.
   {
     id: uniqueId(),
     title: "Invoice",
