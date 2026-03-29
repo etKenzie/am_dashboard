@@ -1,11 +1,12 @@
 'use client';
 
-import { Download as DownloadIcon } from '@mui/icons-material';
+import { Close as CloseIcon, Download as DownloadIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
   Box,
-  Button,
   CircularProgress,
   Divider,
+  IconButton,
+  InputAdornment,
   Paper,
   Table,
   TableBody,
@@ -13,9 +14,12 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import * as XLSX from 'xlsx';
+import { useEffect, useState } from 'react';
 import { TempInternalPayrollClientRankingRow } from '../../api/temp_internal_payroll/TempInternalPayrollSlice';
 
 type SortField = keyof Pick<
@@ -31,6 +35,9 @@ interface ClientRankingTableProps {
   sortBy: SortField;
   displayFieldLabel: string;
   formatValue: (value: number) => string;
+  /** When set, shows search next to title; value sent as `search[value]` on the API. */
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 const ClientRankingTable = ({
@@ -41,8 +48,24 @@ const ClientRankingTable = ({
   sortBy,
   displayFieldLabel,
   formatValue,
+  searchValue = '',
+  onSearchChange,
 }: ClientRankingTableProps) => {
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const sortedData = [...data].sort((a, b) => (b[sortBy] as number) - (a[sortBy] as number));
+
+  useEffect(() => {
+    if (!searchExpanded) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSearchExpanded(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [searchExpanded]);
+
+  const handleCloseSearch = () => {
+    setSearchExpanded(false);
+  };
 
   const prepareDataForExport = () => {
     return sortedData.map((item, index) => ({
@@ -76,22 +99,101 @@ const ClientRankingTable = ({
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
+          gap: 1,
+          flexWrap: 'nowrap',
           px: 2,
           py: 1.5,
+          minWidth: 0,
         }}
       >
-        <Typography variant="h6">{title}</Typography>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handleExcelExport}
-          disabled={sortedData.length === 0}
-          size="small"
-        >
-          Export Excel
-        </Button>
+        <Typography variant="h6" sx={{ flexShrink: 0 }}>
+          {title}
+        </Typography>
+        {onSearchChange ? (
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <Box
+              sx={{
+                width: searchExpanded ? '100%' : 40,
+                minWidth: searchExpanded ? 0 : 40,
+                transition: (theme) =>
+                  theme.transitions.create('width', {
+                    easing: theme.transitions.easing.easeOut,
+                    duration: theme.transitions.duration.shorter,
+                  }),
+                display: 'flex',
+                alignItems: 'center',
+                overflow: 'hidden',
+              }}
+            >
+              {!searchExpanded ? (
+                <Tooltip title="Search">
+                  <IconButton
+                    size="small"
+                    color="primary"
+                    aria-label="Open search"
+                    onClick={() => setSearchExpanded(true)}
+                    sx={{ flexShrink: 0 }}
+                  >
+                    <SearchIcon />
+                  </IconButton>
+                </Tooltip>
+              ) : (
+                <TextField
+                  size="small"
+                  placeholder="Search…"
+                  value={searchValue}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  autoFocus
+                  fullWidth
+                  sx={{ minWidth: 0 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" color="action" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          size="small"
+                          edge="end"
+                          aria-label="Close search"
+                          onClick={handleCloseSearch}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              )}
+            </Box>
+          </Box>
+        ) : (
+          <Box sx={{ flex: 1, minWidth: 0 }} />
+        )}
+        <Tooltip title="Download Excel">
+          <span>
+            <IconButton
+              color="primary"
+              onClick={handleExcelExport}
+              disabled={sortedData.length === 0}
+              size="small"
+              aria-label="Download Excel"
+              sx={{ flexShrink: 0 }}
+            >
+              <DownloadIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
       </Box>
       <Divider />
       <TableContainer sx={{ height: '350px' }}>

@@ -24,6 +24,16 @@ function dashboardForm(params: TempInternalPayrollSummaryParams): FormData {
   return form;
 }
 
+/** FormData for client_by_* list endpoints (same filters + DataTables-style params + global search). */
+function clientListForm(params: TempInternalPayrollSummaryParams, search?: string): FormData {
+  const form = dashboardForm(params);
+  form.append('draw', '1');
+  form.append('start', '0');
+  form.append('length', '100000');
+  form.append('search[value]', (search ?? '').trim());
+  return form;
+}
+
 /** Params for invoice_trend: requires start_period and end_period (MM-YYYY). */
 export interface InvoiceTrendParams {
   start_period: string; // e.g. "10-2025"
@@ -391,22 +401,39 @@ export interface TempInternalPayrollClientRankingParams {
   employer?: string;
   product_type?: string;
   customer_segment?: string;
-}
-
-/** {{base_url}}/api/dashboard/customer_insight — top by invoice, outstanding, overdue */
-export interface CustomerInsightResponse {
-  byInvoice: TempInternalPayrollClientRankingRow[];
-  byOutstanding: TempInternalPayrollClientRankingRow[];
-  byOverdue: TempInternalPayrollClientRankingRow[];
+  /** Sent as FormData field `search[value]` (DataTables global search). */
+  searchInvoice?: string;
+  searchOutstanding?: string;
+  searchOverdue?: string;
 }
 
 /**
- * Fetch client ranking from customer_insight (three lists).
+ * Row shape for {{base_url}}/api/dashboard/client_by_invoice (and sibling client_by_* list APIs).
+ * Response: { error, msg, draw, recordsTotal, recordsFiltered, data: [...] }
  */
-export const fetchTempInternalPayrollClientRanking = async (
-  params: TempInternalPayrollClientRankingParams
-): Promise<TempInternalPayrollClientRankingResponse> => {
-  if (!COLLECTION_API_URL) throw new Error('NEXT_PUBLIC_COLLECTION_API_URL not set');
+interface ClientByListApiRow {
+  client?: string | null;
+  project?: string | null;
+  ranking?: string;
+  total_invoices?: string;
+  total_outstandings?: string;
+  total_outstanding?: string;
+  total_overdue?: string;
+}
+
+function sourcedToFromClientRow(x: ClientByListApiRow): string {
+  const c = (x.client ?? '').trim();
+  const p = (x.project ?? '').trim();
+  if (c && p) return `${c} — ${p}`;
+  return c || p || '—';
+}
+
+async function fetchClientByListEndpoint(
+  pathSegment: string,
+  params: TempInternalPayrollClientRankingParams,
+  search?: string
+): Promise<ClientByListApiRow[]> {
+  if (!COLLECTION_API_URL) return [];
   const dashboardParams: TempInternalPayrollSummaryParams = {
     month: params.month,
     year: params.year,
@@ -414,41 +441,120 @@ export const fetchTempInternalPayrollClientRanking = async (
     product_type: params.product_type ?? '0',
     customer_segment: params.customer_segment ?? '0',
   };
-  const res = await fetch(`${COLLECTION_API_URL}/api/dashboard/customer_insight`, {
-    method: 'POST',
-    body: dashboardForm(dashboardParams),
-  });
-  if (!res.ok) throw new Error(`customer_insight: ${res.status}`);
-  const json = await res.json();
-  if (json.error || !json.result) throw new Error(json.msg || 'customer_insight error');
-  const r = json.result;
+  try {
+    const res = await fetch(`${COLLECTION_API_URL}/api/dashboard/${pathSegment}`, {
+      method: 'POST',
+      body: clientListForm(dashboardParams, search),
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    if (json.error) return [];
+    const data = json.data;
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
 
-  const byInvoice: TempInternalPayrollClientRankingRow[] = (r.top_nilai_invoice ?? []).map(
-    (x: { client: string | null; total_invoices: string }) => ({
-      sourced_to: x.client ?? '—',
-      total_invoice: parseNum(x.total_invoices),
-      outstanding_invoice: 0,
-      overdue_invoice: 0,
-    })
-  );
-  const byOutstanding: TempInternalPayrollClientRankingRow[] = (r.top_nilai_outstanding ?? []).map(
-    (x: { client: string | null; total_outstandings: string }) => ({
-      sourced_to: x.client ?? '—',
-      total_invoice: 0,
-      outstanding_invoice: parseNum(x.total_outstandings),
-      overdue_invoice: 0,
-    })
-  );
-  const byOverdue: TempInternalPayrollClientRankingRow[] = (r.top_nilai_overdue ?? []).map(
-    (x: { client: string | null; total_overdue: string }) => ({
-      sourced_to: x.client ?? '—',
-      total_invoice: 0,
-      outstanding_invoice: 0,
-      overdue_invoice: parseNum(x.total_overdue),
-    })
-  );
+function mapClientByInvoiceRows(rows: ClientByListApiRow[]): TempInternalPayrollClientRankingRow[] {
+  return rows.map((x) => ({
+    sourced_to: sourcedToFromClientRow(x),
+    project: x.project ?? undefined,
+    total_invoice: parseNum(x.total_invoices ?? 0),
+    outstanding_invoice: 0,
+    overdue_invoice: 0,
+  }));
+}
 
-  // Return single merged list for backward compatibility; client overview will use fetchCustomerInsight for three tables
+function mapClientByOutstandingRows(rows: ClientByListApiRow[]): TempInternalPayrollClientRankingRow[] {
+  return rows.map((x) => ({
+    sourced_to: sourcedToFromClientRow(x),
+    project: x.project ?? undefined,
+    total_invoice: 0,
+    outstanding_invoice: parseNum(x.total_outstandings ?? x.total_outstanding ?? x.total_invoices ?? 0),
+    overdue_invoice: 0,
+  }));
+}
+
+function mapClientByOverdueRows(rows: ClientByListApiRow[]): TempInternalPayrollClientRankingRow[] {
+  return rows.map((x) => ({
+    sourced_to: sourcedToFromClientRow(x),
+    project: x.project ?? undefined,
+    total_invoice: 0,
+    outstanding_invoice: 0,
+    overdue_invoice: parseNum(x.total_overdue ?? x.total_invoices ?? 0),
+  }));
+}
+
+/** {{base_url}}/api/dashboard/client_by_invoice | client_by_outstanding | client_by_overdue */
+const CLIENT_BY_INVOICE = 'client_by_invoice';
+const CLIENT_BY_OUTSTANDING = 'client_by_outstanding';
+const CLIENT_BY_OVERDUE = 'client_by_overdue';
+
+function rankingParamsFromFilters(filters: TempInternalPayrollSummaryParams): TempInternalPayrollClientRankingParams {
+  return {
+    month: filters.month,
+    year: filters.year,
+    employer: filters.employer ?? '0',
+    product_type: filters.product_type ?? '0',
+    customer_segment: filters.customer_segment ?? '0',
+  };
+}
+
+/** Single client_by_invoice request (for isolated table refresh). */
+export async function fetchClientInvoiceTable(
+  filters: TempInternalPayrollSummaryParams,
+  search?: string
+): Promise<TempInternalPayrollClientRankingRow[]> {
+  if (!COLLECTION_API_URL) return [];
+  const rows = await fetchClientByListEndpoint(CLIENT_BY_INVOICE, rankingParamsFromFilters(filters), search);
+  return mapClientByInvoiceRows(rows);
+}
+
+/** Single client_by_outstanding request. */
+export async function fetchClientOutstandingTable(
+  filters: TempInternalPayrollSummaryParams,
+  search?: string
+): Promise<TempInternalPayrollClientRankingRow[]> {
+  if (!COLLECTION_API_URL) return [];
+  const rows = await fetchClientByListEndpoint(CLIENT_BY_OUTSTANDING, rankingParamsFromFilters(filters), search);
+  return mapClientByOutstandingRows(rows);
+}
+
+/** Single client_by_overdue request. */
+export async function fetchClientOverdueTable(
+  filters: TempInternalPayrollSummaryParams,
+  search?: string
+): Promise<TempInternalPayrollClientRankingRow[]> {
+  if (!COLLECTION_API_URL) return [];
+  const rows = await fetchClientByListEndpoint(CLIENT_BY_OVERDUE, rankingParamsFromFilters(filters), search);
+  return mapClientByOverdueRows(rows);
+}
+
+export interface CustomerInsightResponse {
+  byInvoice: TempInternalPayrollClientRankingRow[];
+  byOutstanding: TempInternalPayrollClientRankingRow[];
+  byOverdue: TempInternalPayrollClientRankingRow[];
+}
+
+/**
+ * Fetch client ranking (merged) from separate client_by_* list endpoints.
+ */
+export const fetchTempInternalPayrollClientRanking = async (
+  params: TempInternalPayrollClientRankingParams
+): Promise<TempInternalPayrollClientRankingResponse> => {
+  if (!COLLECTION_API_URL) {
+    return { status: 'ok', results: [] };
+  }
+  const [invoiceRows, outstandingRows, overdueRows] = await Promise.all([
+    fetchClientByListEndpoint(CLIENT_BY_INVOICE, params, params.searchInvoice),
+    fetchClientByListEndpoint(CLIENT_BY_OUTSTANDING, params, params.searchOutstanding),
+    fetchClientByListEndpoint(CLIENT_BY_OVERDUE, params, params.searchOverdue),
+  ]);
+  const byInvoice = mapClientByInvoiceRows(invoiceRows);
+  const byOutstanding = mapClientByOutstandingRows(outstandingRows);
+  const byOverdue = mapClientByOverdueRows(overdueRows);
+
   const merged = new Map<string, TempInternalPayrollClientRankingRow>();
   [...byInvoice, ...byOutstanding, ...byOverdue].forEach((row) => {
     const key = row.sourced_to;
@@ -469,47 +575,25 @@ export const fetchTempInternalPayrollClientRanking = async (
 };
 
 /**
- * Fetch customer insight (three separate lists for by-invoice, by-outstanding, by-overdue tables).
+ * Fetch three client tables: client_by_invoice, client_by_outstanding, client_by_overdue.
  */
 export const fetchCustomerInsight = async (
   params: TempInternalPayrollClientRankingParams
 ): Promise<CustomerInsightResponse> => {
-  if (!COLLECTION_API_URL) throw new Error('NEXT_PUBLIC_COLLECTION_API_URL not set');
-  const dashboardParams: TempInternalPayrollSummaryParams = {
+  if (!COLLECTION_API_URL) {
+    return { byInvoice: [], byOutstanding: [], byOverdue: [] };
+  }
+  const filters: TempInternalPayrollSummaryParams = {
     month: params.month,
     year: params.year,
-    employer: params.employer ?? '0',
-    product_type: params.product_type ?? '0',
-    customer_segment: params.customer_segment ?? '0',
+    employer: params.employer,
+    product_type: params.product_type,
+    customer_segment: params.customer_segment,
   };
-  const res = await fetch(`${COLLECTION_API_URL}/api/dashboard/customer_insight`, {
-    method: 'POST',
-    body: dashboardForm(dashboardParams),
-  });
-  if (!res.ok) throw new Error(`customer_insight: ${res.status}`);
-  const json = await res.json();
-  if (json.error || !json.result) throw new Error(json.msg || 'customer_insight error');
-  const r = json.result;
-  return {
-    byInvoice: (r.top_nilai_invoice ?? []).map((x: { client: string | null; total_invoices: string }) => ({
-      sourced_to: x.client ?? '—',
-      total_invoice: parseNum(x.total_invoices),
-      outstanding_invoice: 0,
-      overdue_invoice: 0,
-    })),
-    byOutstanding: (r.top_nilai_outstanding ?? []).map(
-      (x: { client: string | null; total_outstandings: string }) => ({
-        sourced_to: x.client ?? '—',
-        total_invoice: 0,
-        outstanding_invoice: parseNum(x.total_outstandings),
-        overdue_invoice: 0,
-      })
-    ),
-    byOverdue: (r.top_nilai_overdue ?? []).map((x: { client: string | null; total_overdue: string }) => ({
-      sourced_to: x.client ?? '—',
-      total_invoice: 0,
-      outstanding_invoice: 0,
-      overdue_invoice: parseNum(x.total_overdue),
-    })),
-  };
+  const [byInvoice, byOutstanding, byOverdue] = await Promise.all([
+    fetchClientInvoiceTable(filters, params.searchInvoice),
+    fetchClientOutstandingTable(filters, params.searchOutstanding),
+    fetchClientOverdueTable(filters, params.searchOverdue),
+  ]);
+  return { byInvoice, byOutstanding, byOverdue };
 };

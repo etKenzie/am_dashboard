@@ -10,9 +10,11 @@ import {
   SelectChangeEvent,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  fetchCustomerInsight,
+  fetchClientInvoiceTable,
+  fetchClientOutstandingTable,
+  fetchClientOverdueTable,
   TempInternalPayrollClientRankingRow,
 } from '../../api/temp_internal_payroll/TempInternalPayrollSlice';
 import PageContainer from '../container/PageContainer';
@@ -58,13 +60,35 @@ export default function TempInternalPayrollClientOverview() {
   const [byInvoice, setByInvoice] = useState<TempInternalPayrollClientRankingRow[]>([]);
   const [byOutstanding, setByOutstanding] = useState<TempInternalPayrollClientRankingRow[]>([]);
   const [byOverdue, setByOverdue] = useState<TempInternalPayrollClientRankingRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [outstandingLoading, setOutstandingLoading] = useState(false);
+  const [overdueLoading, setOverdueLoading] = useState(false);
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
   const [employer, setEmployer] = useState('0');
   const [productType, setProductType] = useState('0');
   const [customerSegment, setCustomerSegment] = useState('0');
+  const [searchInvoice, setSearchInvoice] = useState('');
+  const [searchOutstanding, setSearchOutstanding] = useState('');
+  const [searchOverdue, setSearchOverdue] = useState('');
+  const [debouncedSearchInvoice, setDebouncedSearchInvoice] = useState('');
+  const [debouncedSearchOutstanding, setDebouncedSearchOutstanding] = useState('');
+  const [debouncedSearchOverdue, setDebouncedSearchOverdue] = useState('');
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearchInvoice(searchInvoice.trim()), 350);
+    return () => clearTimeout(t);
+  }, [searchInvoice]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearchOutstanding(searchOutstanding.trim()), 350);
+    return () => clearTimeout(t);
+  }, [searchOutstanding]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearchOverdue(searchOverdue.trim()), 350);
+    return () => clearTimeout(t);
+  }, [searchOverdue]);
 
   useEffect(() => {
     const d = new Date();
@@ -72,34 +96,70 @@ export default function TempInternalPayrollClientOverview() {
     setYear(d.getFullYear().toString());
   }, []);
 
-  const fetchData = useCallback(async () => {
-    if (!month || !year) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetchCustomerInsight({
-        month,
-        year,
-        employer,
-        product_type: productType,
-        customer_segment: customerSegment,
-      });
-      setByInvoice(res.byInvoice ?? []);
-      setByOutstanding(res.byOutstanding ?? []);
-      setByOverdue(res.byOverdue ?? []);
-    } catch {
-      setByInvoice([]);
-      setByOutstanding([]);
-      setByOverdue([]);
-      setError(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [month, year, employer, productType, customerSegment]);
+  const clientFilters = {
+    month,
+    year,
+    employer,
+    product_type: productType,
+    customer_segment: customerSegment,
+  };
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!month || !year) return;
+    let cancelled = false;
+    setInvoiceLoading(true);
+    fetchClientInvoiceTable(clientFilters, debouncedSearchInvoice)
+      .then((rows) => {
+        if (!cancelled) setByInvoice(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setByInvoice([]);
+      })
+      .finally(() => {
+        if (!cancelled) setInvoiceLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [month, year, employer, productType, customerSegment, debouncedSearchInvoice]);
+
+  useEffect(() => {
+    if (!month || !year) return;
+    let cancelled = false;
+    setOutstandingLoading(true);
+    fetchClientOutstandingTable(clientFilters, debouncedSearchOutstanding)
+      .then((rows) => {
+        if (!cancelled) setByOutstanding(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setByOutstanding([]);
+      })
+      .finally(() => {
+        if (!cancelled) setOutstandingLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [month, year, employer, productType, customerSegment, debouncedSearchOutstanding]);
+
+  useEffect(() => {
+    if (!month || !year) return;
+    let cancelled = false;
+    setOverdueLoading(true);
+    fetchClientOverdueTable(clientFilters, debouncedSearchOverdue)
+      .then((rows) => {
+        if (!cancelled) setByOverdue(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setByOverdue([]);
+      })
+      .finally(() => {
+        if (!cancelled) setOverdueLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [month, year, employer, productType, customerSegment, debouncedSearchOverdue]);
 
   const months = Array.from({ length: 12 }, (_, i) => {
     const num = (i + 1).toString().padStart(2, '0');
@@ -177,35 +237,41 @@ export default function TempInternalPayrollClientOverview() {
             <Box>
               <ClientRankingTable
                 data={byInvoice}
-                loading={loading}
-                error={error}
-                title="Clients by Invoice"
+                loading={invoiceLoading}
+                error={null}
+                title="Invoice"
                 sortBy="total_invoice"
                 displayFieldLabel="Total Invoice"
                 formatValue={formatCurrency}
+                searchValue={searchInvoice}
+                onSearchChange={setSearchInvoice}
               />
             </Box>
             <Grid container spacing={3}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <ClientRankingTable
                   data={byOutstanding}
-                  loading={loading}
-                  error={error}
-                  title="Clients by Outstanding Invoice"
+                  loading={outstandingLoading}
+                  error={null}
+                  title="Outstanding Invoice"
                   sortBy="outstanding_invoice"
                   displayFieldLabel="Outstanding Invoice"
                   formatValue={formatCurrency}
+                  searchValue={searchOutstanding}
+                  onSearchChange={setSearchOutstanding}
                 />
               </Grid>
               <Grid size={{ xs: 12, md: 6 }}>
                 <ClientRankingTable
                   data={byOverdue}
-                  loading={loading}
-                  error={error}
-                  title="Clients by Overdue Invoice"
+                  loading={overdueLoading}
+                  error={null}
+                  title="Overdue Invoice"
                   sortBy="overdue_invoice"
                   displayFieldLabel="Overdue Invoice"
                   formatValue={formatCurrency}
+                  searchValue={searchOverdue}
+                  onSearchChange={setSearchOverdue}
                 />
               </Grid>
             </Grid>
