@@ -35,7 +35,7 @@ interface ClientRankingTableProps {
   sortBy: SortField;
   displayFieldLabel: string;
   formatValue: (value: number) => string;
-  /** When set, shows search next to title; value sent as `search[value]` on the API. */
+  /** When set, shows search control to the left of download; value sent as `search[value]` on the API. */
   searchValue?: string;
   onSearchChange?: (value: string) => void;
 }
@@ -110,21 +110,26 @@ const ClientRankingTable = ({
         <Typography variant="h6" sx={{ flexShrink: 0 }}>
           {title}
         </Typography>
-        {onSearchChange ? (
-          <Box
-            sx={{
-              flex: 1,
-              minWidth: 0,
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          {onSearchChange ? (
             <Box
               sx={{
-                width: searchExpanded ? '100%' : 40,
+                flexBasis: searchExpanded ? 0 : 40,
+                flexGrow: searchExpanded ? 1 : 0,
+                flexShrink: 0,
                 minWidth: searchExpanded ? 0 : 40,
+                maxWidth: searchExpanded ? '100%' : 40,
                 transition: (theme) =>
-                  theme.transitions.create('width', {
+                  theme.transitions.create(['flex-basis', 'flex-grow', 'max-width', 'min-width'], {
                     easing: theme.transitions.easing.easeOut,
                     duration: theme.transitions.duration.shorter,
                   }),
@@ -176,24 +181,22 @@ const ClientRankingTable = ({
                 />
               )}
             </Box>
-          </Box>
-        ) : (
-          <Box sx={{ flex: 1, minWidth: 0 }} />
-        )}
-        <Tooltip title="Download Excel">
-          <span>
-            <IconButton
-              color="primary"
-              onClick={handleExcelExport}
-              disabled={sortedData.length === 0}
-              size="small"
-              aria-label="Download Excel"
-              sx={{ flexShrink: 0 }}
-            >
-              <DownloadIcon />
-            </IconButton>
-          </span>
-        </Tooltip>
+          ) : null}
+          <Tooltip title="Download Excel">
+            <span>
+              <IconButton
+                color="primary"
+                onClick={handleExcelExport}
+                disabled={sortedData.length === 0}
+                size="small"
+                aria-label="Download Excel"
+                sx={{ flexShrink: 0 }}
+              >
+                <DownloadIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Box>
       </Box>
       <Divider />
       <TableContainer sx={{ height: '350px' }}>

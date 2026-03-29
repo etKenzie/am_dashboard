@@ -19,7 +19,15 @@ import {
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface TempInternalPayrollReceivableRiskChartProps {
-  filters: { month: string; year: string; employer?: string; productType?: string; customerSegment?: string };
+  filters: { employer?: string; productType?: string; customerSegment?: string };
+}
+
+function currentPeriod(): { month: string; year: string } {
+  const d = new Date();
+  return {
+    month: String(d.getMonth() + 1).padStart(2, '0'),
+    year: String(d.getFullYear()),
+  };
 }
 
 const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayrollReceivableRiskChartProps) => {
@@ -28,12 +36,12 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
   const theme = useTheme();
 
   const fetchData = useCallback(async () => {
-    if (!filters.month || !filters.year) return;
+    const { month, year } = currentPeriod();
     setLoading(true);
     try {
       const response = await fetchTempInternalPayrollReceivableRisk({
-        month: filters.month,
-        year: filters.year,
+        month,
+        year,
         employer: filters.employer,
         product_type: filters.productType,
         customer_segment: filters.customerSegment,
@@ -42,14 +50,14 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
     } catch {
       setChartData({
         status: 'ok',
-        month: filters.month,
-        year: filters.year,
+        month,
+        year,
         buckets: Object.fromEntries(RECEIVABLE_RISK_BUCKETS.map((k) => [k, 0])),
       });
     } finally {
       setLoading(false);
     }
-  }, [filters.month, filters.year]);
+  }, [filters.employer, filters.productType, filters.customerSegment]);
 
   useEffect(() => {
     fetchData();
@@ -119,32 +127,24 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
     [theme.palette.mode, theme.palette.primary.main]
   );
 
-  const monthName = filters.month && filters.year
-    ? new Date(parseInt(filters.year), parseInt(filters.month) - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })
-    : '';
-
   return (
     <Card>
       <CardContent>
         <Typography variant="h6" sx={{ mb: 3 }}>
-          Receivable Risk — Total Invoice by Aging Bucket {monthName && `(${monthName})`}
+          Accounts Receiveable
         </Typography>
         <Box sx={{ height: 380, position: 'relative', minHeight: 380 }}>
           {loading ? (
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
               <CircularProgress size={24} />
             </Box>
-          ) : filters.month && filters.year ? (
+          ) : (
             <ReactApexChart
               options={chartOptions}
               series={[{ name: 'Total Invoice', data: seriesData }]}
               type="bar"
               height={320}
             />
-          ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-              <Typography color="textSecondary">Select month and year to view data</Typography>
-            </Box>
           )}
         </Box>
       </CardContent>

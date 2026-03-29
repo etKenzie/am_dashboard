@@ -396,7 +396,7 @@ export default function TempInternalPayrollOverview() {
         </Box>
 
         <Box mt={3}>
-          <TempInternalPayrollReceivableRiskChart filters={{ month, year, employer, productType, customerSegment }} />
+          <TempInternalPayrollReceivableRiskChart filters={{ employer, productType, customerSegment }} />
         </Box>
 
         <Box mt={4} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
