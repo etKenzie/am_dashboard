@@ -19,6 +19,8 @@ function dashboardForm(params: TempInternalPayrollSummaryParams): FormData {
   form.append('employer', params.employer ?? '0');
   form.append('product_type', params.product_type ?? '0');
   form.append('customer_segment', params.customer_segment ?? '0');
+  form.append('sourced_to', params.sourced_to ?? '0');
+  form.append('project', params.project ?? '0');
   form.append('month', params.month ?? '0');
   form.append('year', params.year ?? new Date().getFullYear().toString());
   return form;
@@ -41,6 +43,8 @@ export interface InvoiceTrendParams {
   employer?: string;
   product_type?: string;
   customer_segment?: string;
+  sourced_to?: string;
+  project?: string;
 }
 
 /** Build FormData for invoice_trend (uses start_period/end_period). */
@@ -50,6 +54,8 @@ function invoiceTrendForm(params: InvoiceTrendParams): FormData {
   form.append('employer', params.employer ?? '0');
   form.append('product_type', params.product_type ?? '0');
   form.append('customer_segment', params.customer_segment ?? '0');
+  form.append('sourced_to', params.sourced_to ?? '0');
+  form.append('project', params.project ?? '0');
   form.append('start_period', params.start_period);
   form.append('end_period', params.end_period);
   return form;
@@ -61,6 +67,8 @@ export interface TempInternalPayrollSummaryParams {
   employer?: string;       // 0 => All, 1 => PT Valdo International, 2 => PT Valdo Sumber Daya Mandiri, 94 => PT Toko Pandai
   product_type?: string;    // 0 => All, 1 => BPO Bundling, 2 => People, 3 => Infra & Technology, 4 => AkuMaju
   customer_segment?: string; // 0 => All, 1-9 => see Postman collection
+  sourced_to?: string;      // 0 => All
+  project?: string;         // 0 => All
 }
 
 export interface TempInternalPayrollSummaryResponse {
@@ -169,6 +177,8 @@ export interface TempInternalPayrollMonthlyParams {
   employer?: string;
   product_type?: string;
   customer_segment?: string;
+  sourced_to?: string;
+  project?: string;
 }
 
 /**
@@ -193,9 +203,48 @@ export async function fetchInvoiceTrendRaw(
   const body = invoiceTrendForm(params);
   const requestInfo = { url, params: { ...params } };
   console.log('[invoice_trend] request', requestInfo);
-  const res = await fetch(url, { method: 'POST', body });
-  const json = await res.json();
-  console.log('[invoice_trend] response', { ok: res.ok, status: res.status, json });
+  let res: Response;
+  try {
+    res = await fetch(url, { method: 'POST', body });
+  } catch (networkError) {
+    // In browsers, strict CORS failures usually reject fetch before a response exists.
+    console.error('[invoice_trend] fetch_failed', {
+      url,
+      hint: 'Likely network/CORS/preflight block because no HTTP response was received.',
+      error: networkError,
+    });
+    throw networkError;
+  }
+  const rawText = await res.text();
+  const contentType = res.headers.get('content-type') ?? '';
+  console.log('[invoice_trend] response_meta', {
+    ok: res.ok,
+    status: res.status,
+    statusText: res.statusText,
+    contentType,
+    redirected: res.redirected,
+    responseUrl: res.url,
+    type: res.type,
+    url,
+  });
+  console.log('[invoice_trend] response_raw', rawText.slice(0, 2000));
+  if (rawText.trim().startsWith('<')) {
+    console.warn('[invoice_trend] html_response_detected', {
+      hint: 'Response looks like an HTML page (gateway/WAF/login/error page), not API JSON.',
+      status: res.status,
+      contentType,
+      responseUrl: res.url,
+    });
+  }
+  let json: any = null;
+  try {
+    json = rawText ? JSON.parse(rawText) : null;
+  } catch (parseError) {
+    throw new Error(
+      `invoice_trend non-JSON response (status ${res.status}, content-type: ${contentType || 'unknown'})`
+    );
+  }
+  console.log('[invoice_trend] response_json', json);
   if (!res.ok) throw new Error(`invoice_trend: ${res.status}`);
   if (json.error || !json.result) throw new Error(json.msg || 'invoice_trend error');
   return json.result;
@@ -216,6 +265,8 @@ export const fetchTempInternalPayrollMonthly = async (
       employer: params.employer ?? '0',
       product_type: params.product_type ?? '0',
       customer_segment: params.customer_segment ?? '0',
+      sourced_to: params.sourced_to ?? '0',
+      project: params.project ?? '0',
     };
     const result = await fetchInvoiceTrendRaw(trendParams);
     const labels = result.get_tren_nilai?.label ?? [];
@@ -253,6 +304,8 @@ export interface TempInternalPayrollPaidUnpaidParams {
   employer?: string;
   product_type?: string;
   customer_segment?: string;
+  sourced_to?: string;
+  project?: string;
 }
 
 /**
@@ -270,6 +323,8 @@ export const fetchTempInternalPayrollPaidUnpaid = async (
       employer: params.employer ?? '0',
       product_type: params.product_type ?? '0',
       customer_segment: params.customer_segment ?? '0',
+      sourced_to: params.sourced_to ?? '0',
+      project: params.project ?? '0',
     };
     const result = await fetchInvoiceTrendRaw(trendParams);
     const perf = result.get_tren_performa_pembayaran;
@@ -315,6 +370,8 @@ export interface TempInternalPayrollReceivableRiskParams {
   employer?: string;
   product_type?: string;
   customer_segment?: string;
+  sourced_to?: string;
+  project?: string;
 }
 
 function emptyReceivableRisk(month: string, year: string): TempInternalPayrollReceivableRiskResponse {
@@ -351,6 +408,8 @@ export const fetchTempInternalPayrollReceivableRisk = async (
       employer: params.employer ?? '0',
       product_type: params.product_type ?? '0',
       customer_segment: params.customer_segment ?? '0',
+      sourced_to: params.sourced_to ?? '0',
+      project: params.project ?? '0',
     };
     const res = await fetch(`${COLLECTION_API_URL}/api/dashboard/ar_management`, {
       method: 'POST',
@@ -383,6 +442,10 @@ export const fetchTempInternalPayrollReceivableRisk = async (
 export interface TempInternalPayrollClientRankingRow {
   sourced_to: string;
   project?: string;
+  product_type?: string;
+  segment?: string;
+  jumlah_invoices?: number;
+  ranking?: number;
   total_invoice: number;
   outstanding_invoice: number;
   overdue_invoice: number;
@@ -401,6 +464,8 @@ export interface TempInternalPayrollClientRankingParams {
   employer?: string;
   product_type?: string;
   customer_segment?: string;
+  sourced_to?: string;
+  project?: string;
   /** Sent as FormData field `search[value]` (DataTables global search). */
   searchInvoice?: string;
   searchOutstanding?: string;
@@ -414,6 +479,9 @@ export interface TempInternalPayrollClientRankingParams {
 interface ClientByListApiRow {
   client?: string | null;
   project?: string | null;
+  product_type?: string | null;
+  segment?: string | null;
+  jumlah_invoices?: string | number;
   ranking?: string;
   total_invoices?: string;
   total_outstandings?: string;
@@ -440,6 +508,8 @@ async function fetchClientByListEndpoint(
     employer: params.employer ?? '0',
     product_type: params.product_type ?? '0',
     customer_segment: params.customer_segment ?? '0',
+    sourced_to: params.sourced_to ?? '0',
+    project: params.project ?? '0',
   };
   try {
     const res = await fetch(`${COLLECTION_API_URL}/api/dashboard/${pathSegment}`, {
@@ -460,6 +530,10 @@ function mapClientByInvoiceRows(rows: ClientByListApiRow[]): TempInternalPayroll
   return rows.map((x) => ({
     sourced_to: sourcedToFromClientRow(x),
     project: x.project ?? undefined,
+    product_type: x.product_type ?? undefined,
+    segment: x.segment ?? undefined,
+    jumlah_invoices: parseNum(x.jumlah_invoices ?? 0),
+    ranking: parseNum(x.ranking ?? 0),
     total_invoice: parseNum(x.total_invoices ?? 0),
     outstanding_invoice: 0,
     overdue_invoice: 0,
@@ -470,6 +544,10 @@ function mapClientByOutstandingRows(rows: ClientByListApiRow[]): TempInternalPay
   return rows.map((x) => ({
     sourced_to: sourcedToFromClientRow(x),
     project: x.project ?? undefined,
+    product_type: x.product_type ?? undefined,
+    segment: x.segment ?? undefined,
+    jumlah_invoices: parseNum(x.jumlah_invoices ?? 0),
+    ranking: parseNum(x.ranking ?? 0),
     total_invoice: 0,
     outstanding_invoice: parseNum(x.total_outstandings ?? x.total_outstanding ?? x.total_invoices ?? 0),
     overdue_invoice: 0,
@@ -480,6 +558,10 @@ function mapClientByOverdueRows(rows: ClientByListApiRow[]): TempInternalPayroll
   return rows.map((x) => ({
     sourced_to: sourcedToFromClientRow(x),
     project: x.project ?? undefined,
+    product_type: x.product_type ?? undefined,
+    segment: x.segment ?? undefined,
+    jumlah_invoices: parseNum(x.jumlah_invoices ?? 0),
+    ranking: parseNum(x.ranking ?? 0),
     total_invoice: 0,
     outstanding_invoice: 0,
     overdue_invoice: parseNum(x.total_overdue ?? x.total_invoices ?? 0),
@@ -498,6 +580,8 @@ function rankingParamsFromFilters(filters: TempInternalPayrollSummaryParams): Te
     employer: filters.employer ?? '0',
     product_type: filters.product_type ?? '0',
     customer_segment: filters.customer_segment ?? '0',
+    sourced_to: filters.sourced_to ?? '0',
+    project: filters.project ?? '0',
   };
 }
 

@@ -48,6 +48,9 @@ const CUSTOMER_SEGMENT_OPTIONS = [
   { value: '9', label: 'BFSI Others' },
 ];
 
+const SOURCED_TO_OPTIONS = [{ value: '0', label: 'All' }];
+const PROJECT_OPTIONS = [{ value: '0', label: 'All' }];
+
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -68,6 +71,8 @@ export default function TempInternalPayrollClientOverview() {
   const [employer, setEmployer] = useState('0');
   const [productType, setProductType] = useState('0');
   const [customerSegment, setCustomerSegment] = useState('0');
+  const [sourcedTo, setSourcedTo] = useState('0');
+  const [project, setProject] = useState('0');
   const [searchInvoice, setSearchInvoice] = useState('');
   const [searchOutstanding, setSearchOutstanding] = useState('');
   const [searchOverdue, setSearchOverdue] = useState('');
@@ -102,6 +107,8 @@ export default function TempInternalPayrollClientOverview() {
     employer,
     product_type: productType,
     customer_segment: customerSegment,
+    sourced_to: sourcedTo || '0',
+    project: project || '0',
   };
 
   useEffect(() => {
@@ -121,7 +128,7 @@ export default function TempInternalPayrollClientOverview() {
     return () => {
       cancelled = true;
     };
-  }, [month, year, employer, productType, customerSegment, debouncedSearchInvoice]);
+  }, [month, year, employer, productType, customerSegment, sourcedTo, project, debouncedSearchInvoice]);
 
   useEffect(() => {
     if (!month || !year) return;
@@ -140,7 +147,7 @@ export default function TempInternalPayrollClientOverview() {
     return () => {
       cancelled = true;
     };
-  }, [month, year, employer, productType, customerSegment, debouncedSearchOutstanding]);
+  }, [month, year, employer, productType, customerSegment, sourcedTo, project, debouncedSearchOutstanding]);
 
   useEffect(() => {
     if (!month || !year) return;
@@ -159,7 +166,7 @@ export default function TempInternalPayrollClientOverview() {
     return () => {
       cancelled = true;
     };
-  }, [month, year, employer, productType, customerSegment, debouncedSearchOverdue]);
+  }, [month, year, employer, productType, customerSegment, sourcedTo, project, debouncedSearchOverdue]);
 
   const months = Array.from({ length: 12 }, (_, i) => {
     const num = (i + 1).toString().padStart(2, '0');
@@ -180,7 +187,7 @@ export default function TempInternalPayrollClientOverview() {
         </Typography>
 
         <Grid container spacing={2} sx={{ mb: 3 }} width="100%">
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 6 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Month</InputLabel>
               <Select value={month} label="Month" onChange={(e: SelectChangeEvent<string>) => setMonth(e.target.value)}>
@@ -190,7 +197,7 @@ export default function TempInternalPayrollClientOverview() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 6 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Year</InputLabel>
               <Select value={year} label="Year" onChange={(e: SelectChangeEvent<string>) => setYear(e.target.value)}>
@@ -200,7 +207,7 @@ export default function TempInternalPayrollClientOverview() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Employer</InputLabel>
               <Select value={employer} label="Employer" onChange={(e: SelectChangeEvent<string>) => setEmployer(e.target.value)}>
@@ -210,7 +217,7 @@ export default function TempInternalPayrollClientOverview() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Product Type</InputLabel>
               <Select value={productType} label="Product Type" onChange={(e: SelectChangeEvent<string>) => setProductType(e.target.value)}>
@@ -220,11 +227,31 @@ export default function TempInternalPayrollClientOverview() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Customer Segment</InputLabel>
               <Select value={customerSegment} label="Customer Segment" onChange={(e: SelectChangeEvent<string>) => setCustomerSegment(e.target.value)}>
                 {CUSTOMER_SEGMENT_OPTIONS.map((o) => (
+                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Sourced To</InputLabel>
+              <Select value={sourcedTo} label="Sourced To" onChange={(e: SelectChangeEvent<string>) => setSourcedTo(e.target.value)}>
+                {SOURCED_TO_OPTIONS.map((o) => (
+                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Project</InputLabel>
+              <Select value={project} label="Project" onChange={(e: SelectChangeEvent<string>) => setProject(e.target.value)}>
+                {PROJECT_OPTIONS.map((o) => (
                   <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
                 ))}
               </Select>
@@ -245,36 +272,33 @@ export default function TempInternalPayrollClientOverview() {
                 formatValue={formatCurrency}
                 searchValue={searchInvoice}
                 onSearchChange={setSearchInvoice}
+                showDetailColumns
               />
             </Box>
-            <Grid container spacing={3}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <ClientRankingTable
-                  data={byOutstanding}
-                  loading={outstandingLoading}
-                  error={null}
-                  title="Outstanding Invoice"
-                  sortBy="outstanding_invoice"
-                  displayFieldLabel="Outstanding Invoice"
-                  formatValue={formatCurrency}
-                  searchValue={searchOutstanding}
-                  onSearchChange={setSearchOutstanding}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <ClientRankingTable
-                  data={byOverdue}
-                  loading={overdueLoading}
-                  error={null}
-                  title="Overdue Invoice"
-                  sortBy="overdue_invoice"
-                  displayFieldLabel="Overdue Invoice"
-                  formatValue={formatCurrency}
-                  searchValue={searchOverdue}
-                  onSearchChange={setSearchOverdue}
-                />
-              </Grid>
-            </Grid>
+            <ClientRankingTable
+              data={byOutstanding}
+              loading={outstandingLoading}
+              error={null}
+              title="Outstanding Invoice"
+              sortBy="outstanding_invoice"
+              displayFieldLabel="Outstanding Invoice"
+              formatValue={formatCurrency}
+              searchValue={searchOutstanding}
+              onSearchChange={setSearchOutstanding}
+              showDetailColumns
+            />
+            <ClientRankingTable
+              data={byOverdue}
+              loading={overdueLoading}
+              error={null}
+              title="Overdue Invoice"
+              sortBy="overdue_invoice"
+              displayFieldLabel="Overdue Invoice"
+              formatValue={formatCurrency}
+              searchValue={searchOverdue}
+              onSearchChange={setSearchOverdue}
+              showDetailColumns
+            />
           </Box>
         ) : (
           <Box

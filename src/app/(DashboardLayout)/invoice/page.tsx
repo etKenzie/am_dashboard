@@ -4,15 +4,14 @@ import { getPageRoles } from '@/config/roles';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import TempInternalPayrollOverview from '../../components/temp_internal_payroll/TempInternalPayrollOverview';
 
-const TempInternalPayrollPage = () => {
+const InvoicePage = () => {
   return <TempInternalPayrollOverview />;
 };
 
-//TESTING
-export default function ProtectedTempInternalPayroll() {
+export default function ProtectedInvoicePage() {
   return (
     <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
-      <TempInternalPayrollPage />
+      <InvoicePage />
     </ProtectedRoute>
   );
 }

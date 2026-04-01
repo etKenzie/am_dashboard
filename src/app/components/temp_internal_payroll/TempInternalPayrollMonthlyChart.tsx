@@ -23,7 +23,15 @@ import {
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface TempInternalPayrollMonthlyChartProps {
-  filters: { month: string; year: string; employer?: string; productType?: string; customerSegment?: string };
+  filters: {
+    month: string;
+    year: string;
+    employer?: string;
+    productType?: string;
+    customerSegment?: string;
+    sourcedTo?: string;
+    project?: string;
+  };
 }
 
 const MONTH_NAMES = [
@@ -90,6 +98,8 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
         employer: filters.employer,
         product_type: filters.productType,
         customer_segment: filters.customerSegment,
+        sourced_to: filters.sourcedTo ?? '0',
+        project: filters.project ?? '0',
       });
       setChartData(response);
     } catch {
@@ -97,7 +107,7 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
     } finally {
       setLoading(false);
     }
-  }, [startMonthYear, endMonthYear]);
+  }, [startMonthYear, endMonthYear, filters.employer, filters.productType, filters.customerSegment, filters.sourcedTo, filters.project]);
 
   useEffect(() => {
     if (startMonthYear && endMonthYear) fetchChartData();

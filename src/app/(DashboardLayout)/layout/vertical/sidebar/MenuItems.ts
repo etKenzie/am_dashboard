@@ -159,14 +159,14 @@ const Menuitems: MenuitemsType[] = [
     id: uniqueId(),
     title: "Invoice",
     icon: IconBox,
-    href: "/temp-internal-payroll",
+    href: "/invoice",
     chip: "New",
     children: [
       {
         id: uniqueId(),
         title: "Overview",
         icon: IconDashboard,
-        href: "/temp-internal-payroll",
+        href: "/invoice",
         chipColor: "secondary",
       },
     ],

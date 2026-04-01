@@ -81,6 +81,9 @@ const CUSTOMER_SEGMENT_OPTIONS = [
   { value: '9', label: 'BFSI Others' },
 ];
 
+const SOURCED_TO_OPTIONS = [{ value: '0', label: 'All' }];
+const PROJECT_OPTIONS = [{ value: '0', label: 'All' }];
+
 export default function TempInternalPayrollOverview() {
   const [summary, setSummary] = useState<TempInternalPayrollSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -101,6 +104,8 @@ export default function TempInternalPayrollOverview() {
   const [employer, setEmployer] = useState('0');
   const [productType, setProductType] = useState('0');
   const [customerSegment, setCustomerSegment] = useState('0');
+  const [sourcedTo, setSourcedTo] = useState('0');
+  const [project, setProject] = useState('0');
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearchInvoice(searchInvoice.trim()), 350);
@@ -126,6 +131,8 @@ export default function TempInternalPayrollOverview() {
         employer,
         product_type: productType,
         customer_segment: customerSegment,
+        sourced_to: sourcedTo || '0',
+        project: project || '0',
       };
       const data = await fetchTempInternalPayrollSummary(params);
       setSummary(data);
@@ -134,7 +141,7 @@ export default function TempInternalPayrollOverview() {
     } finally {
       setLoading(false);
     }
-  }, [month, year, employer, productType, customerSegment]);
+  }, [month, year, employer, productType, customerSegment, sourcedTo, project]);
 
   useEffect(() => {
     loadSummary();
@@ -146,6 +153,8 @@ export default function TempInternalPayrollOverview() {
     employer,
     product_type: productType,
     customer_segment: customerSegment,
+    sourced_to: sourcedTo || '0',
+    project: project || '0',
   };
 
   useEffect(() => {
@@ -165,7 +174,7 @@ export default function TempInternalPayrollOverview() {
     return () => {
       cancelled = true;
     };
-  }, [month, year, employer, productType, customerSegment, debouncedSearchInvoice]);
+  }, [month, year, employer, productType, customerSegment, sourcedTo, project, debouncedSearchInvoice]);
 
   useEffect(() => {
     if (!month || !year) return;
@@ -184,7 +193,7 @@ export default function TempInternalPayrollOverview() {
     return () => {
       cancelled = true;
     };
-  }, [month, year, employer, productType, customerSegment, debouncedSearchOutstanding]);
+  }, [month, year, employer, productType, customerSegment, sourcedTo, project, debouncedSearchOutstanding]);
 
   useEffect(() => {
     if (!month || !year) return;
@@ -203,7 +212,7 @@ export default function TempInternalPayrollOverview() {
     return () => {
       cancelled = true;
     };
-  }, [month, year, employer, productType, customerSegment, debouncedSearchOverdue]);
+  }, [month, year, employer, productType, customerSegment, sourcedTo, project, debouncedSearchOverdue]);
 
   // Initialize month/year on client to avoid hydration mismatch
   useEffect(() => {
@@ -247,7 +256,7 @@ export default function TempInternalPayrollOverview() {
         </Typography>
 
         <Grid container spacing={2} sx={{ mb: 3 }} width="100%">
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 6 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Month</InputLabel>
               <Select value={month} label="Month" onChange={handleMonthChange}>
@@ -257,7 +266,7 @@ export default function TempInternalPayrollOverview() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 6 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Year</InputLabel>
               <Select value={year} label="Year" onChange={handleYearChange}>
@@ -267,7 +276,7 @@ export default function TempInternalPayrollOverview() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Employer</InputLabel>
               <Select value={employer} label="Employer" onChange={handleEmployerChange}>
@@ -277,7 +286,7 @@ export default function TempInternalPayrollOverview() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Product Type</InputLabel>
               <Select value={productType} label="Product Type" onChange={handleProductTypeChange}>
@@ -287,11 +296,31 @@ export default function TempInternalPayrollOverview() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Customer Segment</InputLabel>
               <Select value={customerSegment} label="Customer Segment" onChange={handleCustomerSegmentChange}>
                 {CUSTOMER_SEGMENT_OPTIONS.map((o) => (
+                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Sourced To</InputLabel>
+              <Select value={sourcedTo} label="Sourced To" onChange={(e: SelectChangeEvent<string>) => setSourcedTo(e.target.value)}>
+                {SOURCED_TO_OPTIONS.map((o) => (
+                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
+            <FormControl size="small" fullWidth>
+              <InputLabel>Project</InputLabel>
+              <Select value={project} label="Project" onChange={(e: SelectChangeEvent<string>) => setProject(e.target.value)}>
+                {PROJECT_OPTIONS.map((o) => (
                   <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
                 ))}
               </Select>
@@ -339,7 +368,7 @@ export default function TempInternalPayrollOverview() {
         </Grid>
 
         <Box mt={3}>
-          <TempInternalPayrollMonthlyChart filters={{ month, year, employer, productType, customerSegment }} />
+          <TempInternalPayrollMonthlyChart filters={{ month, year, employer, productType, customerSegment, sourcedTo, project }} />
         </Box>
 
         <Grid container spacing={3} alignItems="stretch" sx={{ mt: 3 }}>
@@ -378,7 +407,11 @@ export default function TempInternalPayrollOverview() {
         </Grid>
 
         <Box mt={3}>
-          <TempInternalPayrollPaidUnpaidChart filters={{ month, year, employer, productType, customerSegment }} />
+          <TempInternalPayrollPaidUnpaidChart filters={{ month, year, employer, productType, customerSegment, sourcedTo, project }} />
+        </Box>
+
+        <Box mt={3}>
+          <TempInternalPayrollReceivableRiskChart filters={{ employer, productType, customerSegment, sourcedTo, project }} />
         </Box>
 
         <Box mt={3}>
@@ -392,42 +425,35 @@ export default function TempInternalPayrollOverview() {
             formatValue={formatCurrency}
             searchValue={searchInvoice}
             onSearchChange={setSearchInvoice}
+            showDetailColumns
           />
         </Box>
 
-        <Box mt={3}>
-          <TempInternalPayrollReceivableRiskChart filters={{ employer, productType, customerSegment }} />
-        </Box>
-
         <Box mt={4} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <ClientRankingTable
-                data={byOutstanding}
-                loading={outstandingLoading}
-                error={null}
-                title="Outstanding Invoice"
-                sortBy="outstanding_invoice"
-                displayFieldLabel="Total Invoice"
-                formatValue={formatCurrency}
-                searchValue={searchOutstanding}
-                onSearchChange={setSearchOutstanding}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <ClientRankingTable
-                data={byOverdue}
-                loading={overdueLoading}
-                error={null}
-                title="Overdue Invoice"
-                sortBy="overdue_invoice"
-                displayFieldLabel="Total Invoice"
-                formatValue={formatCurrency}
-                searchValue={searchOverdue}
-                onSearchChange={setSearchOverdue}
-              />
-            </Grid>
-          </Grid>
+          <ClientRankingTable
+            data={byOutstanding}
+            loading={outstandingLoading}
+            error={null}
+            title="Outstanding Invoice"
+            sortBy="outstanding_invoice"
+            displayFieldLabel="Total Invoice"
+            formatValue={formatCurrency}
+            searchValue={searchOutstanding}
+            onSearchChange={setSearchOutstanding}
+            showDetailColumns
+          />
+          <ClientRankingTable
+            data={byOverdue}
+            loading={overdueLoading}
+            error={null}
+            title="Overdue Invoice"
+            sortBy="overdue_invoice"
+            displayFieldLabel="Total Invoice"
+            formatValue={formatCurrency}
+            searchValue={searchOverdue}
+            onSearchChange={setSearchOverdue}
+            showDetailColumns
+          />
         </Box>
       </Box>
     </PageContainer>

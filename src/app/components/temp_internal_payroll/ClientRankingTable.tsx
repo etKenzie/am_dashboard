@@ -38,6 +38,7 @@ interface ClientRankingTableProps {
   /** When set, shows search control to the left of download; value sent as `search[value]` on the API. */
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  showDetailColumns?: boolean;
 }
 
 const ClientRankingTable = ({
@@ -50,6 +51,7 @@ const ClientRankingTable = ({
   formatValue,
   searchValue = '',
   onSearchChange,
+  showDetailColumns = false,
 }: ClientRankingTableProps) => {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const sortedData = [...data].sort((a, b) => (b[sortBy] as number) - (a[sortBy] as number));
@@ -71,9 +73,18 @@ const ClientRankingTable = ({
     return sortedData.map((item, index) => ({
       Rank: index + 1,
       'Sourced To': item.sourced_to,
+      ...(showDetailColumns
+        ? {
+            'Jumlah Invoice': item.jumlah_invoices ?? 0,
+            'Product Type': item.product_type ?? '-',
+            Segment: item.segment ?? '-',
+          }
+        : {}),
       [displayFieldLabel]: formatValue(item[sortBy] as number),
     }));
   };
+
+  const totalColumns = showDetailColumns ? 6 : 3;
 
   const handleExcelExport = () => {
     if (!sortedData.length) return;
@@ -205,25 +216,32 @@ const ClientRankingTable = ({
             <TableRow>
               <TableCell sx={{ fontWeight: 'bold', width: '80px', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }}>Rank</TableCell>
               <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }}>Sourced To</TableCell>
+              {showDetailColumns ? (
+                <>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }} align="right">Jumlah Invoice</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }}>Product Type</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }}>Segment</TableCell>
+                </>
+              ) : null}
               <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }} align="right">{displayFieldLabel}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={3} align="center">
+                <TableCell colSpan={totalColumns} align="center">
                   <CircularProgress size={24} />
                 </TableCell>
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={3} align="center">
+                <TableCell colSpan={totalColumns} align="center">
                   <Typography variant="body2" color="error">{error}</Typography>
                 </TableCell>
               </TableRow>
             ) : sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} align="center">
+                <TableCell colSpan={totalColumns} align="center">
                   <Typography variant="body2" color="textSecondary">No data found</Typography>
                 </TableCell>
               </TableRow>
@@ -232,6 +250,13 @@ const ClientRankingTable = ({
                 <TableRow key={`${row.sourced_to}-${index}`} hover>
                   <TableCell sx={{ fontWeight: 'bold' }}>{index + 1}</TableCell>
                   <TableCell>{row.sourced_to}</TableCell>
+                  {showDetailColumns ? (
+                    <>
+                      <TableCell align="right">{(row.jumlah_invoices ?? 0).toLocaleString('en-US')}</TableCell>
+                      <TableCell>{row.product_type ?? '-'}</TableCell>
+                      <TableCell>{row.segment ?? '-'}</TableCell>
+                    </>
+                  ) : null}
                   <TableCell align="right" sx={{ fontWeight: 'bold' }}>
                     {formatValue(row[sortBy] as number)}
                   </TableCell>

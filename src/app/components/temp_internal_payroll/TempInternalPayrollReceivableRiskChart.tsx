@@ -19,7 +19,7 @@ import {
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface TempInternalPayrollReceivableRiskChartProps {
-  filters: { employer?: string; productType?: string; customerSegment?: string };
+  filters: { employer?: string; productType?: string; customerSegment?: string; sourcedTo?: string; project?: string };
 }
 
 function currentPeriod(): { month: string; year: string } {
@@ -45,6 +45,8 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
         employer: filters.employer,
         product_type: filters.productType,
         customer_segment: filters.customerSegment,
+        sourced_to: filters.sourcedTo ?? '0',
+        project: filters.project ?? '0',
       });
       setChartData(response);
     } catch {
@@ -57,7 +59,7 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
     } finally {
       setLoading(false);
     }
-  }, [filters.employer, filters.productType, filters.customerSegment]);
+  }, [filters.employer, filters.productType, filters.customerSegment, filters.sourcedTo, filters.project]);
 
   useEffect(() => {
     fetchData();
