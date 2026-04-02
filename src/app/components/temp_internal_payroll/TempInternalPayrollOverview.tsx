@@ -16,6 +16,8 @@ import {
   fetchClientInvoiceTable,
   fetchClientOutstandingTable,
   fetchClientOverdueTable,
+  fetchProjectFilterOptions,
+  fetchSourcedToFilterOptions,
   fetchTempInternalPayrollSummary,
   TempInternalPayrollClientRankingRow,
   TempInternalPayrollSummaryResponse,
@@ -81,8 +83,6 @@ const CUSTOMER_SEGMENT_OPTIONS = [
   { value: '9', label: 'BFSI Others' },
 ];
 
-const SOURCED_TO_OPTIONS = [{ value: '0', label: 'All' }];
-const PROJECT_OPTIONS = [{ value: '0', label: 'All' }];
 
 export default function TempInternalPayrollOverview() {
   const [summary, setSummary] = useState<TempInternalPayrollSummaryResponse | null>(null);
@@ -106,6 +106,12 @@ export default function TempInternalPayrollOverview() {
   const [customerSegment, setCustomerSegment] = useState('0');
   const [sourcedTo, setSourcedTo] = useState('0');
   const [project, setProject] = useState('0');
+  const [sourcedToOptions, setSourcedToOptions] = useState<Array<{ value: string; label: string }>>([
+    { value: '0', label: 'All' },
+  ]);
+  const [projectOptions, setProjectOptions] = useState<Array<{ value: string; label: string }>>([
+    { value: '0', label: 'All' },
+  ]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearchInvoice(searchInvoice.trim()), 350);
@@ -121,6 +127,38 @@ export default function TempInternalPayrollOverview() {
     const t = setTimeout(() => setDebouncedSearchOverdue(searchOverdue.trim()), 350);
     return () => clearTimeout(t);
   }, [searchOverdue]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSourcedToFilterOptions({ employer })
+      .then((rows) => {
+        if (cancelled) return;
+        const mapped = rows.map((x) => ({ value: x.id_sourced_to, label: x.name }));
+        setSourcedToOptions([{ value: '0', label: 'All' }, ...mapped]);
+      })
+      .catch(() => {
+        if (!cancelled) setSourcedToOptions([{ value: '0', label: 'All' }]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [employer]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchProjectFilterOptions({ employer, sourced_to: sourcedTo || '0' })
+      .then((rows) => {
+        if (cancelled) return;
+        const mapped = rows.map((x) => ({ value: x.id_project, label: x.name }));
+        setProjectOptions([{ value: '0', label: 'All' }, ...mapped]);
+      })
+      .catch(() => {
+        if (!cancelled) setProjectOptions([{ value: '0', label: 'All' }]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [employer, sourcedTo]);
 
   const loadSummary = useCallback(async () => {
     setLoading(true);
@@ -310,7 +348,7 @@ export default function TempInternalPayrollOverview() {
             <FormControl size="small" fullWidth>
               <InputLabel>Sourced To</InputLabel>
               <Select value={sourcedTo} label="Sourced To" onChange={(e: SelectChangeEvent<string>) => setSourcedTo(e.target.value)}>
-                {SOURCED_TO_OPTIONS.map((o) => (
+                {sourcedToOptions.map((o) => (
                   <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
                 ))}
               </Select>
@@ -320,7 +358,7 @@ export default function TempInternalPayrollOverview() {
             <FormControl size="small" fullWidth>
               <InputLabel>Project</InputLabel>
               <Select value={project} label="Project" onChange={(e: SelectChangeEvent<string>) => setProject(e.target.value)}>
-                {PROJECT_OPTIONS.map((o) => (
+                {projectOptions.map((o) => (
                   <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
                 ))}
               </Select>

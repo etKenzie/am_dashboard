@@ -84,6 +84,74 @@ export interface TempInternalPayrollSummaryResponse {
   message?: string | null;
 }
 
+export interface SourcedToFilterOption {
+  id_sourced_to: string;
+  name: string;
+}
+
+export interface ProjectFilterOption {
+  id_project: string;
+  name: string;
+}
+
+/** {{base_url}}/api/filter/sourced_to with token + employer */
+export async function fetchSourcedToFilterOptions(params: { employer?: string }): Promise<SourcedToFilterOption[]> {
+  if (!COLLECTION_API_URL) return [];
+  const form = new FormData();
+  form.append('token', COLLECTION_API_TOKEN);
+  form.append('employer', params.employer ?? '0');
+  try {
+    const res = await fetch(`${COLLECTION_API_URL}/api/filter/sourced_to`, {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    if (json?.error) return [];
+    const rows = json?.result;
+    if (!Array.isArray(rows)) return [];
+    return rows
+      .map((x: any) => ({
+        id_sourced_to: String(x?.id_sourced_to ?? ''),
+        name: String(x?.name ?? ''),
+      }))
+      .filter((x) => x.id_sourced_to && x.name);
+  } catch {
+    return [];
+  }
+}
+
+/** {{base_url}}/api/filter/project with token + employer + sourced_to */
+export async function fetchProjectFilterOptions(params: {
+  employer?: string;
+  sourced_to?: string;
+}): Promise<ProjectFilterOption[]> {
+  if (!COLLECTION_API_URL) return [];
+  const form = new FormData();
+  form.append('token', COLLECTION_API_TOKEN);
+  form.append('employer', params.employer ?? '0');
+  form.append('sourced_to', params.sourced_to ?? '0');
+  try {
+    const res = await fetch(`${COLLECTION_API_URL}/api/filter/project`, {
+      method: 'POST',
+      body: form,
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    if (json?.error) return [];
+    const rows = json?.result;
+    if (!Array.isArray(rows)) return [];
+    return rows
+      .map((x: any) => ({
+        id_project: String(x?.id_project ?? ''),
+        name: String(x?.name ?? ''),
+      }))
+      .filter((x) => x.id_project && x.name);
+  } catch {
+    return [];
+  }
+}
+
 function parseNum(v: string | number): number {
   if (typeof v === 'number') return v;
   const n = parseFloat(String(v).replace(/[^0-9.-]/g, ''));
