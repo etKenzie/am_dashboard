@@ -192,20 +192,27 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
       ],
       tooltip: {
         theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
-        y: [
-          {
-            formatter: (value: number) =>
-              new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              }).format(value),
+        // Single formatter: array form maps by *visible* row order after legend toggles, so the
+        // remaining line can get the wrong formatter (currency vs count) or undefined values.
+        y: {
+          formatter: (
+            value: number | null | undefined,
+            opts: { seriesIndex: number; w?: { globals?: { seriesNames?: string[] } } }
+          ) => {
+            const num = Number(value);
+            if (!Number.isFinite(num)) return '—';
+            const name = opts.w?.globals?.seriesNames?.[opts.seriesIndex] ?? '';
+            if (name === 'Jumlah Invoice' || (name === '' && opts.seriesIndex === 1)) {
+              return num.toLocaleString('en-US');
+            }
+            return new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'IDR',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            }).format(num);
           },
-          {
-            formatter: (value: number) => value.toLocaleString('en-US'),
-          },
-        ],
+        },
       },
     }),
     [chartDataConfig.categories, theme.palette.mode, theme.palette.primary.main, theme.palette.secondary.main]

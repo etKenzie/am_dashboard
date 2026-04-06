@@ -3,6 +3,7 @@ import {
   IconBuilding,
   IconCashBanknote,
   IconDashboard,
+  IconFileInvoice,
   IconGraph,
   IconHome,
   IconMask,
@@ -158,7 +159,7 @@ const Menuitems: MenuitemsType[] = [
   {
     id: uniqueId(),
     title: "Invoice",
-    icon: IconBox,
+    icon: IconFileInvoice,
     href: "/invoice",
     chip: "New",
     children: [
