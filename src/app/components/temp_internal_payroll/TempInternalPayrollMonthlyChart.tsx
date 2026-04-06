@@ -1,17 +1,6 @@
 'use client';
 
-import {
-  Box,
-  Card,
-  CardContent,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Typography,
-} from '@mui/material';
+import { Box, Card, CardContent, CircularProgress, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import dynamic from 'next/dynamic';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -24,8 +13,8 @@ const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 
 interface TempInternalPayrollMonthlyChartProps {
   filters: {
-    month: string;
-    year: string;
+    start_month: string;
+    end_month: string;
     employer?: string;
     productType?: string;
     customerSegment?: string;
@@ -42,59 +31,15 @@ const MONTH_NAMES = [
 const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthlyChartProps) => {
   const [chartData, setChartData] = useState<TempInternalPayrollMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [startMonthYear, setStartMonthYear] = useState<string>('');
-  const [endMonthYear, setEndMonthYear] = useState<string>('');
   const theme = useTheme();
 
-  const generateMonthYearOptions = () => {
-    const currentYear = new Date().getFullYear();
-    const options: { value: string; label: string }[] = [];
-    for (let yearOffset = 0; yearOffset <= 1; yearOffset++) {
-      const year = currentYear - yearOffset;
-      for (let month = 1; month <= 12; month++) {
-        const monthName = new Date(year, month - 1).toLocaleString('en-US', { month: 'long' });
-        const monthNum = month.toString().padStart(2, '0');
-        options.push({ value: `${monthNum}-${year}`, label: `${monthName} ${year}` });
-      }
-    }
-    return options.reverse();
-  };
-
-  const monthYearOptions = generateMonthYearOptions();
-
-  useEffect(() => {
-    if (filters.month && filters.year) {
-      const selectedMonth = parseInt(filters.month);
-      const selectedYear = parseInt(filters.year);
-      let defaultStartMonth = selectedMonth - 3; // default 3 months range
-      let defaultStartYear = selectedYear;
-      if (defaultStartMonth <= 0) {
-        defaultStartMonth += 12;
-        defaultStartYear -= 1;
-      }
-      if (defaultStartMonth < 1) {
-        defaultStartMonth = 1;
-        defaultStartYear = selectedYear - 1;
-      }
-      const defaultStartValue = `${defaultStartMonth.toString().padStart(2, '0')}-${defaultStartYear}`;
-      const endValue = `${filters.month}-${filters.year}`;
-      if (!startMonthYear && !endMonthYear) {
-        setStartMonthYear(defaultStartValue);
-        setEndMonthYear(endValue);
-      } else if (endMonthYear !== endValue) {
-        setEndMonthYear(endValue);
-        setStartMonthYear(defaultStartValue);
-      }
-    }
-  }, [filters.month, filters.year]);
-
   const fetchChartData = useCallback(async () => {
-    if (!startMonthYear || !endMonthYear) return;
+    if (!filters.start_month || !filters.end_month) return;
     setLoading(true);
     try {
       const response = await fetchTempInternalPayrollMonthly({
-        start_month: startMonthYear,
-        end_month: endMonthYear,
+        start_month: filters.start_month,
+        end_month: filters.end_month,
         employer: filters.employer,
         product_type: filters.productType,
         customer_segment: filters.customerSegment,
@@ -107,14 +52,19 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
     } finally {
       setLoading(false);
     }
-  }, [startMonthYear, endMonthYear, filters.employer, filters.productType, filters.customerSegment, filters.sourcedTo, filters.project]);
+  }, [
+    filters.start_month,
+    filters.end_month,
+    filters.employer,
+    filters.productType,
+    filters.customerSegment,
+    filters.sourcedTo,
+    filters.project,
+  ]);
 
   useEffect(() => {
-    if (startMonthYear && endMonthYear) fetchChartData();
-  }, [startMonthYear, endMonthYear, fetchChartData]);
-
-  const handleStartMonthYearChange = (e: SelectChangeEvent<string>) => setStartMonthYear(e.target.value);
-  const handleEndMonthYearChange = (e: SelectChangeEvent<string>) => setEndMonthYear(e.target.value);
+    fetchChartData();
+  }, [fetchChartData]);
 
   const prepareChartData = () => {
     if (!chartData?.summaries) return { categories: [], series: [] };
@@ -221,28 +171,10 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
   return (
     <Card>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
+        <Box sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ margin: 0 }}>
             Nilai Invoice & Jumlah Invoice (Month to Month)
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>Start Month</InputLabel>
-              <Select value={startMonthYear} label="Start Month" onChange={handleStartMonthYearChange}>
-                {monthYearOptions.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel>End Month</InputLabel>
-              <Select value={endMonthYear} label="End Month" onChange={handleEndMonthYearChange}>
-                {monthYearOptions.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
         </Box>
         <Box sx={{ height: 400, position: 'relative', minHeight: 400, overflow: 'visible' }}>
           {loading ? (
@@ -258,7 +190,7 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
             />
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-              <Typography color="textSecondary">Select start and end month to view data</Typography>
+              <Typography color="textSecondary">No data for the selected period</Typography>
             </Box>
           )}
         </Box>

@@ -162,15 +162,6 @@ const Menuitems: MenuitemsType[] = [
     icon: IconFileInvoice,
     href: "/invoice",
     chip: "New",
-    children: [
-      {
-        id: uniqueId(),
-        title: "Overview",
-        icon: IconDashboard,
-        href: "/invoice",
-        chipColor: "secondary",
-      },
-    ],
   },
 
   // {

@@ -19,7 +19,15 @@ import {
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface TempInternalPayrollReceivableRiskChartProps {
-  filters: { employer?: string; productType?: string; customerSegment?: string; sourcedTo?: string; project?: string };
+  filters: {
+    month?: string;
+    year?: string;
+    employer?: string;
+    productType?: string;
+    customerSegment?: string;
+    sourcedTo?: string;
+    project?: string;
+  };
 }
 
 function currentPeriod(): { month: string; year: string } {
@@ -36,7 +44,9 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
   const theme = useTheme();
 
   const fetchData = useCallback(async () => {
-    const { month, year } = currentPeriod();
+    const fallback = currentPeriod();
+    const month = filters.month || fallback.month;
+    const year = filters.year || fallback.year;
     setLoading(true);
     try {
       const response = await fetchTempInternalPayrollReceivableRisk({
@@ -59,7 +69,15 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
     } finally {
       setLoading(false);
     }
-  }, [filters.employer, filters.productType, filters.customerSegment, filters.sourcedTo, filters.project]);
+  }, [
+    filters.month,
+    filters.year,
+    filters.employer,
+    filters.productType,
+    filters.customerSegment,
+    filters.sourcedTo,
+    filters.project,
+  ]);
 
   useEffect(() => {
     fetchData();
