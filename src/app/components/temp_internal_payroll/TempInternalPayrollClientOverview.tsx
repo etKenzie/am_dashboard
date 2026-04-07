@@ -17,6 +17,8 @@ import {
   fetchClientOverdueTable,
   fetchProjectFilterOptions,
   fetchSourcedToFilterOptions,
+  firstDayOfCalendarMonth,
+  lastDayOfCalendarMonth,
   TempInternalPayrollClientRankingRow,
 } from '../../api/temp_internal_payroll/TempInternalPayrollSlice';
 import PageContainer from '../container/PageContainer';
@@ -140,8 +142,8 @@ export default function TempInternalPayrollClientOverview() {
   }, []);
 
   const clientFilters = {
-    month,
-    year,
+    start_date: month && year ? firstDayOfCalendarMonth(month, year) : '',
+    end_date: month && year ? lastDayOfCalendarMonth(month, year) : '',
     employer,
     product_type: productType,
     customer_segment: customerSegment,

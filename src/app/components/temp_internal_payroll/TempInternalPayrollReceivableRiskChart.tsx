@@ -20,8 +20,8 @@ const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 
 interface TempInternalPayrollReceivableRiskChartProps {
   filters: {
-    month?: string;
-    year?: string;
+    start_date?: string;
+    end_date?: string;
     employer?: string;
     productType?: string;
     customerSegment?: string;
@@ -30,12 +30,9 @@ interface TempInternalPayrollReceivableRiskChartProps {
   };
 }
 
-function currentPeriod(): { month: string; year: string } {
+function todayYmd(): string {
   const d = new Date();
-  return {
-    month: String(d.getMonth() + 1).padStart(2, '0'),
-    year: String(d.getFullYear()),
-  };
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayrollReceivableRiskChartProps) => {
@@ -44,14 +41,14 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
   const theme = useTheme();
 
   const fetchData = useCallback(async () => {
-    const fallback = currentPeriod();
-    const month = filters.month || fallback.month;
-    const year = filters.year || fallback.year;
+    const t = todayYmd();
+    const start_date = (filters.start_date ?? '').trim() || t;
+    const end_date = (filters.end_date ?? '').trim() || t;
     setLoading(true);
     try {
       const response = await fetchTempInternalPayrollReceivableRisk({
-        month,
-        year,
+        start_date,
+        end_date,
         employer: filters.employer,
         product_type: filters.productType,
         customer_segment: filters.customerSegment,
@@ -62,16 +59,16 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
     } catch {
       setChartData({
         status: 'ok',
-        month,
-        year,
+        start_date,
+        end_date,
         buckets: Object.fromEntries(RECEIVABLE_RISK_BUCKETS.map((k) => [k, 0])),
       });
     } finally {
       setLoading(false);
     }
   }, [
-    filters.month,
-    filters.year,
+    filters.start_date,
+    filters.end_date,
     filters.employer,
     filters.productType,
     filters.customerSegment,

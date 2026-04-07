@@ -12,6 +12,47 @@ function authHeaders(): HeadersInit {
   return h;
 }
 
+function compareMmYyyyKeys(a: string, b: string): number {
+  const [ma, ya] = a.split('-').map(Number);
+  const [mb, yb] = b.split('-').map(Number);
+  return ya * 12 + ma - (yb * 12 + mb);
+}
+
+/** First day of calendar month (month 1–12). `YYYY-MM-DD` */
+export function firstDayOfCalendarMonth(month: string, year: string): string {
+  const m = String(month).padStart(2, '0');
+  const y = String(year).trim();
+  return `${y}-${m}-01`;
+}
+
+/** Last day of calendar month (month 1–12). `YYYY-MM-DD` */
+export function lastDayOfCalendarMonth(month: string, year: string): string {
+  const y = Number(year);
+  const mo = Number(month);
+  const last = new Date(y, mo, 0).getDate();
+  return `${year}-${String(month).padStart(2, '0')}-${String(last).padStart(2, '0')}`;
+}
+
+/** Chronological API range from two month/year pairs (handles swapped start/end). */
+export function orderedInvoiceApiDateRange(
+  startMonth: string,
+  startYear: string,
+  endMonth: string,
+  endYear: string
+): { start_date: string; end_date: string } {
+  const sKey = `${String(startMonth).padStart(2, '0')}-${startYear}`;
+  const eKey = `${String(endMonth).padStart(2, '0')}-${endYear}`;
+  const swap = compareMmYyyyKeys(sKey, eKey) > 0;
+  const firstM = swap ? endMonth : startMonth;
+  const firstY = swap ? endYear : startYear;
+  const lastM = swap ? startMonth : endMonth;
+  const lastY = swap ? startYear : endYear;
+  return {
+    start_date: firstDayOfCalendarMonth(firstM, firstY),
+    end_date: lastDayOfCalendarMonth(lastM, lastY),
+  };
+}
+
 /** Build FormData for dashboard endpoints (POST). */
 function dashboardForm(params: TempInternalPayrollSummaryParams): FormData {
   const form = new FormData();
@@ -21,8 +62,8 @@ function dashboardForm(params: TempInternalPayrollSummaryParams): FormData {
   form.append('customer_segment', params.customer_segment ?? '0');
   form.append('sourced_to', params.sourced_to ?? '0');
   form.append('project', params.project ?? '0');
-  form.append('month', params.month ?? '0');
-  form.append('year', params.year ?? new Date().getFullYear().toString());
+  form.append('start_date', params.start_date ?? '');
+  form.append('end_date', params.end_date ?? '');
   return form;
 }
 
@@ -36,10 +77,13 @@ function clientListForm(params: TempInternalPayrollSummaryParams, search?: strin
   return form;
 }
 
-/** Params for invoice_trend: requires start_period and end_period (MM-YYYY). */
+/**
+ * Params for invoice_trend: pass `start_date` / `end_date` as `YYYY-MM-DD`;
+ * they are sent to the API as `start_period` / `end_period` (`MM-YYYY`, e.g. `10-2025`).
+ */
 export interface InvoiceTrendParams {
-  start_period: string; // e.g. "10-2025"
-  end_period: string;   // e.g. "03-2026"
+  start_date: string;
+  end_date: string;
   employer?: string;
   product_type?: string;
   customer_segment?: string;
@@ -47,7 +91,15 @@ export interface InvoiceTrendParams {
   project?: string;
 }
 
-/** Build FormData for invoice_trend (uses start_period/end_period). */
+/** Calendar month of a `YYYY-MM-DD` date as `MM-YYYY` for invoice_trend. */
+export function yyyyMmDdToInvoicePeriod(isoDate: string): string {
+  const s = isoDate.trim();
+  const m = s.match(/^(\d{4})-(\d{2})-\d{2}/);
+  if (!m) throw new Error(`Invalid date for invoice period: ${isoDate}`);
+  return `${m[2]}-${m[1]}`;
+}
+
+/** Build FormData for invoice_trend. */
 function invoiceTrendForm(params: InvoiceTrendParams): FormData {
   const form = new FormData();
   form.append('token', COLLECTION_API_TOKEN);
@@ -56,14 +108,14 @@ function invoiceTrendForm(params: InvoiceTrendParams): FormData {
   form.append('customer_segment', params.customer_segment ?? '0');
   form.append('sourced_to', params.sourced_to ?? '0');
   form.append('project', params.project ?? '0');
-  form.append('start_period', params.start_period);
-  form.append('end_period', params.end_period);
+  form.append('start_period', yyyyMmDdToInvoicePeriod(params.start_date));
+  form.append('end_period', yyyyMmDdToInvoicePeriod(params.end_date));
   return form;
 }
 
 export interface TempInternalPayrollSummaryParams {
-  month?: string;
-  year?: string;
+  start_date?: string;
+  end_date?: string;
   employer?: string;       // 0 => All, 1 => PT Valdo International, 2 => PT Valdo Sumber Daya Mandiri, 94 => PT Toko Pandai
   product_type?: string;    // 0 => All, 1 => BPO Bundling, 2 => People, 3 => Infra & Technology, 4 => AkuMaju
   customer_segment?: string; // 0 => All, 1-9 => see Postman collection
@@ -215,7 +267,9 @@ async function fetchPaymentPerformance(params: TempInternalPayrollSummaryParams)
 export const fetchTempInternalPayrollSummary = async (
   params: TempInternalPayrollSummaryParams
 ): Promise<TempInternalPayrollSummaryResponse> => {
-  if (!params.month && !params.year) throw new Error('Month and year required');
+  if (!params.start_date?.trim() || !params.end_date?.trim()) {
+    throw new Error('start_date and end_date required (YYYY-MM-DD)');
+  }
   const [financial, payment] = await Promise.all([
     fetchFinancialSummary(params),
     fetchPaymentPerformance(params).catch(() => ({ average_days: 0, percentage_payment: 0 })),
@@ -240,8 +294,8 @@ export interface TempInternalPayrollMonthlyResponse {
 }
 
 export interface TempInternalPayrollMonthlyParams {
-  start_month: string; // "MM-YYYY"
-  end_month: string;   // "MM-YYYY"
+  start_date: string; // YYYY-MM-DD
+  end_date: string;
   employer?: string;
   product_type?: string;
   customer_segment?: string;
@@ -328,8 +382,8 @@ export const fetchTempInternalPayrollMonthly = async (
   if (!COLLECTION_API_URL) return { status: 'ok', summaries: {} };
   try {
     const trendParams: InvoiceTrendParams = {
-      start_period: params.start_month,
-      end_period: params.end_month,
+      start_date: params.start_date,
+      end_date: params.end_date,
       employer: params.employer ?? '0',
       product_type: params.product_type ?? '0',
       customer_segment: params.customer_segment ?? '0',
@@ -367,8 +421,8 @@ export interface TempInternalPayrollPaidUnpaidResponse {
 }
 
 export interface TempInternalPayrollPaidUnpaidParams {
-  start_month: string;
-  end_month: string;
+  start_date: string;
+  end_date: string;
   employer?: string;
   product_type?: string;
   customer_segment?: string;
@@ -386,8 +440,8 @@ export const fetchTempInternalPayrollPaidUnpaid = async (
   if (!COLLECTION_API_URL) return { status: 'ok', summaries: {} };
   try {
     const trendParams: InvoiceTrendParams = {
-      start_period: params.start_month,
-      end_period: params.end_month,
+      start_date: params.start_date,
+      end_date: params.end_date,
       employer: params.employer ?? '0',
       product_type: params.product_type ?? '0',
       customer_segment: params.customer_segment ?? '0',
@@ -425,16 +479,16 @@ export type ReceivableRiskBucketKey = (typeof RECEIVABLE_RISK_BUCKETS)[number];
 
 export interface TempInternalPayrollReceivableRiskResponse {
   status: string;
-  month: string;
-  year: string;
+  start_date: string;
+  end_date: string;
   /** Total invoice amount per bucket key (e.g. "0-30", "31-60", ...) */
   buckets: Record<string, number>;
   message?: string | null;
 }
 
 export interface TempInternalPayrollReceivableRiskParams {
-  month: string;
-  year: string;
+  start_date: string;
+  end_date: string;
   employer?: string;
   product_type?: string;
   customer_segment?: string;
@@ -442,12 +496,12 @@ export interface TempInternalPayrollReceivableRiskParams {
   project?: string;
 }
 
-function emptyReceivableRisk(month: string, year: string): TempInternalPayrollReceivableRiskResponse {
+function emptyReceivableRisk(start_date: string, end_date: string): TempInternalPayrollReceivableRiskResponse {
   const buckets: Record<string, number> = {};
   RECEIVABLE_RISK_BUCKETS.forEach((k) => {
     buckets[k] = 0;
   });
-  return { status: 'ok', month, year, buckets };
+  return { status: 'ok', start_date, end_date, buckets };
 }
 
 /** {{base_url}}/api/dashboard/ar_management — label + data arrays */
@@ -468,11 +522,11 @@ const AR_LABEL_TO_BUCKET: Record<string, string> = {
 export const fetchTempInternalPayrollReceivableRisk = async (
   params: TempInternalPayrollReceivableRiskParams
 ): Promise<TempInternalPayrollReceivableRiskResponse> => {
-  if (!COLLECTION_API_URL) return emptyReceivableRisk(params.month, params.year);
+  if (!COLLECTION_API_URL) return emptyReceivableRisk(params.start_date, params.end_date);
   try {
     const dashboardParams: TempInternalPayrollSummaryParams = {
-      month: params.month,
-      year: params.year,
+      start_date: params.start_date,
+      end_date: params.end_date,
       employer: params.employer ?? '0',
       product_type: params.product_type ?? '0',
       customer_segment: params.customer_segment ?? '0',
@@ -483,9 +537,9 @@ export const fetchTempInternalPayrollReceivableRisk = async (
       method: 'POST',
       body: dashboardForm(dashboardParams),
     });
-    if (!res.ok) return emptyReceivableRisk(params.month, params.year);
+    if (!res.ok) return emptyReceivableRisk(params.start_date, params.end_date);
     const json = await res.json();
-    if (json.error || !json.result) return emptyReceivableRisk(params.month, params.year);
+    if (json.error || !json.result) return emptyReceivableRisk(params.start_date, params.end_date);
     const labels: string[] = json.result.label ?? [];
     const data: number[] = json.result.data ?? [];
     const buckets: Record<string, number> = {};
@@ -500,9 +554,9 @@ export const fetchTempInternalPayrollReceivableRisk = async (
         buckets['181-365'] = (buckets['181-365'] ?? 0) + (data[i] ?? 0);
       }
     });
-    return { status: 'ok', month: params.month, year: params.year, buckets };
+    return { status: 'ok', start_date: params.start_date, end_date: params.end_date, buckets };
   } catch {
-    return emptyReceivableRisk(params.month, params.year);
+    return emptyReceivableRisk(params.start_date, params.end_date);
   }
 };
 
@@ -527,8 +581,8 @@ export interface TempInternalPayrollClientRankingResponse {
 }
 
 export interface TempInternalPayrollClientRankingParams {
-  month?: string;
-  year?: string;
+  start_date?: string;
+  end_date?: string;
   employer?: string;
   product_type?: string;
   customer_segment?: string;
@@ -571,8 +625,8 @@ async function fetchClientByListEndpoint(
 ): Promise<ClientByListApiRow[]> {
   if (!COLLECTION_API_URL) return [];
   const dashboardParams: TempInternalPayrollSummaryParams = {
-    month: params.month,
-    year: params.year,
+    start_date: params.start_date,
+    end_date: params.end_date,
     employer: params.employer ?? '0',
     product_type: params.product_type ?? '0',
     customer_segment: params.customer_segment ?? '0',
@@ -643,8 +697,8 @@ const CLIENT_BY_OVERDUE = 'client_by_overdue';
 
 function rankingParamsFromFilters(filters: TempInternalPayrollSummaryParams): TempInternalPayrollClientRankingParams {
   return {
-    month: filters.month,
-    year: filters.year,
+    start_date: filters.start_date,
+    end_date: filters.end_date,
     employer: filters.employer ?? '0',
     product_type: filters.product_type ?? '0',
     customer_segment: filters.customer_segment ?? '0',
@@ -736,11 +790,13 @@ export const fetchCustomerInsight = async (
     return { byInvoice: [], byOutstanding: [], byOverdue: [] };
   }
   const filters: TempInternalPayrollSummaryParams = {
-    month: params.month,
-    year: params.year,
+    start_date: params.start_date,
+    end_date: params.end_date,
     employer: params.employer,
     product_type: params.product_type,
     customer_segment: params.customer_segment,
+    sourced_to: params.sourced_to,
+    project: params.project,
   };
   const [byInvoice, byOutstanding, byOverdue] = await Promise.all([
     fetchClientInvoiceTable(filters, params.searchInvoice),

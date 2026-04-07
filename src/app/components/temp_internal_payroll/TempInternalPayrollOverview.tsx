@@ -19,6 +19,7 @@ import {
   fetchProjectFilterOptions,
   fetchSourcedToFilterOptions,
   fetchTempInternalPayrollSummary,
+  orderedInvoiceApiDateRange,
   TempInternalPayrollClientRankingRow,
   TempInternalPayrollSummaryResponse,
 } from '../../api/temp_internal_payroll/TempInternalPayrollSlice';
@@ -53,31 +54,6 @@ function formatCurrency(value: number): string {
 
 function formatNumber(value: number): string {
   return value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
-
-/** API period key `MM-YYYY` */
-function toMmYyyyKey(month: string, year: string): string {
-  return `${month.padStart(2, '0')}-${year}`;
-}
-
-function compareMmYyyy(a: string, b: string): number {
-  const [ma, ya] = a.split('-').map(Number);
-  const [mb, yb] = b.split('-').map(Number);
-  return ya * 12 + ma - (yb * 12 + mb);
-}
-
-/** Chart range: always chronological even if user picks end before start. */
-function orderedChartRange(
-  startMonth: string,
-  startYear: string,
-  endMonth: string,
-  endYear: string
-): { start_month: string; end_month: string } {
-  const s = toMmYyyyKey(startMonth, startYear);
-  const e = toMmYyyyKey(endMonth, endYear);
-  return compareMmYyyy(s, e) <= 0
-    ? { start_month: s, end_month: e }
-    : { start_month: e, end_month: s };
 }
 
 const EMPLOYER_OPTIONS = [
@@ -197,12 +173,46 @@ export default function TempInternalPayrollOverview() {
     };
   }, [employer, sourcedTo]);
 
+  const apiDateRange = useMemo(
+    () =>
+      startMonth && startYear && endMonth && endYear
+        ? orderedInvoiceApiDateRange(startMonth, startYear, endMonth, endYear)
+        : { start_date: '', end_date: '' },
+    [startMonth, startYear, endMonth, endYear]
+  );
+
+  const clientFilters = useMemo(
+    () => ({
+      start_date: apiDateRange.start_date,
+      end_date: apiDateRange.end_date,
+      employer,
+      product_type: productType,
+      customer_segment: customerSegment,
+      sourced_to: sourcedTo || '0',
+      project: project || '0',
+    }),
+    [
+      apiDateRange.start_date,
+      apiDateRange.end_date,
+      employer,
+      productType,
+      customerSegment,
+      sourcedTo,
+      project,
+    ]
+  );
+
   const loadSummary = useCallback(async () => {
+    if (!apiDateRange.start_date || !apiDateRange.end_date) {
+      setSummary(PLACEHOLDER_SUMMARY);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const params = {
-        month: endMonth || undefined,
-        year: endYear || undefined,
+        start_date: apiDateRange.start_date,
+        end_date: apiDateRange.end_date,
         employer,
         product_type: productType,
         customer_segment: customerSegment,
@@ -216,24 +226,22 @@ export default function TempInternalPayrollOverview() {
     } finally {
       setLoading(false);
     }
-  }, [endMonth, endYear, employer, productType, customerSegment, sourcedTo, project]);
+  }, [
+    apiDateRange.start_date,
+    apiDateRange.end_date,
+    employer,
+    productType,
+    customerSegment,
+    sourcedTo,
+    project,
+  ]);
 
   useEffect(() => {
     loadSummary();
   }, [loadSummary]);
 
-  const clientFilters = {
-    month: endMonth,
-    year: endYear,
-    employer,
-    product_type: productType,
-    customer_segment: customerSegment,
-    sourced_to: sourcedTo || '0',
-    project: project || '0',
-  };
-
   useEffect(() => {
-    if (!endMonth || !endYear) return;
+    if (!clientFilters.start_date || !clientFilters.end_date) return;
     let cancelled = false;
     setInvoiceLoading(true);
     fetchClientInvoiceTable(clientFilters, debouncedSearchInvoice)
@@ -249,10 +257,10 @@ export default function TempInternalPayrollOverview() {
     return () => {
       cancelled = true;
     };
-  }, [endMonth, endYear, employer, productType, customerSegment, sourcedTo, project, debouncedSearchInvoice]);
+  }, [clientFilters, debouncedSearchInvoice]);
 
   useEffect(() => {
-    if (!endMonth || !endYear) return;
+    if (!clientFilters.start_date || !clientFilters.end_date) return;
     let cancelled = false;
     setOutstandingLoading(true);
     fetchClientOutstandingTable(clientFilters, debouncedSearchOutstanding)
@@ -268,10 +276,10 @@ export default function TempInternalPayrollOverview() {
     return () => {
       cancelled = true;
     };
-  }, [endMonth, endYear, employer, productType, customerSegment, sourcedTo, project, debouncedSearchOutstanding]);
+  }, [clientFilters, debouncedSearchOutstanding]);
 
   useEffect(() => {
-    if (!endMonth || !endYear) return;
+    if (!clientFilters.start_date || !clientFilters.end_date) return;
     let cancelled = false;
     setOverdueLoading(true);
     fetchClientOverdueTable(clientFilters, debouncedSearchOverdue)
@@ -287,7 +295,7 @@ export default function TempInternalPayrollOverview() {
     return () => {
       cancelled = true;
     };
-  }, [endMonth, endYear, employer, productType, customerSegment, sourcedTo, project, debouncedSearchOverdue]);
+  }, [clientFilters, debouncedSearchOverdue]);
 
   // Defaults: Jan → current month (same year), on client only (hydration-safe)
   useEffect(() => {
@@ -317,14 +325,6 @@ export default function TempInternalPayrollOverview() {
   const handleEmployerChange = (e: SelectChangeEvent<string>) => setEmployer(e.target.value);
   const handleProductTypeChange = (e: SelectChangeEvent<string>) => setProductType(e.target.value);
   const handleCustomerSegmentChange = (e: SelectChangeEvent<string>) => setCustomerSegment(e.target.value);
-
-  const chartPeriod = useMemo(
-    () =>
-      startMonth && startYear && endMonth && endYear
-        ? orderedChartRange(startMonth, startYear, endMonth, endYear)
-        : { start_month: '', end_month: '' },
-    [startMonth, startYear, endMonth, endYear]
-  );
 
   const summaryCards = [
     { title: 'Jumlah Invoice', value: data.jumlah_invoice, isCurrency: false },
@@ -499,8 +499,8 @@ export default function TempInternalPayrollOverview() {
         <Box mt={3}>
           <TempInternalPayrollMonthlyChart
             filters={{
-              start_month: chartPeriod.start_month,
-              end_month: chartPeriod.end_month,
+              start_date: apiDateRange.start_date,
+              end_date: apiDateRange.end_date,
               employer,
               productType,
               customerSegment,
@@ -548,8 +548,8 @@ export default function TempInternalPayrollOverview() {
         <Box mt={3}>
           <TempInternalPayrollPaidUnpaidChart
             filters={{
-              start_month: chartPeriod.start_month,
-              end_month: chartPeriod.end_month,
+              start_date: apiDateRange.start_date,
+              end_date: apiDateRange.end_date,
               employer,
               productType,
               customerSegment,
@@ -604,8 +604,8 @@ export default function TempInternalPayrollOverview() {
         <Box mt={4}>
           <TempInternalPayrollReceivableRiskChart
             filters={{
-              month: endMonth,
-              year: endYear,
+              start_date: apiDateRange.start_date,
+              end_date: apiDateRange.end_date,
               employer,
               productType,
               customerSegment,

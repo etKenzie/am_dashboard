@@ -13,8 +13,8 @@ const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 
 interface TempInternalPayrollPaidUnpaidChartProps {
   filters: {
-    start_month: string;
-    end_month: string;
+    start_date: string;
+    end_date: string;
     employer?: string;
     productType?: string;
     customerSegment?: string;
@@ -34,12 +34,12 @@ const TempInternalPayrollPaidUnpaidChart = ({ filters }: TempInternalPayrollPaid
   const theme = useTheme();
 
   const fetchChartData = useCallback(async () => {
-    if (!filters.start_month || !filters.end_month) return;
+    if (!filters.start_date || !filters.end_date) return;
     setLoading(true);
     try {
       const response = await fetchTempInternalPayrollPaidUnpaid({
-        start_month: filters.start_month,
-        end_month: filters.end_month,
+        start_date: filters.start_date,
+        end_date: filters.end_date,
         employer: filters.employer,
         product_type: filters.productType,
         customer_segment: filters.customerSegment,
@@ -53,8 +53,8 @@ const TempInternalPayrollPaidUnpaidChart = ({ filters }: TempInternalPayrollPaid
       setLoading(false);
     }
   }, [
-    filters.start_month,
-    filters.end_month,
+    filters.start_date,
+    filters.end_date,
     filters.employer,
     filters.productType,
     filters.customerSegment,

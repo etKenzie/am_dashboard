@@ -1,4 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { yyyyMmDdToInvoicePeriod } from '@/app/api/temp_internal_payroll/TempInternalPayrollSlice';
+
+/** `M-YYYY` or `MM-YYYY` → `MM-YYYY` for Collection invoice_trend. */
+function normalizeMmYyyyPeriod(v: string): string {
+  const m = v.trim().match(/^(\d{1,2})-(\d{4})$/);
+  if (!m) return v.trim();
+  return `${m[1].padStart(2, '0')}-${m[2]}`;
+}
 
 const BASE = process.env.COLLECTION_API_URL ?? process.env.NEXT_PUBLIC_COLLECTION_API_URL ?? '';
 const TOKEN = process.env.COLLECTION_API_TOKEN ?? process.env.NEXT_PUBLIC_COLLECTION_API_TOKEN ?? '';
@@ -6,11 +14,11 @@ const baseUrl = BASE.replace(/\/$/, '');
 
 /**
  * Single proxy for all Collection API requests (avoids CORS).
- * - GET  /api/collection/temp_internal_payroll/monthly?start_month=...&end_month=...
+ * - GET  /api/collection/... (various; invoice_trend POST: JSON start_date/end_date YYYY-MM-DD → FormData start_period/end_period MM-YYYY)
  * - GET  /api/collection/temp_internal_payroll/paid_unpaid?...
  * - GET  /api/collection/temp_internal_payroll/receivable_risk?month=...&year=...
  * - GET  /api/collection/temp_internal_payroll/client_ranking?...
- * - POST /api/collection/api/dashboard/invoice_trend  (body: employer, product_type, customer_segment, month, year)
+ * - POST /api/collection/api/dashboard/invoice_trend  (body: …, start_date/end_date YYYY-MM-DD or start_period/end_period MM-YYYY)
  */
 export async function GET(
   request: NextRequest,
@@ -67,8 +75,16 @@ export async function POST(
       form.append('employer', body.employer ?? '0');
       form.append('product_type', body.product_type ?? '0');
       form.append('customer_segment', body.customer_segment ?? '0');
-      form.append('month', body.month ?? '0');
-      form.append('year', body.year ?? new Date().getFullYear().toString());
+      form.append('sourced_to', body.sourced_to ?? '0');
+      form.append('project', body.project ?? '0');
+      const rawStart =
+        (body.start_period as string | undefined)?.trim() ||
+        (body.start_date ? yyyyMmDdToInvoicePeriod(String(body.start_date)) : '');
+      const rawEnd =
+        (body.end_period as string | undefined)?.trim() ||
+        (body.end_date ? yyyyMmDdToInvoicePeriod(String(body.end_date)) : '');
+      form.append('start_period', normalizeMmYyyyPeriod(rawStart));
+      form.append('end_period', normalizeMmYyyyPeriod(rawEnd));
       const res = await fetch(url, { method: 'POST', body: form });
       const data = await res.json();
       return NextResponse.json(data, { status: res.status });
