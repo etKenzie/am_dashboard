@@ -146,6 +146,8 @@ export interface TempInternalPayrollSummaryResponse {
   total_headcount?: number;
   /** When API adds payroll total (e.g. `total_payroll_disbursed`). */
   total_payroll_disbursed?: number;
+  /** From `on_time_rate` in financial_summary, e.g. `"85.96%"`. */
+  on_time_rate_text?: string;
 }
 
 export interface SourcedToFilterOption {
@@ -261,6 +263,10 @@ async function fetchFinancialSummary(
     total_management_fee_amount: parseNum(mgmt.total_management_fee ?? 0),
     total_headcount: parseNum(r.total_headcount ?? 0),
     total_payroll_disbursed: payrollRaw != null ? parseNum(payrollRaw) : undefined,
+    on_time_rate_text: (() => {
+      const s = String(r.on_time_rate ?? '').trim();
+      return s || undefined;
+    })(),
   };
 }
 

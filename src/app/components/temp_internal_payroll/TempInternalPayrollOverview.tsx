@@ -616,10 +616,10 @@ export default function TempInternalPayrollOverview() {
                   </Typography>
                   {!loading && (
                     <Typography variant="caption" color="text.secondary" display="block">
-                      Management Rate{' '}
                       <Box component="span" sx={{ fontWeight: 700 }}>
                         {data.management_rate_text?.trim() || '—'}
                       </Box>
+                      {' '}Management Rate
                     </Typography>
                   )}
                 </Box>
@@ -666,9 +666,19 @@ export default function TempInternalPayrollOverview() {
                 <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
                   {loading ? <CircularProgress size={24} /> : formatCurrency(data.total_invoice_paid)}
                 </Box>
-                <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
-                  Total invoice paid
-                </Typography>
+                <Box sx={statCardTitleBlockSx}>
+                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                    Total invoice paid
+                  </Typography>
+                  {!loading && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {data.on_time_rate_text?.trim() || '—'}
+                      </Box>
+                      {' '}On time payment rate
+                    </Typography>
+                  )}
+                </Box>
               </Box>
             </DashboardCard>
           </Box>
