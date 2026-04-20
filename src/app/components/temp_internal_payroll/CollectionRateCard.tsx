@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, CircularProgress, LinearProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, LinearProgress, Typography, SxProps, Theme } from '@mui/material';
 import React from 'react';
 import DashboardCard from '../shared/DashboardCard';
 
@@ -15,40 +15,35 @@ interface CollectionRateCardProps {
   /** Percentage 0-100 */
   value: number;
   isLoading?: boolean;
+  cardSx?: SxProps<Theme>;
+  contentSx?: SxProps<Theme>;
 }
 
 const CollectionRateCard: React.FC<CollectionRateCardProps> = ({
   title = 'Collection Rate',
   value,
   isLoading = false,
+  cardSx,
+  contentSx,
 }) => {
   const clampedValue = Math.min(100, Math.max(0, value));
   const displayValue = typeof value === 'number' ? value.toFixed(1) : '0.0';
   const rateColor = getCollectionRateColor(clampedValue);
 
   return (
-    <DashboardCard>
+    <DashboardCard cardSx={cardSx} contentSx={contentSx}>
       <Box
         sx={{
           p: 2,
-          height: '100%',
           minHeight: '96px',
+          flex: 1,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-start',
+          gap: 0.75,
         }}
       >
-        <Typography
-          sx={{
-            fontSize: '0.875rem',
-            color: 'text.secondary',
-            fontWeight: 500,
-            mb: 1,
-          }}
-        >
-          {title}
-        </Typography>
-        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
           {isLoading ? (
             <CircularProgress size={24} />
           ) : (
@@ -60,10 +55,20 @@ const CollectionRateCard: React.FC<CollectionRateCardProps> = ({
             </Typography>
           )}
         </Box>
+        <Typography
+          sx={{
+            fontSize: '0.875rem',
+            color: 'text.secondary',
+            fontWeight: 500,
+          }}
+        >
+          {title}
+        </Typography>
         {/* Full-bleed at bottom: no horizontal or bottom margins */}
         <Box
           sx={{
-            mt: 1,
+            mt: 'auto',
+            pt: 1,
             mx: 'calc(-30px - 16px)', // cancel CardContent (30px) + this Box padding (p: 2 = 16px)
             mb: '-30px', // sit flush with card bottom
           }}

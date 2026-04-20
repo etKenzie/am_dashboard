@@ -148,7 +148,7 @@ const TempInternalPayrollReceivableRiskChart = ({ filters }: TempInternalPayroll
     <Card>
       <CardContent>
         <Typography variant="h6" sx={{ mb: 3 }}>
-          Accounts Receiveable
+          Accounts receivable
         </Typography>
         <Box sx={{ height: 380, position: 'relative', minHeight: 380 }}>
           {loading ? (

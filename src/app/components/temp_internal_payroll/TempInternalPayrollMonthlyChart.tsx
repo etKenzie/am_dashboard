@@ -173,7 +173,7 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
       <CardContent>
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ margin: 0 }}>
-            Nilai Invoice & Jumlah Invoice (Month to Month)
+            Revenue trend
           </Typography>
         </Box>
         <Box sx={{ height: 400, position: 'relative', minHeight: 400, overflow: 'visible' }}>

@@ -134,6 +134,18 @@ export interface TempInternalPayrollSummaryResponse {
   average_days_to_payment: number;
   on_time_payment_rate: number; // 0-100
   message?: string | null;
+  /** From `total_outstanding.total_invoices` (financial_summary). */
+  outstanding_invoice_count?: number;
+  /** From `total_overdue.total_invoices` (financial_summary). */
+  overdue_invoice_count?: number;
+  /** From `total_management_fee.management_rate`, e.g. `"3.84%"`. */
+  management_rate_text?: string;
+  /** From `total_management_fee.total_management_fee` (financial_summary). */
+  total_management_fee_amount?: number;
+  /** From `total_headcount` (financial_summary). */
+  total_headcount?: number;
+  /** When API adds payroll total (e.g. `total_payroll_disbursed`). */
+  total_payroll_disbursed?: number;
 }
 
 export interface SourcedToFilterOption {
@@ -227,16 +239,28 @@ async function fetchFinancialSummary(
   const json = await res.json();
   if (json.error || !json.result) throw new Error(json.msg || 'financial_summary error');
   const r = json.result;
+  const mgmt = r.total_management_fee ?? {};
+  const payrollRaw =
+    r.total_payroll_disbursed ?? r.total_payroll ?? r.payroll_disbursed ?? r.jumlah_payroll;
   return {
     status: 'ok',
-    total_nilai_invoice_released: parseNum(r.invoice_released.jumlah),
-    total_invoice_paid: parseNum(r.invoice_paid.jumlah),
-    total_outstanding_invoice: parseNum(r.total_outstanding.jumlah),
-    total_overview_invoice: parseNum(r.total_overdue.jumlah),
-    jumlah_invoice: r.invoice_released?.total_invoices ?? 0,
+    total_nilai_invoice_released: parseNum(r.invoice_released?.jumlah),
+    total_invoice_paid: parseNum(r.invoice_paid?.jumlah),
+    total_outstanding_invoice: parseNum(r.total_outstanding?.jumlah),
+    total_overview_invoice: parseNum(r.total_overdue?.jumlah),
+    jumlah_invoice: Number(r.invoice_released?.total_invoices) || 0,
     collection_rate: parseCollectionRate(r.collection_rate),
     average_days_to_payment: 0,
     on_time_payment_rate: 0,
+    outstanding_invoice_count: Number(r.total_outstanding?.total_invoices) || 0,
+    overdue_invoice_count: Number(r.total_overdue?.total_invoices) || 0,
+    management_rate_text: (() => {
+      const s = String(mgmt.management_rate ?? '').trim();
+      return s || undefined;
+    })(),
+    total_management_fee_amount: parseNum(mgmt.total_management_fee ?? 0),
+    total_headcount: parseNum(r.total_headcount ?? 0),
+    total_payroll_disbursed: payrollRaw != null ? parseNum(payrollRaw) : undefined,
   };
 }
 
@@ -280,6 +304,37 @@ export const fetchTempInternalPayrollSummary = async (
     on_time_payment_rate: payment.percentage_payment,
   };
 };
+
+/** {{base_url}}/api/dashboard/bpjs_company_cost */
+export interface BpjsCompanyCostResult {
+  total_bpjs_tk: number;
+  total_bpjs_kesehatan: number;
+  total_bpjs_pensiun: number;
+}
+
+export async function fetchBpjsCompanyCost(
+  params: TempInternalPayrollSummaryParams
+): Promise<BpjsCompanyCostResult> {
+  if (!COLLECTION_API_URL) {
+    return { total_bpjs_tk: 0, total_bpjs_kesehatan: 0, total_bpjs_pensiun: 0 };
+  }
+  if (!params.start_date?.trim() || !params.end_date?.trim()) {
+    return { total_bpjs_tk: 0, total_bpjs_kesehatan: 0, total_bpjs_pensiun: 0 };
+  }
+  const res = await fetch(`${COLLECTION_API_URL}/api/dashboard/bpjs_company_cost`, {
+    method: 'POST',
+    body: dashboardForm(params),
+  });
+  if (!res.ok) throw new Error(`bpjs_company_cost: ${res.status}`);
+  const json = await res.json();
+  if (json.error || !json.result) throw new Error(json.msg || 'bpjs_company_cost error');
+  const r = json.result;
+  return {
+    total_bpjs_tk: parseNum(r.total_bpjs_tk),
+    total_bpjs_kesehatan: parseNum(r.total_bpjs_kesehatan),
+    total_bpjs_pensiun: parseNum(r.total_bpjs_pensiun),
+  };
+}
 
 /** Monthly data point for chart (key = "Month YYYY" e.g. "March 2025") */
 export interface TempInternalPayrollMonthlySummary {

@@ -13,7 +13,8 @@ import {
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  fetchClientInvoiceTable,
+  BpjsCompanyCostResult,
+  fetchBpjsCompanyCost,
   fetchClientOutstandingTable,
   fetchClientOverdueTable,
   fetchProjectFilterOptions,
@@ -31,6 +32,12 @@ import TempInternalPayrollMonthlyChart from './TempInternalPayrollMonthlyChart';
 import TempInternalPayrollPaidUnpaidChart from './TempInternalPayrollPaidUnpaidChart';
 import TempInternalPayrollReceivableRiskChart from './TempInternalPayrollReceivableRiskChart';
 
+const BPJS_EMPTY: BpjsCompanyCostResult = {
+  total_bpjs_tk: 0,
+  total_bpjs_kesehatan: 0,
+  total_bpjs_pensiun: 0,
+};
+
 const PLACEHOLDER_SUMMARY: TempInternalPayrollSummaryResponse = {
   status: 'ok',
   total_nilai_invoice_released: 0,
@@ -41,6 +48,10 @@ const PLACEHOLDER_SUMMARY: TempInternalPayrollSummaryResponse = {
   collection_rate: 0,
   average_days_to_payment: 0,
   on_time_payment_rate: 0,
+  outstanding_invoice_count: 0,
+  overdue_invoice_count: 0,
+  total_management_fee_amount: 0,
+  total_headcount: 0,
 };
 
 function formatCurrency(value: number): string {
@@ -52,8 +63,28 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+/** IDR with up to 2 decimals (BPJS amounts from API may include cents). */
+function formatCurrencyBpjs(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 function formatNumber(value: number): string {
   return value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function payrollAvgPerEmployee(
+  payroll: number | undefined,
+  headcount: number | undefined
+): string | null {
+  const p = payroll ?? 0;
+  const h = headcount ?? 0;
+  if (h <= 0 || p <= 0) return null;
+  return formatCurrency(p / h);
 }
 
 const EMPLOYER_OPTIONS = [
@@ -98,18 +129,16 @@ const periodYearFormSx = { flex: '1 1 0%', minWidth: 0 } as const;
 export default function TempInternalPayrollOverview() {
   const [summary, setSummary] = useState<TempInternalPayrollSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [byInvoice, setByInvoice] = useState<TempInternalPayrollClientRankingRow[]>([]);
   const [byOutstanding, setByOutstanding] = useState<TempInternalPayrollClientRankingRow[]>([]);
   const [byOverdue, setByOverdue] = useState<TempInternalPayrollClientRankingRow[]>([]);
-  const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [outstandingLoading, setOutstandingLoading] = useState(false);
   const [overdueLoading, setOverdueLoading] = useState(false);
-  const [searchInvoice, setSearchInvoice] = useState('');
   const [searchOutstanding, setSearchOutstanding] = useState('');
   const [searchOverdue, setSearchOverdue] = useState('');
-  const [debouncedSearchInvoice, setDebouncedSearchInvoice] = useState('');
   const [debouncedSearchOutstanding, setDebouncedSearchOutstanding] = useState('');
   const [debouncedSearchOverdue, setDebouncedSearchOverdue] = useState('');
+  const [bpjsCost, setBpjsCost] = useState<BpjsCompanyCostResult>(BPJS_EMPTY);
+  const [bpjsLoading, setBpjsLoading] = useState(false);
   const [startMonth, setStartMonth] = useState('');
   const [startYear, setStartYear] = useState('');
   const [endMonth, setEndMonth] = useState('');
@@ -125,11 +154,6 @@ export default function TempInternalPayrollOverview() {
   const [projectOptions, setProjectOptions] = useState<Array<{ value: string; label: string }>>([
     { value: '0', label: 'All' },
   ]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearchInvoice(searchInvoice.trim()), 350);
-    return () => clearTimeout(t);
-  }, [searchInvoice]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearchOutstanding(searchOutstanding.trim()), 350);
@@ -241,23 +265,27 @@ export default function TempInternalPayrollOverview() {
   }, [loadSummary]);
 
   useEffect(() => {
-    if (!clientFilters.start_date || !clientFilters.end_date) return;
+    if (!clientFilters.start_date || !clientFilters.end_date) {
+      setBpjsCost(BPJS_EMPTY);
+      setBpjsLoading(false);
+      return;
+    }
     let cancelled = false;
-    setInvoiceLoading(true);
-    fetchClientInvoiceTable(clientFilters, debouncedSearchInvoice)
-      .then((rows) => {
-        if (!cancelled) setByInvoice(rows);
+    setBpjsLoading(true);
+    fetchBpjsCompanyCost(clientFilters)
+      .then((r) => {
+        if (!cancelled) setBpjsCost(r);
       })
       .catch(() => {
-        if (!cancelled) setByInvoice([]);
+        if (!cancelled) setBpjsCost(BPJS_EMPTY);
       })
       .finally(() => {
-        if (!cancelled) setInvoiceLoading(false);
+        if (!cancelled) setBpjsLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [clientFilters, debouncedSearchInvoice]);
+  }, [clientFilters]);
 
   useEffect(() => {
     if (!clientFilters.start_date || !clientFilters.end_date) return;
@@ -326,13 +354,61 @@ export default function TempInternalPayrollOverview() {
   const handleProductTypeChange = (e: SelectChangeEvent<string>) => setProductType(e.target.value);
   const handleCustomerSegmentChange = (e: SelectChangeEvent<string>) => setCustomerSegment(e.target.value);
 
-  const summaryCards = [
-    { title: 'Jumlah Invoice', value: data.jumlah_invoice, isCurrency: false },
-    { title: 'Total Nilai Invoice Released', value: data.total_nilai_invoice_released, isCurrency: true },
-    { title: 'Total Outstanding Invoice', value: data.total_outstanding_invoice, isCurrency: true },
-    { title: 'Total Invoice Paid', value: data.total_invoice_paid, isCurrency: true },
-    { title: 'Total Overdue Invoice', value: data.total_overview_invoice, isCurrency: true },
-  ];
+  const chartFilters = {
+    start_date: apiDateRange.start_date,
+    end_date: apiDateRange.end_date,
+    employer,
+    productType,
+    customerSegment,
+    sourcedTo,
+    project,
+  };
+
+  const sectionTitleSx = { mb: 2, mt: 0, fontWeight: 600 } as const;
+  const statGrid8 = {
+    display: 'grid',
+    gap: 2,
+    gridTemplateColumns: { xs: '1fr', md: 'repeat(8, minmax(0, 1fr))' },
+    alignItems: 'stretch',
+  } as const;
+
+  /** Grid cell: stretch cards to the row’s tallest item. */
+  const statGridCellSx = {
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+  } as const;
+
+  const statCardStretchCardSx = {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+  } as const;
+
+  const statCardStretchContentSx = {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+  } as const;
+
+  const statCardInnerSx = {
+    p: 2,
+    minHeight: '96px',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    gap: 0.75,
+  } as const;
+
+  const statCardTitleBlockSx = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 0.25,
+  } as const;
 
   return (
     <PageContainer title="Invoice" description="Invoice summary and collection insights">
@@ -457,121 +533,197 @@ export default function TempInternalPayrollOverview() {
           </Grid>
         </Grid>
 
-        <Grid container spacing={3} alignItems="stretch">
-          {summaryCards.map((card) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={card.title}>
-              <DashboardCard>
-                <Box
-                  p={2}
-                  sx={{
-                    height: '96px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    minHeight: '96px',
-                  }}
-                >
-                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
-                    {card.title}
-                  </Typography>
-                  <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {loading ? (
-                      <CircularProgress size={24} />
-                    ) : card.isCurrency ? (
-                      formatCurrency(card.value)
-                    ) : (
-                      formatNumber(card.value)
-                    )}
-                  </Box>
+        <Typography variant="h5" sx={{ ...sectionTitleSx, mt: 1 }}>
+          Revenue &amp; Billing
+        </Typography>
+
+        <Box sx={statGrid8}>
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' }, ...statGridCellSx }}>
+            <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+              <Box sx={statCardInnerSx}>
+                <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                  {loading ? <CircularProgress size={24} /> : formatNumber(data.jumlah_invoice)}
                 </Box>
-              </DashboardCard>
-            </Grid>
-          ))}
-          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-            <CollectionRateCard
-              title="Collection Rate"
-              value={data.collection_rate}
-              isLoading={loading}
-            />
-          </Grid>
-        </Grid>
-
-        <Box mt={3}>
-          <TempInternalPayrollMonthlyChart
-            filters={{
-              start_date: apiDateRange.start_date,
-              end_date: apiDateRange.end_date,
-              employer,
-              productType,
-              customerSegment,
-              sourcedTo,
-              project,
-            }}
-          />
-        </Box>
-
-        <Grid container spacing={3} alignItems="stretch" sx={{ mt: 3 }}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <DashboardCard>
-              <Box
-                p={2}
-                sx={{
-                  height: '96px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  minHeight: '96px',
-                }}
-              >
                 <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
-                  Average Days to Payment
+                  Invoices released
                 </Typography>
-                <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+              </Box>
+            </DashboardCard>
+          </Box>
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, ...statGridCellSx }}>
+            <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+              <Box sx={statCardInnerSx}>
+                <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                  {loading ? <CircularProgress size={24} /> : formatCurrency(data.total_nilai_invoice_released)}
+                </Box>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                  Total invoice amount
+                </Typography>
+              </Box>
+            </DashboardCard>
+          </Box>
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' }, ...statGridCellSx }}>
+            <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+              <Box sx={statCardInnerSx}>
+                <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                  {loading ? <CircularProgress size={24} /> : formatNumber(data.total_headcount ?? 0)}
+                </Box>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                  Total headcount
+                </Typography>
+              </Box>
+            </DashboardCard>
+          </Box>
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, ...statGridCellSx }}>
+            <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+              <Box sx={statCardInnerSx}>
+                <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
                   {loading ? (
                     <CircularProgress size={24} />
                   ) : (
-                    formatNumber(data.average_days_to_payment)
+                    formatCurrency(data.total_payroll_disbursed ?? 0)
+                  )}
+                </Box>
+                <Box sx={statCardTitleBlockSx}>
+                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                    Total payroll disbursed
+                  </Typography>
+                  {!loading && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Avg. per employee:{' '}
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {payrollAvgPerEmployee(data.total_payroll_disbursed, data.total_headcount) ?? '—'}
+                      </Box>
+                    </Typography>
                   )}
                 </Box>
               </Box>
             </DashboardCard>
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <CollectionRateCard
-              title="On Time Payment Rate"
-              value={data.on_time_payment_rate}
-              isLoading={loading}
-            />
-          </Grid>
-        </Grid>
-
-        <Box mt={3}>
-          <TempInternalPayrollPaidUnpaidChart
-            filters={{
-              start_date: apiDateRange.start_date,
-              end_date: apiDateRange.end_date,
-              employer,
-              productType,
-              customerSegment,
-              sourcedTo,
-              project,
-            }}
-          />
+          </Box>
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, ...statGridCellSx }}>
+            <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+              <Box sx={statCardInnerSx}>
+                <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                  {loading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    formatCurrency(data.total_management_fee_amount ?? 0)
+                  )}
+                </Box>
+                <Box sx={statCardTitleBlockSx}>
+                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                    Total management fee
+                  </Typography>
+                  {!loading && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Management Rate{' '}
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {data.management_rate_text?.trim() || '—'}
+                      </Box>
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </DashboardCard>
+          </Box>
         </Box>
 
         <Box mt={3}>
-          <ClientRankingTable
-            data={byInvoice}
-            loading={invoiceLoading}
-            error={null}
-            title="Invoice"
-            sortBy="total_invoice"
-            displayFieldLabel="Total Invoice"
-            formatValue={formatCurrency}
-            searchValue={searchInvoice}
-            onSearchChange={setSearchInvoice}
-            showDetailColumns
-          />
+          <TempInternalPayrollMonthlyChart filters={chartFilters} />
+        </Box>
+
+        <Typography variant="h5" sx={{ ...sectionTitleSx, mt: 4 }}>
+          Collection
+        </Typography>
+
+        <Box sx={statGrid8}>
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, ...statGridCellSx }}>
+            <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+              <Box sx={statCardInnerSx}>
+                <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                  {loading ? <CircularProgress size={24} /> : formatCurrency(data.total_outstanding_invoice)}
+                </Box>
+                <Box sx={statCardTitleBlockSx}>
+                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                    Total outstanding invoice
+                  </Typography>
+                  {!loading && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      From{' '}
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {formatNumber(data.outstanding_invoice_count ?? 0)}
+                      </Box>
+                      {' '}invoices
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </DashboardCard>
+          </Box>
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, ...statGridCellSx }}>
+            <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+              <Box sx={statCardInnerSx}>
+                <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                  {loading ? <CircularProgress size={24} /> : formatCurrency(data.total_invoice_paid)}
+                </Box>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                  Total invoice paid
+                </Typography>
+              </Box>
+            </DashboardCard>
+          </Box>
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, ...statGridCellSx }}>
+            <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+              <Box sx={statCardInnerSx}>
+                <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                  {loading ? <CircularProgress size={24} /> : formatCurrency(data.total_overview_invoice)}
+                </Box>
+                <Box sx={statCardTitleBlockSx}>
+                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                    Total invoice overdue
+                  </Typography>
+                  {!loading && (
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      From{' '}
+                      <Box component="span" sx={{ fontWeight: 700 }}>
+                        {formatNumber(data.overdue_invoice_count ?? 0)}
+                      </Box>
+                      {' '}invoices
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </DashboardCard>
+          </Box>
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' }, ...statGridCellSx }}>
+            <CollectionRateCard
+              title="Collection rate"
+              value={data.collection_rate}
+              isLoading={loading}
+              cardSx={statCardStretchCardSx}
+              contentSx={statCardStretchContentSx}
+            />
+          </Box>
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' }, ...statGridCellSx }}>
+            <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+              <Box sx={statCardInnerSx}>
+                <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                  {loading ? <CircularProgress size={24} /> : formatNumber(data.average_days_to_payment)}
+                </Box>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                  Avg. days to pay
+                </Typography>
+              </Box>
+            </DashboardCard>
+          </Box>
+        </Box>
+
+        <Box mt={3}>
+          <TempInternalPayrollPaidUnpaidChart filters={chartFilters} />
+        </Box>
+
+        <Box mt={3}>
+          <TempInternalPayrollReceivableRiskChart filters={chartFilters} />
         </Box>
 
         <Box mt={4} sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -601,19 +753,65 @@ export default function TempInternalPayrollOverview() {
           />
         </Box>
 
-        <Box mt={4}>
-          <TempInternalPayrollReceivableRiskChart
-            filters={{
-              start_date: apiDateRange.start_date,
-              end_date: apiDateRange.end_date,
-              employer,
-              productType,
-              customerSegment,
-              sourcedTo,
-              project,
-            }}
-          />
-        </Box>
+        <Typography variant="h5" sx={{ ...sectionTitleSx, mt: 4 }}>
+          BPJS Company Cost
+        </Typography>
+        <Grid container spacing={2} alignItems="stretch">
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Box sx={statGridCellSx}>
+              <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+                <Box sx={statCardInnerSx}>
+                  <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                    {bpjsLoading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      formatCurrencyBpjs(bpjsCost.total_bpjs_tk)
+                    )}
+                  </Box>
+                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                    Total BPJS TK
+                  </Typography>
+                </Box>
+              </DashboardCard>
+            </Box>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Box sx={statGridCellSx}>
+              <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+                <Box sx={statCardInnerSx}>
+                  <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                    {bpjsLoading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      formatCurrencyBpjs(bpjsCost.total_bpjs_kesehatan)
+                    )}
+                  </Box>
+                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                    Total BPJS Kesehatan
+                  </Typography>
+                </Box>
+              </DashboardCard>
+            </Box>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Box sx={statGridCellSx}>
+              <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+                <Box sx={statCardInnerSx}>
+                  <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                    {bpjsLoading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      formatCurrencyBpjs(bpjsCost.total_bpjs_pensiun)
+                    )}
+                  </Box>
+                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                    Total BPJS Pensiun
+                  </Typography>
+                </Box>
+              </DashboardCard>
+            </Box>
+          </Grid>
+        </Grid>
       </Box>
     </PageContainer>
   );
