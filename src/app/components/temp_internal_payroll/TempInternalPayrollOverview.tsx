@@ -721,7 +721,7 @@ export default function TempInternalPayrollOverview() {
                   {loading ? <CircularProgress size={24} /> : formatNumber(data.average_days_to_payment)}
                 </Box>
                 <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
-                  Avg. days to pay
+                  Avg Days Pay
                 </Typography>
               </Box>
             </DashboardCard>

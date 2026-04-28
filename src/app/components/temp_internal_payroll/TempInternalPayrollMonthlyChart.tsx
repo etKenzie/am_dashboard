@@ -1,6 +1,17 @@
 'use client';
 
-import { Box, Card, CardContent, CircularProgress, Typography } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Typography,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import dynamic from 'next/dynamic';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -28,9 +39,42 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+type RevenueTrendMetric =
+  | 'total_invoice_amount'
+  | 'total_management_fee'
+  | 'total_headcount'
+  | 'total_invoice_released';
+
+const METRIC_CONFIG: Record<
+  RevenueTrendMetric,
+  { label: string; isCurrency: boolean; valueKey: keyof TempInternalPayrollMonthlyResponse['summaries'][string] }
+> = {
+  total_invoice_amount: {
+    label: 'Total Invoice Amount',
+    isCurrency: true,
+    valueKey: 'total_invoice_amount',
+  },
+  total_management_fee: {
+    label: 'Total Management Fee',
+    isCurrency: true,
+    valueKey: 'total_management_fee',
+  },
+  total_headcount: {
+    label: 'Total Headcount',
+    isCurrency: false,
+    valueKey: 'total_headcount',
+  },
+  total_invoice_released: {
+    label: 'Total Invoice Released',
+    isCurrency: false,
+    valueKey: 'total_invoice_released',
+  },
+};
+
 const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthlyChartProps) => {
   const [chartData, setChartData] = useState<TempInternalPayrollMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState<RevenueTrendMetric>('total_invoice_amount');
   const theme = useTheme();
 
   const fetchChartData = useCallback(async () => {
@@ -66,6 +110,10 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
     fetchChartData();
   }, [fetchChartData]);
 
+  const handleMetricChange = (event: SelectChangeEvent<RevenueTrendMetric>) => {
+    setSelectedMetric(event.target.value as RevenueTrendMetric);
+  };
+
   const prepareChartData = () => {
     if (!chartData?.summaries) return { categories: [], series: [] };
     const months = Object.keys(chartData.summaries).sort((a, b) => {
@@ -76,9 +124,12 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
       return MONTH_NAMES.indexOf(monthA) - MONTH_NAMES.indexOf(monthB);
     });
     const categories = months;
+    const metricConfig = METRIC_CONFIG[selectedMetric];
     const series = [
-      { name: 'Nilai Invoice', data: months.map((m) => chartData.summaries[m].nilai_invoice) },
-      { name: 'Jumlah Invoice', data: months.map((m) => chartData.summaries[m].jumlah_invoice) },
+      {
+        name: metricConfig.label,
+        data: months.map((m) => chartData.summaries[m][metricConfig.valueKey] ?? 0),
+      },
     ];
     return { categories, series };
   };
@@ -94,13 +145,13 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
         toolbar: { show: true },
         zoom: { enabled: false },
       },
-      colors: [theme.palette.primary.main, theme.palette.secondary.main],
+      colors: [theme.palette.primary.main],
       stroke: { curve: 'smooth', width: 3 },
       dataLabels: { enabled: false },
       legend: {
         show: true,
-        position: 'bottom',
-        horizontalAlign: 'center',
+        position: 'top',
+        horizontalAlign: 'right',
         labels: { colors: theme.palette.mode === 'dark' ? '#adb0bb' : '#5e5873' },
       },
       grid: {
@@ -113,68 +164,69 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
         labels: { style: { colors: theme.palette.mode === 'dark' ? '#adb0bb' : '#5e5873' } },
         axisBorder: { show: false },
       },
-      yaxis: [
-        {
-          title: { text: 'Nilai Invoice', style: { color: theme.palette.primary.main } },
-          labels: {
-            style: { colors: theme.palette.mode === 'dark' ? '#adb0bb' : '#5e5873' },
-            formatter: (value: number) =>
-              new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'IDR',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              }).format(value),
-          },
-          axisTicks: { show: true },
-          axisBorder: { show: true },
+      yaxis: {
+        title: { text: METRIC_CONFIG[selectedMetric].label, style: { color: theme.palette.primary.main } },
+        labels: {
+          style: { colors: theme.palette.mode === 'dark' ? '#adb0bb' : '#5e5873' },
+          formatter: (value: number) =>
+            METRIC_CONFIG[selectedMetric].isCurrency
+              ? new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'IDR',
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                }).format(value)
+              : value.toLocaleString('en-US'),
         },
-        {
-          opposite: true,
-          title: { text: 'Jumlah Invoice', style: { color: theme.palette.secondary.main } },
-          labels: {
-            style: { colors: theme.palette.mode === 'dark' ? '#adb0bb' : '#5e5873' },
-            formatter: (value: number) => value.toLocaleString('en-US'),
-          },
-          axisTicks: { show: true },
-          axisBorder: { show: true },
-        },
-      ],
+        axisTicks: { show: true },
+        axisBorder: { show: true },
+      },
       tooltip: {
         theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
-        // Single formatter: array form maps by *visible* row order after legend toggles, so the
-        // remaining line can get the wrong formatter (currency vs count) or undefined values.
         y: {
-          formatter: (
-            value: number | null | undefined,
-            opts: { seriesIndex: number; w?: { globals?: { seriesNames?: string[] } } }
-          ) => {
+          formatter: (value: number | null | undefined) => {
             const num = Number(value);
             if (!Number.isFinite(num)) return '—';
-            const name = opts.w?.globals?.seriesNames?.[opts.seriesIndex] ?? '';
-            if (name === 'Jumlah Invoice' || (name === '' && opts.seriesIndex === 1)) {
-              return num.toLocaleString('en-US');
-            }
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'IDR',
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            }).format(num);
+            return METRIC_CONFIG[selectedMetric].isCurrency
+              ? new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'IDR',
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                }).format(num)
+              : num.toLocaleString('en-US');
           },
         },
       },
     }),
-    [chartDataConfig.categories, theme.palette.mode, theme.palette.primary.main, theme.palette.secondary.main]
+    [chartDataConfig.categories, selectedMetric, theme.palette.mode, theme.palette.primary.main]
   );
 
   return (
     <Card>
       <CardContent>
-        <Box sx={{ mb: 3 }}>
+        <Box
+          sx={{
+            mb: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            flexWrap: 'wrap',
+          }}
+        >
           <Typography variant="h6" sx={{ margin: 0 }}>
             Revenue trend
           </Typography>
+          <FormControl size="small" sx={{ minWidth: 220 }}>
+            <InputLabel>Metric</InputLabel>
+            <Select value={selectedMetric} label="Metric" onChange={handleMetricChange}>
+              <MenuItem value="total_invoice_amount">Total Invoice Amount</MenuItem>
+              <MenuItem value="total_management_fee">Total Management Fee</MenuItem>
+              <MenuItem value="total_headcount">Total Headcount</MenuItem>
+              <MenuItem value="total_invoice_released">Total Invoice Released</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
         <Box sx={{ height: 400, position: 'relative', minHeight: 400, overflow: 'visible' }}>
           {loading ? (

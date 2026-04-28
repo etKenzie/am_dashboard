@@ -62,7 +62,7 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
               }}>
                 <Box
                   sx={{
-                    fontSize: '0.875rem',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     color: 'text.secondary',
                     mb: 1,
                     fontWeight: 500,
@@ -80,7 +80,7 @@ const SummaryTiles: React.FC<SummaryTilesProps> = ({ tiles, md = 4 }) => {
                 </Box>
                 <Box
                   sx={{
-                    fontSize: '1.5rem',
+                    fontSize: { xs: '1.1rem', sm: '1.5rem' },
                     fontWeight: 'bold',
                     color: tile.color || 'text.primary',
                     minHeight: '2.5rem',

@@ -103,13 +103,27 @@ export function yyyyMmDdToInvoicePeriod(isoDate: string): string {
 function invoiceTrendForm(params: InvoiceTrendParams): FormData {
   const form = new FormData();
   form.append('token', COLLECTION_API_TOKEN);
+  form.append('start_period', yyyyMmDdToInvoicePeriod(params.start_date));
+  form.append('end_period', yyyyMmDdToInvoicePeriod(params.end_date));
   form.append('employer', params.employer ?? '0');
   form.append('product_type', params.product_type ?? '0');
   form.append('customer_segment', params.customer_segment ?? '0');
   form.append('sourced_to', params.sourced_to ?? '0');
   form.append('project', params.project ?? '0');
+  return form;
+}
+
+/** Build FormData for revenue_trend with all filters. */
+function revenueTrendForm(params: InvoiceTrendParams): FormData {
+  const form = new FormData();
+  form.append('token', COLLECTION_API_TOKEN);
   form.append('start_period', yyyyMmDdToInvoicePeriod(params.start_date));
   form.append('end_period', yyyyMmDdToInvoicePeriod(params.end_date));
+  form.append('employer', params.employer ?? '0');
+  form.append('product_type', params.product_type ?? '0');
+  form.append('customer_segment', params.customer_segment ?? '0');
+  form.append('sourced_to', params.sourced_to ?? '0');
+  form.append('project', params.project ?? '0');
   return form;
 }
 
@@ -346,6 +360,10 @@ export async function fetchBpjsCompanyCost(
 export interface TempInternalPayrollMonthlySummary {
   nilai_invoice: number;
   jumlah_invoice: number;
+  total_headcount: number;
+  total_management_fee: number;
+  total_invoice_amount: number;
+  total_invoice_released: number;
 }
 
 export interface TempInternalPayrollMonthlyResponse {
@@ -370,13 +388,18 @@ export interface TempInternalPayrollMonthlyParams {
  * - get_tren_performa_pembayaran (data_paid, data_unpaid) → Paid vs Unpaid stacked column chart
  */
 export interface InvoiceTrendResult {
-  get_tren_nilai: { label: string[]; data: number[] };
-  get_tren_jumlah_invoice: { label: string[]; data: number[] };
-  get_tren_performa_pembayaran: {
+  get_tren_nilai?: { label: string[]; data: number[] };
+  get_tren_jumlah_invoice?: { label: string[]; data: number[] };
+  get_tren_performa_pembayaran?: {
     label: string[];
     data_paid: number[];
     data_unpaid: number[];
   };
+  // revenue_trend variants
+  get_total_headcount?: { label: string[]; data: number[] };
+  get_total_management_fee?: { label: string[]; data: number[] };
+  get_total_invoice_amount?: { label: string[]; data: number[] };
+  get_total_invoice_released?: { label: string[]; data: number[] };
 }
 
 export async function fetchInvoiceTrendRaw(
@@ -433,8 +456,26 @@ export async function fetchInvoiceTrendRaw(
   return json.result;
 }
 
+export async function fetchRevenueTrendRaw(
+  params: InvoiceTrendParams
+): Promise<InvoiceTrendResult> {
+  const url = `${COLLECTION_API_URL}/api/dashboard/revenue_trend`;
+  const body = revenueTrendForm(params);
+  const res = await fetch(url, { method: 'POST', body });
+  const rawText = await res.text();
+  let json: any = null;
+  try {
+    json = rawText ? JSON.parse(rawText) : null;
+  } catch {
+    throw new Error(`revenue_trend non-JSON response (status ${res.status})`);
+  }
+  if (!res.ok) throw new Error(`revenue_trend: ${res.status}`);
+  if (json.error || !json.result) throw new Error(json.msg || 'revenue_trend error');
+  return json.result;
+}
+
 /**
- * Fetch temp internal payroll monthly from invoice_trend (get_tren_nilai + get_tren_jumlah_invoice).
+ * Fetch temp internal payroll monthly from revenue_trend.
  * Returns empty summaries when API is unavailable.
  */
 export const fetchTempInternalPayrollMonthly = async (
@@ -451,15 +492,30 @@ export const fetchTempInternalPayrollMonthly = async (
       sourced_to: params.sourced_to ?? '0',
       project: params.project ?? '0',
     };
-    const result = await fetchInvoiceTrendRaw(trendParams);
-    const labels = result.get_tren_nilai?.label ?? [];
+    const result = await fetchRevenueTrendRaw(trendParams);
+    const labels =
+      result.get_total_invoice_amount?.label ??
+      result.get_total_management_fee?.label ??
+      result.get_total_headcount?.label ??
+      result.get_total_invoice_released?.label ??
+      result.get_tren_nilai?.label ??
+      result.get_tren_jumlah_invoice?.label ??
+      [];
     const nilai = result.get_tren_nilai?.data ?? [];
     const jumlah = result.get_tren_jumlah_invoice?.data ?? [];
+    const totalHeadcount = result.get_total_headcount?.data ?? [];
+    const totalManagementFee = result.get_total_management_fee?.data ?? [];
+    const totalInvoiceAmount = result.get_total_invoice_amount?.data ?? [];
+    const totalInvoiceReleased = result.get_total_invoice_released?.data ?? [];
     const summaries: Record<string, TempInternalPayrollMonthlySummary> = {};
     labels.forEach((label, i) => {
       summaries[label] = {
         nilai_invoice: nilai[i] ?? 0,
         jumlah_invoice: jumlah[i] ?? 0,
+        total_headcount: totalHeadcount[i] ?? 0,
+        total_management_fee: totalManagementFee[i] ?? 0,
+        total_invoice_amount: totalInvoiceAmount[i] ?? 0,
+        total_invoice_released: totalInvoiceReleased[i] ?? 0,
       };
     });
     return { status: 'ok', summaries };
