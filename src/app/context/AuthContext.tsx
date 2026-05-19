@@ -21,6 +21,27 @@ interface AuthContextType {
   refreshRoles: () => Promise<string[]>;
 }
 
+const AUTH_STORAGE_KEY = 'am-dashboard-auth';
+const SESSION_FETCH_TIMEOUT_MS = 10_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(message)), ms);
+    }),
+  ]);
+}
+
+function clearPersistedAuthSession() {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
@@ -78,46 +99,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Get initial session
     const getInitialSession = async () => {
       try {
-        console.log('Getting initial session...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
+        const { data: { session }, error } = await withTimeout(
+          supabase.auth.getSession(),
+          SESSION_FETCH_TIMEOUT_MS,
+          'Session fetch timed out'
+        );
+
         if (error) {
           console.error('Error getting session:', error);
+          clearPersistedAuthSession();
+          updateAuth(null, null);
+          setRoles([]);
           setAuthLoading(false);
           setRolesLoading(false);
+          isInitialized.current = true;
           return;
         }
-        
-        console.log('Session found:', !!session, 'User:', session?.user?.email);
-        
-        // Set initial state
+
         updateAuth(session, session?.user ?? null);
-        
-        // Always end auth loading after session fetch - don't wait for roles
         setAuthLoading(false);
-        
+
         if (session?.user) {
-          console.log('User found, fetching roles in background...');
-          // Fetch roles in background - don't block auth loading
           setRolesLoading(true);
-          getUserRoles(session.user.id).catch(error => {
-            console.error('Error fetching roles in background:', error);
-            setRoles(['user']); // Safe default
+          getUserRoles(session.user.id).catch(() => {
+            setRoles(['user']);
             setRolesLoading(false);
           });
         } else {
-          console.log('No user found, setting empty roles');
           setRoles([]);
           setRolesLoading(false);
         }
-        
+
         isInitialized.current = true;
       } catch (error) {
         console.error('Error in getInitialSession:', error);
+        clearPersistedAuthSession();
+        updateAuth(null, null);
         setAuthLoading(false);
         setRolesLoading(false);
-        setUser(null);
-        setSession(null);
         setRoles([]);
         isInitialized.current = true;
       }
@@ -133,35 +152,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         // Skip if this is a tab switch and we have valid sticky state
         if (isTabSwitch.current && stickyUser.current && stickyRoles.current.length > 0) {
-          console.log('Tab switch detected - skipping auth state change processing');
           return;
         }
-        
 
-        
-        console.log('Auth state change:', event, 'User:', session?.user?.email);
-        
-        // Update auth state
         updateAuth(session, session?.user ?? null);
-        
+
         if (session?.user) {
-          // Check if this is a tab switch and we have sticky roles
           if (isTabSwitch.current && stickyRoles.current.length > 0) {
-            console.log('Tab switch detected - using sticky roles, skipping fetch');
             setRoles(stickyRoles.current);
             setRolesLoading(false);
           } else {
-            console.log('User in auth change, fetching roles in background...');
-            // Fetch roles in background - don't block auth state
             setRolesLoading(true);
-            getUserRoles(session.user.id).catch(error => {
-              console.error('Error fetching roles in auth change:', error);
-              setRoles(['user']); // Safe default
+            getUserRoles(session.user.id).catch(() => {
+              setRoles(['user']);
               setRolesLoading(false);
             });
           }
         } else {
-          console.log('No user in auth change, clearing roles');
           setRoles([]);
           setRolesLoading(false);
         }
@@ -171,20 +178,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Handle browser visibility changes to prevent unnecessary auth reloads
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('Tab became visible - setting tab switch flag');
         isTabSwitch.current = true;
-        // Reset the flag after a delay to prevent rapid auth changes
         setTimeout(() => {
           isTabSwitch.current = false;
-          console.log('Tab switch quiet period ended');
-        }, 2000); // 2 second quiet period
+        }, 2000);
       }
     };
 
-    // Handle window focus events
     const handleFocus = () => {
-      console.log('Window focused - maintaining sticky auth state');
-      // Don't trigger any auth checks, just maintain current state
+      // Maintain current auth state; no extra refresh on focus
     };
 
     if (typeof document !== 'undefined') {
@@ -203,56 +205,41 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const getUserRoles = async (userId: string): Promise<string[]> => {
     try {
-      console.log(`Fetching roles for user: ${userId}`);
-      
       const { data: profile, error } = await supabase
-        .from("profiles")
-        .select("roles")
-        .eq("id", userId)
+        .from('profiles')
+        .select('roles')
+        .eq('id', userId)
         .single();
 
       if (error) {
-        console.error('Error fetching user roles:', error);
-        
-        // If profile doesn't exist, return default role without creating profile
         if (error.code === 'PGRST116') {
-          console.log('Profile not found, using default role');
           setRoles(['user']);
           setRolesLoading(false);
+          stickyRoles.current = ['user'];
           return ['user'];
         }
-        
-        // For other errors, use default role
-        console.error('Using fallback role due to error');
         setRoles(['user']);
         setRolesLoading(false);
+        stickyRoles.current = ['user'];
         return ['user'];
       }
-      
-      console.log('Profile data received:', profile);
+
       const userRoles = profile?.roles || [];
-      console.log('User roles:', userRoles);
-      
-      // If roles array is empty, use default role
       if (userRoles.length === 0) {
-        console.log('Profile exists but has no roles, using default role');
         setRoles(['user']);
         setRolesLoading(false);
+        stickyRoles.current = ['user'];
         return ['user'];
       }
-      
+
       setRoles(userRoles);
       setRolesLoading(false);
-      // Update sticky roles
       stickyRoles.current = userRoles;
       return userRoles;
-    } catch (error) {
-      console.error('Error fetching user roles:', error);
-      
-      // Use default role on any error
-      console.error('Using fallback role due to unexpected error');
+    } catch {
       setRoles(['user']);
       setRolesLoading(false);
+      stickyRoles.current = ['user'];
       return ['user'];
     }
   };

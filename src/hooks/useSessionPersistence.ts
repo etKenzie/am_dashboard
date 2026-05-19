@@ -19,9 +19,7 @@ export const useSessionPersistence = () => {
         // Tab became hidden - store last activity time
         lastActivity.current = Date.now();
              } else if (!wasVisible && isTabVisible.current) {
-         // Tab became visible - just log, don't refresh session
-         const timeSinceLastActivity = Date.now() - lastActivity.current;
-         console.log(`Tab became visible after ${Math.round(timeSinceLastActivity / 1000)}s - no session refresh needed`);
+         lastActivity.current = Date.now();
        }
     };
 

@@ -46,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const { activeLayout, isLayout, activeMode, isCollapse } = useContext(CustomizerContext);
-  const { user, loading, roles } = useAuth();
+  const { user, loading, roles, rolesLoading } = useAuth();
   const router = useRouter();
   const MiniSidebarWidth = config.miniSidebarWidth;
 
@@ -192,8 +192,8 @@ export default function RootLayout({
     return null;
   }
 
-  // If user is authenticated but roles are still loading, show a minimal loading state
-  if (user && (!roles || roles.length === 0)) {
+  // Only block on roles while they are actively loading
+  if (user && rolesLoading) {
     return (
       <PageContainer title="Loading" description="Loading user roles">
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>

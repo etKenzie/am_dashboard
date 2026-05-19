@@ -34,22 +34,21 @@ const EMPLOYER_OPTIONS = [
 const PRODUCT_TYPE_OPTIONS = [
   { value: '0', label: 'All' },
   { value: '1', label: 'BPO Bundling' },
-  { value: '2', label: 'People' },
+  { value: '2', label: 'Staffing' },
   { value: '3', label: 'Infra & Technology' },
-  { value: '4', label: 'AkuMaju' },
 ];
 
 const CUSTOMER_SEGMENT_OPTIONS = [
   { value: '0', label: 'All' },
-  { value: '1', label: 'Non BFSI Logistic' },
-  { value: '2', label: 'Non BFSI F&B' },
   { value: '3', label: 'BFSI Bank' },
-  { value: '4', label: 'Non BFSI Others' },
-  { value: '5', label: 'Non BFSI Distribution' },
-  { value: '6', label: 'Non BFSI E-commerce' },
   { value: '7', label: 'BFSI Insurance' },
   { value: '8', label: 'BFSI Multi Finance' },
   { value: '9', label: 'BFSI Others' },
+  { value: '1', label: 'Non BFSI Logistic' },
+  { value: '2', label: 'Non BFSI F&B' },
+  { value: '4', label: 'Non BFSI Others' },
+  { value: '5', label: 'Non BFSI Distribution' },
+  { value: '6', label: 'Non BFSI E-commerce' },
 ];
 
 

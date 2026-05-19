@@ -216,7 +216,7 @@ const TempInternalPayrollMonthlyChart = ({ filters }: TempInternalPayrollMonthly
           }}
         >
           <Typography variant="h6" sx={{ margin: 0 }}>
-            Revenue trend
+            Data Trend
           </Typography>
           <FormControl size="small" sx={{ minWidth: 220 }}>
             <InputLabel>Metric</InputLabel>
