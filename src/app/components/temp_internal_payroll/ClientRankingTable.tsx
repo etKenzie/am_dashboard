@@ -39,6 +39,8 @@ interface ClientRankingTableProps {
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   showDetailColumns?: boolean;
+  /** Outstanding / overdue tables: show Client Risk from API */
+  showClientRisk?: boolean;
 }
 
 const ClientRankingTable = ({
@@ -52,6 +54,7 @@ const ClientRankingTable = ({
   searchValue = '',
   onSearchChange,
   showDetailColumns = false,
+  showClientRisk = false,
 }: ClientRankingTableProps) => {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const sortedData = [...data].sort((a, b) => (b[sortBy] as number) - (a[sortBy] as number));
@@ -78,13 +81,15 @@ const ClientRankingTable = ({
             'Jumlah Invoice': item.jumlah_invoices ?? 0,
             'Product Type': item.product_type ?? '-',
             Segment: item.segment ?? '-',
+            ...(showClientRisk ? { 'Client Risk': item.client_risk ?? '-' } : {}),
           }
         : {}),
       [displayFieldLabel]: formatValue(item[sortBy] as number),
     }));
   };
 
-  const totalColumns = showDetailColumns ? 6 : 3;
+  const totalColumns =
+    (showDetailColumns ? 5 : 2) + (showClientRisk ? 1 : 0) + 1;
 
   const handleExcelExport = () => {
     if (!sortedData.length) return;
@@ -221,6 +226,9 @@ const ClientRankingTable = ({
                   <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }} align="right">Jumlah Invoice</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }}>Product Type</TableCell>
                   <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }}>Segment</TableCell>
+                  {showClientRisk ? (
+                    <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }}>Client Risk</TableCell>
+                  ) : null}
                 </>
               ) : null}
               <TableCell sx={{ fontWeight: 'bold', backgroundColor: (theme) => (theme.palette.mode === 'dark' ? 'grey.900' : 'grey.100') }} align="right">{displayFieldLabel}</TableCell>
@@ -255,6 +263,9 @@ const ClientRankingTable = ({
                       <TableCell align="right">{(row.jumlah_invoices ?? 0).toLocaleString('en-US')}</TableCell>
                       <TableCell>{row.product_type ?? '-'}</TableCell>
                       <TableCell>{row.segment ?? '-'}</TableCell>
+                      {showClientRisk ? (
+                        <TableCell>{row.client_risk ?? '-'}</TableCell>
+                      ) : null}
                     </>
                   ) : null}
                   <TableCell align="right" sx={{ fontWeight: 'bold' }}>

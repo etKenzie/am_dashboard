@@ -40,10 +40,12 @@ const PRODUCT_TYPE_OPTIONS = [
 
 const CUSTOMER_SEGMENT_OPTIONS = [
   { value: '0', label: 'All' },
+  { value: '98', label: 'All BFSI' },
   { value: '3', label: 'BFSI Bank' },
   { value: '7', label: 'BFSI Insurance' },
   { value: '8', label: 'BFSI Multi Finance' },
   { value: '9', label: 'BFSI Others' },
+  { value: '99', label: 'All non BFSI' },
   { value: '1', label: 'Non BFSI Logistic' },
   { value: '2', label: 'Non BFSI F&B' },
   { value: '4', label: 'Non BFSI Others' },
@@ -325,6 +327,7 @@ export default function TempInternalPayrollClientOverview() {
               searchValue={searchOutstanding}
               onSearchChange={setSearchOutstanding}
               showDetailColumns
+              showClientRisk
             />
             <ClientRankingTable
               data={byOverdue}
@@ -337,6 +340,7 @@ export default function TempInternalPayrollClientOverview() {
               searchValue={searchOverdue}
               onSearchChange={setSearchOverdue}
               showDetailColumns
+              showClientRisk
             />
           </Box>
         ) : (

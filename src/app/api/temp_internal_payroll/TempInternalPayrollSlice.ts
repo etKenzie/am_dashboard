@@ -132,7 +132,7 @@ export interface TempInternalPayrollSummaryParams {
   end_date?: string;
   employer?: string;       // 0 => All, 1 => PT Valdo International, 2 => PT Valdo Sumber Daya Mandiri, 94 => PT Toko Pandai
   product_type?: string;    // 0 => All, 1 => BPO Bundling, 2 => People, 3 => Infra & Technology, 4 => AkuMaju
-  customer_segment?: string; // 0 => All, 1-9 => see Postman collection
+  customer_segment?: string; // 0 => All, 1-9 segments, 98 => All BFSI, 99 => All non BFSI
   sourced_to?: string;      // 0 => All
   project?: string;         // 0 => All
 }
@@ -683,6 +683,7 @@ export interface TempInternalPayrollClientRankingRow {
   project?: string;
   product_type?: string;
   segment?: string;
+  client_risk?: string;
   jumlah_invoices?: number;
   ranking?: number;
   total_invoice: number;
@@ -720,6 +721,7 @@ interface ClientByListApiRow {
   project?: string | null;
   product_type?: string | null;
   segment?: string | null;
+  client_risk?: string | null;
   jumlah_invoices?: string | number;
   ranking?: string;
   total_invoices?: string;
@@ -785,6 +787,7 @@ function mapClientByOutstandingRows(rows: ClientByListApiRow[]): TempInternalPay
     project: x.project ?? undefined,
     product_type: x.product_type ?? undefined,
     segment: x.segment ?? undefined,
+    client_risk: x.client_risk?.trim() || undefined,
     jumlah_invoices: parseNum(x.jumlah_invoices ?? 0),
     ranking: parseNum(x.ranking ?? 0),
     total_invoice: 0,
@@ -799,6 +802,7 @@ function mapClientByOverdueRows(rows: ClientByListApiRow[]): TempInternalPayroll
     project: x.project ?? undefined,
     product_type: x.product_type ?? undefined,
     segment: x.segment ?? undefined,
+    client_risk: x.client_risk?.trim() || undefined,
     jumlah_invoices: parseNum(x.jumlah_invoices ?? 0),
     ranking: parseNum(x.ranking ?? 0),
     total_invoice: 0,
