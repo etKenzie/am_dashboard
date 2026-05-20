@@ -5,6 +5,7 @@ import {
   IconDashboard,
   IconFileInvoice,
   IconGraph,
+  IconUsers,
   IconHome,
   IconMask,
   // IconPaywall,
@@ -161,6 +162,14 @@ const Menuitems: MenuitemsType[] = [
     title: "Invoice",
     icon: IconFileInvoice,
     href: "/invoice",
+    chip: "New",
+  },
+
+  {
+    id: uniqueId(),
+    title: "Recruitment",
+    icon: IconUsers,
+    href: "/recruitment",
     chip: "New",
   },
 
