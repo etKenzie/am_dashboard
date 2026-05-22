@@ -1,6 +1,7 @@
 'use client';
 
 import { Box, Typography } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import { CandidateQualityInsights } from '../../api/recruitment/RecruitmentSlice';
 import AiRecommendationVsHiringSuccessChart from './AiRecommendationVsHiringSuccessChart';
 import AiRecommendedCandidateCard from './AiRecommendedCandidateCard';
@@ -12,7 +13,7 @@ interface CandidateQualityInsightsSectionProps {
   loading?: boolean;
 }
 
-const panelSx = (theme: { palette: { mode: 'light' | 'dark' } }) => ({
+const panelSx = (theme: Theme) => ({
   flex: { xs: '1 1 auto', lg: '1 1 0' },
   minWidth: 0,
   minHeight: { xs: 220, lg: 280 },
