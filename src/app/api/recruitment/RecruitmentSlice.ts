@@ -41,7 +41,10 @@ export interface RecruitmentSummary {
 }
 
 export interface CandidateGrowthChartData {
+  /** Display labels, e.g. "Apr 2022" */
   categories: string[];
+  /** Raw month keys from API, e.g. "2022-04" */
+  categoryKeys: string[];
   series: Array<{ name: string; data: number[] }>;
 }
 
@@ -246,7 +249,8 @@ function mapFilterOptions(raw?: ApiRecruitmentDashboardResponse['filter_options'
 function mapRecruitmentApiToDashboard(json: ApiRecruitmentDashboardResponse): RecruitmentDashboardData {
   const summary = json.summary ?? {};
   const growthRaw = json.candidate_growth;
-  const categories = (growthRaw?.categories ?? []).map(formatMonthCategory);
+  const categoryKeys = growthRaw?.categories ?? [];
+  const categories = categoryKeys.map(formatMonthCategory);
   const growthSeries = (growthRaw?.series ?? []).map((s) => ({
     name: s.name,
     data: (s.data ?? []).map((v) => num(v)),
@@ -304,6 +308,7 @@ function mapRecruitmentApiToDashboard(json: ApiRecruitmentDashboardResponse): Re
     },
     candidate_growth: {
       categories,
+      categoryKeys,
       series: growthSeries,
     },
     funnel,
@@ -340,7 +345,7 @@ export const EMPTY_RECRUITMENT_DASHBOARD: RecruitmentDashboardData = {
     hiring_conversion_rate: 0,
     average_time_to_hire: 0,
   },
-  candidate_growth: { categories: [], series: [] },
+  candidate_growth: { categories: [], categoryKeys: [], series: [] },
   funnel: [],
   fulfillment: {
     metrics: {

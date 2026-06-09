@@ -63,12 +63,12 @@ function formatDateYmd(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+const CHART_DATA_START_DATE = '2022-04-01';
+
 function getDefaultDateRange() {
-  const now = new Date();
-  const y = now.getFullYear();
   return {
-    start: `${y}-01-01`,
-    end: formatDateYmd(now),
+    start: CHART_DATA_START_DATE,
+    end: formatDateYmd(new Date()),
   };
 }
 

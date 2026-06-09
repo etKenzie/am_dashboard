@@ -1,25 +1,68 @@
 'use client';
 
-import { Box, Card, CardContent, CircularProgress, Typography } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Typography,
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import dynamic from 'next/dynamic';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { CandidateGrowthChartData } from '../../api/recruitment/RecruitmentSlice';
 import { recruitmentCardOuterSx } from './recruitmentStyles';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
+
+const CHART_DATA_START_YEAR = 2022;
+const SERIES_COLORS = ['#C4B5FD', '#7C3AED'];
 
 interface CandidateGrowthChartProps {
   data: CandidateGrowthChartData;
   loading?: boolean;
 }
 
-const SERIES_COLORS = ['#C4B5FD', '#7C3AED'];
+function filterGrowthByYear(data: CandidateGrowthChartData, yearFilter: string): CandidateGrowthChartData {
+  if (yearFilter === 'all') return data;
+
+  const year = Number(yearFilter);
+  const indices = data.categoryKeys
+    .map((key, i) => (key.startsWith(`${year}-`) ? i : -1))
+    .filter((i) => i >= 0);
+
+  return {
+    categoryKeys: indices.map((i) => data.categoryKeys[i]),
+    categories: indices.map((i) => data.categories[i]),
+    series: data.series.map((s) => ({
+      name: s.name,
+      data: indices.map((i) => s.data[i] ?? 0),
+    })),
+  };
+}
 
 const CandidateGrowthChart = ({ data, loading = false }: CandidateGrowthChartProps) => {
   const theme = useTheme();
+  const currentYear = new Date().getFullYear();
+  const [yearFilter, setYearFilter] = useState(String(currentYear));
 
-  const { categories, series } = data;
+  const yearOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = [];
+    for (let y = currentYear; y >= CHART_DATA_START_YEAR; y--) {
+      options.push({ value: String(y), label: String(y) });
+    }
+    options.push({ value: 'all', label: 'All' });
+    return options;
+  }, [currentYear]);
+
+  const filteredData = useMemo(() => filterGrowthByYear(data, yearFilter), [data, yearFilter]);
+
+  const { categories, series } = filteredData;
   const hasData = categories.length > 0 && series.length > 0;
 
   const chartOptions: ApexCharts.ApexOptions = useMemo(
@@ -78,9 +121,32 @@ const CandidateGrowthChart = ({ data, loading = false }: CandidateGrowthChartPro
   return (
     <Card sx={(theme) => recruitmentCardOuterSx(theme)}>
       <CardContent>
-        <Typography variant="h6" sx={{ mb: 3 }}>
-          Candidate growth
-        </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            mb: 3,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Typography variant="h6">Candidate growth</Typography>
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <InputLabel>Period</InputLabel>
+            <Select
+              value={yearFilter}
+              label="Period"
+              onChange={(e: SelectChangeEvent<string>) => setYearFilter(e.target.value)}
+            >
+              {yearOptions.map((o) => (
+                <MenuItem key={o.value} value={o.value}>
+                  {o.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
         <Box sx={{ height: 380, position: 'relative' }}>
           {loading ? (
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -90,7 +156,7 @@ const CandidateGrowthChart = ({ data, loading = false }: CandidateGrowthChartPro
             <ReactApexChart options={chartOptions} series={series} type="bar" height={340} />
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-              <Typography color="textSecondary">No growth data for the selected filters</Typography>
+              <Typography color="textSecondary">No growth data for the selected period</Typography>
             </Box>
           )}
         </Box>
