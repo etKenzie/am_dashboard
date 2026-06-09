@@ -8,6 +8,7 @@ import {
   MenuItem,
   Select,
   SelectChangeEvent,
+  TextField,
   Typography,
 } from '@mui/material';
 import {
@@ -17,16 +18,14 @@ import {
   IconUsers,
   IconUsersGroup,
 } from '@tabler/icons-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  getMockRecruitmentDashboard,
+  EMPTY_RECRUITMENT_DASHBOARD,
+  fetchRecruitmentDashboard,
   RecruitmentDashboardData,
+  RecruitmentFilterOptions,
   RecruitmentFilters,
 } from '../../api/recruitment/RecruitmentSlice';
-import {
-  fetchProjectFilterOptions,
-  fetchSourcedToFilterOptions,
-} from '../../api/temp_internal_payroll/TempInternalPayrollSlice';
 import PageContainer from '../container/PageContainer';
 import CandidateGrowthChart from './CandidateGrowthChart';
 import CandidateQualityInsightsBreakdownSection from './CandidateQualityInsightsBreakdownSection';
@@ -35,34 +34,15 @@ import FulfillmentPerformanceSection from './FulfillmentPerformanceSection';
 import RecruitmentFunnelCard from './RecruitmentFunnelCard';
 import RecruitmentMetricCard from './RecruitmentMetricCard';
 
-const EMPLOYER_OPTIONS = [
-  { value: '0', label: 'All' },
-  { value: '1', label: 'PT Valdo International' },
-  { value: '2', label: 'PT Valdo Sumber Daya Mandiri' },
-  { value: '94', label: 'PT Toko Pandai' },
-];
+const ALL_OPTION = { value: '0', label: 'All' };
 
-const PRODUCT_TYPE_OPTIONS = [
-  { value: '0', label: 'All' },
-  { value: '1', label: 'BPO Bundling' },
-  { value: '2', label: 'Staffing' },
-  { value: '3', label: 'Infra & Technology' },
-];
-
-const CUSTOMER_SEGMENT_OPTIONS = [
-  { value: '0', label: 'All' },
-  { value: '98', label: 'All BFSI' },
-  { value: '3', label: 'BFSI Bank' },
-  { value: '7', label: 'BFSI Insurance' },
-  { value: '8', label: 'BFSI Multi Finance' },
-  { value: '9', label: 'BFSI Others' },
-  { value: '99', label: 'All non BFSI' },
-  { value: '1', label: 'Non BFSI Logistic' },
-  { value: '2', label: 'Non BFSI F&B' },
-  { value: '4', label: 'Non BFSI Others' },
-  { value: '5', label: 'Non BFSI Distribution' },
-  { value: '6', label: 'Non BFSI E-commerce' },
-];
+const EMPTY_FILTER_OPTIONS: RecruitmentFilterOptions = {
+  employers: [],
+  sourced_to: [],
+  projects: [],
+  segments: [],
+  product_types: [],
+};
 
 function formatNumber(value: number): string {
   return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -72,20 +52,41 @@ function formatPercent(value: number): string {
   return `${value.toLocaleString('en-US', { maximumFractionDigits: 1 })}%`;
 }
 
+function toSelectOptions(items: Array<{ id: string; name: string }>) {
+  return [ALL_OPTION, ...items.map((x) => ({ value: x.id, label: x.name }))];
+}
+
+function formatDateYmd(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function getDefaultDateRange() {
+  const now = new Date();
+  const y = now.getFullYear();
+  return {
+    start: `${y}-01-01`,
+    end: formatDateYmd(now),
+  };
+}
+
 export default function RecruitmentOverview() {
+  const defaultRange = getDefaultDateRange();
+
+  const [startDate, setStartDate] = useState(defaultRange.start);
+  const [endDate, setEndDate] = useState(defaultRange.end);
+
   const [employer, setEmployer] = useState('0');
   const [sourcedTo, setSourcedTo] = useState('0');
   const [project, setProject] = useState('0');
   const [customerSegment, setCustomerSegment] = useState('0');
   const [productType, setProductType] = useState('0');
-  const [sourcedToOptions, setSourcedToOptions] = useState<Array<{ value: string; label: string }>>([
-    { value: '0', label: 'All' },
-  ]);
-  const [projectOptions, setProjectOptions] = useState<Array<{ value: string; label: string }>>([
-    { value: '0', label: 'All' },
-  ]);
-  const [dashboard, setDashboard] = useState<RecruitmentDashboardData | null>(null);
+  const [filterOptions, setFilterOptions] = useState<RecruitmentFilterOptions>(EMPTY_FILTER_OPTIONS);
+  const [dashboard, setDashboard] = useState<RecruitmentDashboardData>(EMPTY_RECRUITMENT_DASHBOARD);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const filters: RecruitmentFilters = useMemo(
     () => ({
@@ -94,54 +95,58 @@ export default function RecruitmentOverview() {
       project,
       customer_segment: customerSegment,
       product_type: productType,
+      start_date: startDate,
+      end_date: endDate,
     }),
-    [employer, sourcedTo, project, customerSegment, productType]
+    [employer, sourcedTo, project, customerSegment, productType, startDate, endDate]
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    fetchSourcedToFilterOptions({ employer })
-      .then((rows) => {
-        if (cancelled) return;
-        setSourcedToOptions([{ value: '0', label: 'All' }, ...rows.map((x) => ({ value: x.id_sourced_to, label: x.name }))]);
-      })
-      .catch(() => {
-        if (!cancelled) setSourcedToOptions([{ value: '0', label: 'All' }]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [employer]);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchProjectFilterOptions({ employer, sourced_to: sourcedTo || '0' })
-      .then((rows) => {
-        if (cancelled) return;
-        setProjectOptions([{ value: '0', label: 'All' }, ...rows.map((x) => ({ value: x.id_project, label: x.name }))]);
-      })
-      .catch(() => {
-        if (!cancelled) setProjectOptions([{ value: '0', label: 'All' }]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [employer, sourcedTo]);
-
-  useEffect(() => {
+  const loadDashboard = useCallback(async () => {
     setLoading(true);
-    const t = setTimeout(() => {
-      setDashboard(getMockRecruitmentDashboard(filters));
+    setError(null);
+    try {
+      const result = await fetchRecruitmentDashboard(filters);
+      setDashboard(result.dashboard);
+      setFilterOptions(result.filterOptions);
+    } catch (err) {
+      console.error('Failed to load recruitment dashboard:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load recruitment data');
+      setDashboard(EMPTY_RECRUITMENT_DASHBOARD);
+    } finally {
       setLoading(false);
-    }, 300);
-    return () => clearTimeout(t);
+    }
   }, [filters]);
 
-  const summary = dashboard?.summary;
-  const growth = dashboard?.candidate_growth ?? [];
-  const funnel = dashboard?.funnel ?? [];
-  const fulfillment = dashboard?.fulfillment;
-  const candidateQuality = dashboard?.candidate_quality;
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  const employerOptions = useMemo(
+    () => toSelectOptions(filterOptions.employers),
+    [filterOptions.employers]
+  );
+  const sourcedToOptions = useMemo(
+    () => toSelectOptions(filterOptions.sourced_to),
+    [filterOptions.sourced_to]
+  );
+  const projectOptions = useMemo(
+    () => toSelectOptions(filterOptions.projects),
+    [filterOptions.projects]
+  );
+  const segmentOptions = useMemo(
+    () => toSelectOptions(filterOptions.segments),
+    [filterOptions.segments]
+  );
+  const productTypeOptions = useMemo(
+    () => toSelectOptions(filterOptions.product_types),
+    [filterOptions.product_types]
+  );
+
+  const summary = dashboard.summary;
+  const growth = dashboard.candidate_growth;
+  const funnel = dashboard.funnel;
+  const fulfillment = dashboard.fulfillment;
+  const candidateQuality = dashboard.candidate_quality;
 
   const sectionTitleSx = { mb: 2, mt: 0, fontWeight: 600 } as const;
 
@@ -155,12 +160,52 @@ export default function RecruitmentOverview() {
           Hiring funnel summary and month-to-month candidate growth.
         </Typography>
 
+        {error && (
+          <Typography variant="body2" color="error.main" mb={2}>
+            {error}
+          </Typography>
+        )}
+
+        <Grid container spacing={2} sx={{ mb: 2 }} width="100%">
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              size="small"
+              fullWidth
+              label="Start date"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              size="small"
+              fullWidth
+              label="End date"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              inputProps={{ min: startDate || undefined }}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
+        </Grid>
+
         <Grid container spacing={2} sx={{ mb: 3 }} width="100%">
           <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Employer</InputLabel>
-              <Select value={employer} label="Employer" onChange={(e: SelectChangeEvent<string>) => setEmployer(e.target.value)}>
-                {EMPLOYER_OPTIONS.map((o) => (
+              <Select
+                value={employer}
+                label="Employer"
+                onChange={(e: SelectChangeEvent<string>) => {
+                  setEmployer(e.target.value);
+                  setSourcedTo('0');
+                  setProject('0');
+                }}
+              >
+                {employerOptions.map((o) => (
                   <MenuItem key={o.value} value={o.value}>
                     {o.label}
                   </MenuItem>
@@ -171,7 +216,14 @@ export default function RecruitmentOverview() {
           <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
             <FormControl size="small" fullWidth>
               <InputLabel>Sourced To</InputLabel>
-              <Select value={sourcedTo} label="Sourced To" onChange={(e: SelectChangeEvent<string>) => setSourcedTo(e.target.value)}>
+              <Select
+                value={sourcedTo}
+                label="Sourced To"
+                onChange={(e: SelectChangeEvent<string>) => {
+                  setSourcedTo(e.target.value);
+                  setProject('0');
+                }}
+              >
                 {sourcedToOptions.map((o) => (
                   <MenuItem key={o.value} value={o.value}>
                     {o.label}
@@ -200,7 +252,7 @@ export default function RecruitmentOverview() {
                 label="Segment"
                 onChange={(e: SelectChangeEvent<string>) => setCustomerSegment(e.target.value)}
               >
-                {CUSTOMER_SEGMENT_OPTIONS.map((o) => (
+                {segmentOptions.map((o) => (
                   <MenuItem key={o.value} value={o.value}>
                     {o.label}
                   </MenuItem>
@@ -212,7 +264,7 @@ export default function RecruitmentOverview() {
             <FormControl size="small" fullWidth>
               <InputLabel>Product Type</InputLabel>
               <Select value={productType} label="Product Type" onChange={(e: SelectChangeEvent<string>) => setProductType(e.target.value)}>
-                {PRODUCT_TYPE_OPTIONS.map((o) => (
+                {productTypeOptions.map((o) => (
                   <MenuItem key={o.value} value={o.value}>
                     {o.label}
                   </MenuItem>
@@ -240,35 +292,31 @@ export default function RecruitmentOverview() {
         >
           <RecruitmentMetricCard
             title="Total Applicant"
-            value={formatNumber(summary?.total_applicants ?? 0)}
+            value={formatNumber(summary.total_applicants)}
             icon={IconUsers}
             loading={loading}
           />
           <RecruitmentMetricCard
             title="Candidates in Process"
-            value={formatNumber(summary?.candidates_in_process ?? 0)}
+            value={formatNumber(summary.candidates_in_process)}
             icon={IconUsersGroup}
             loading={loading}
           />
           <RecruitmentMetricCard
             title="Total Hired"
-            value={formatNumber(summary?.total_hired ?? 0)}
+            value={formatNumber(summary.total_hired)}
             icon={IconUserCheck}
             loading={loading}
           />
           <RecruitmentMetricCard
             title="Hiring Conversion Rate"
-            value={formatPercent(summary?.hiring_conversion_rate ?? 0)}
+            value={formatPercent(summary.hiring_conversion_rate)}
             icon={IconPercentage}
             loading={loading}
           />
           <RecruitmentMetricCard
             title="Average Time to Hire"
-            value={
-              summary != null
-                ? `${formatNumber(summary.average_time_to_hire)} days`
-                : '—'
-            }
+            value={`${formatNumber(summary.average_time_to_hire)} days`}
             icon={IconClock}
             loading={loading}
           />

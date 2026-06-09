@@ -1,6 +1,9 @@
 /**
- * Recruitment API — placeholder types and mock data until endpoints are available.
+ * Recruitment dashboard — AM Main API
+ * GET {NEXT_PUBLIC_AM_MAIN_API_URL}/analisis/api/recruitment-dashboard
  */
+
+import { AM_MAIN_API_TOKEN, AM_MAIN_API_URL } from '@/utils/config';
 
 export interface RecruitmentFilters {
   employer: string;
@@ -8,6 +11,23 @@ export interface RecruitmentFilters {
   project: string;
   customer_segment: string;
   product_type: string;
+  year?: number;
+  month?: number;
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface RecruitmentFilterOption {
+  id: string;
+  name: string;
+}
+
+export interface RecruitmentFilterOptions {
+  employers: RecruitmentFilterOption[];
+  sourced_to: RecruitmentFilterOption[];
+  projects: RecruitmentFilterOption[];
+  segments: RecruitmentFilterOption[];
+  product_types: RecruitmentFilterOption[];
 }
 
 export interface RecruitmentSummary {
@@ -20,9 +40,9 @@ export interface RecruitmentSummary {
   average_time_to_hire: number;
 }
 
-export interface CandidateGrowthPoint {
-  month: string;
-  count: number;
+export interface CandidateGrowthChartData {
+  categories: string[];
+  series: Array<{ name: string; data: number[] }>;
 }
 
 export interface RecruitmentFunnelStage {
@@ -60,13 +80,8 @@ export interface FulfillmentPerformance {
 }
 
 export interface AiVsHiringSuccessMetrics {
-  /** Raw count / score (axis is numeric, not %) */
   ai_recommendation: number;
   hiring_success: number;
-  /**
-   * If set, tooltip % is `value / denominator × 100`.
-   * If omitted, % is each bar’s share of (AI Recommendation + Hiring Success).
-   */
   tooltip_percent_denominator?: number;
 }
 
@@ -80,14 +95,12 @@ export interface CandidateSourceByQuality {
   id: string;
   title: string;
   hires: number;
-  /** 0–100 — drives progress bar and right-aligned % */
+  /** 0–100 */
   quality_percent: number;
 }
 
 export interface CandidateQualityInsights {
-  /** 0–100, one decimal */
   quality_score: number;
-  /** 0–100 AI recommended share */
   ai_recommended_percent: number;
   ai_vs_hiring_success: AiVsHiringSuccessMetrics;
   top_matching_skills: MatchingSkill[];
@@ -96,112 +109,285 @@ export interface CandidateQualityInsights {
 
 export interface RecruitmentDashboardData {
   summary: RecruitmentSummary;
-  candidate_growth: CandidateGrowthPoint[];
+  candidate_growth: CandidateGrowthChartData;
   funnel: RecruitmentFunnelStage[];
   fulfillment: FulfillmentPerformance;
   candidate_quality: CandidateQualityInsights;
 }
 
-/** Mock dashboard payload (replace with API call when ready). */
-export function getMockRecruitmentDashboard(_filters: RecruitmentFilters): RecruitmentDashboardData {
+export interface RecruitmentDashboardResult {
+  dashboard: RecruitmentDashboardData;
+  filterOptions: RecruitmentFilterOptions;
+}
+
+// --- Raw API types ---
+
+interface ApiIdName {
+  id: string;
+  name: string;
+}
+
+interface ApiRecruitmentDashboardResponse {
+  success: boolean;
+  message?: string;
+  summary?: {
+    total_applicant?: number;
+    candidates_in_process?: number;
+    total_hired?: number;
+    hiring_conversion_rate?: number;
+    average_time_to_hire_days?: number;
+  };
+  candidate_growth?: {
+    categories?: string[];
+    series?: Array<{ name: string; data: number[] }>;
+  };
+  recruitment_funnel?: Array<{
+    stage_name: string;
+    total_count: number;
+    pass_rate_percent: number;
+  }>;
+  fulfillment_performance?: {
+    active_vacancies?: number;
+    active_requested_count?: number;
+    ready_for_hiring_headcount?: number;
+    fulfillment_rate_percent?: number;
+  };
+  candidate_sources?: Array<{
+    source_name?: string;
+    total?: number;
+    ready_for_hiring_count?: number;
+    quality_rate_percent?: number;
+  }>;
+  top_hiring_positions?: Array<{
+    position_name?: string;
+    ready_for_hiring_count?: number;
+    target_headcount?: number;
+    achievement_percent?: number;
+  }>;
+  candidate_quality?: {
+    score?: number;
+    ai_recommended_percent?: number;
+    ai_recommended_count?: number;
+    ready_for_hiring_from_ai_recommended_count?: number;
+    top_matching_skills?: Array<{
+      skill?: string;
+      name?: string;
+      count?: number;
+      candidate_count?: number;
+    }>;
+  };
+  filter_options?: {
+    employers?: ApiIdName[];
+    sourced_to?: ApiIdName[];
+    projects?: ApiIdName[];
+    segments?: ApiIdName[];
+    product_types?: ApiIdName[];
+  };
+}
+
+function slugify(text: string): string {
+  return (
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '') || 'item'
+  );
+}
+
+function formatMonthCategory(cat: string): string {
+  const m = cat.match(/^(\d{4})-(\d{2})$/);
+  if (!m) return cat;
+  const date = new Date(Number(m[1]), Number(m[2]) - 1, 1);
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+function num(value: unknown, fallback = 0): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function buildRecruitmentQueryParams(filters: RecruitmentFilters): URLSearchParams {
+  const params = new URLSearchParams();
+  const add = (key: string, val: string | number | undefined) => {
+    if (val === undefined || val === null || val === '' || val === '0') return;
+    params.set(key, String(val));
+  };
+
+  add('employer_id', filters.employer);
+  add('sourced_to_id', filters.sourced_to);
+  add('project_id', filters.project);
+  add('segment', filters.customer_segment);
+  add('product_type', filters.product_type);
+
+  if (filters.start_date && filters.end_date) {
+    add('start_date', filters.start_date);
+    add('end_date', filters.end_date);
+  } else if (filters.year != null) {
+    add('year', filters.year);
+    if (filters.month != null) add('month', filters.month);
+  }
+
+  return params;
+}
+
+function mapFilterOptions(raw?: ApiRecruitmentDashboardResponse['filter_options']): RecruitmentFilterOptions {
+  const mapList = (items?: ApiIdName[]) =>
+    (items ?? []).map((x) => ({ id: String(x.id), name: String(x.name).trim() }));
+
+  return {
+    employers: mapList(raw?.employers),
+    sourced_to: mapList(raw?.sourced_to),
+    projects: mapList(raw?.projects),
+    segments: mapList(raw?.segments),
+    product_types: mapList(raw?.product_types),
+  };
+}
+
+function mapRecruitmentApiToDashboard(json: ApiRecruitmentDashboardResponse): RecruitmentDashboardData {
+  const summary = json.summary ?? {};
+  const growthRaw = json.candidate_growth;
+  const categories = (growthRaw?.categories ?? []).map(formatMonthCategory);
+  const growthSeries = (growthRaw?.series ?? []).map((s) => ({
+    name: s.name,
+    data: (s.data ?? []).map((v) => num(v)),
+  }));
+
+  const funnel = (json.recruitment_funnel ?? []).map((stage) => ({
+    id: slugify(stage.stage_name),
+    title: stage.stage_name,
+    count: num(stage.total_count),
+    pass_rate: num(stage.pass_rate_percent),
+  }));
+
+  const fp = json.fulfillment_performance ?? {};
+  const candidateSourcesRaw = json.candidate_sources ?? [];
+
+  const candidateSources: CandidateSourceSlice[] = candidateSourcesRaw.map((s) => ({
+    label: String(s.source_name ?? 'Unknown'),
+    count: num(s.total),
+  }));
+
+  const topSourcesByQuality: CandidateSourceByQuality[] = candidateSourcesRaw.map((s) => ({
+    id: slugify(String(s.source_name ?? 'unknown')),
+    title: String(s.source_name ?? 'Unknown'),
+    hires: num(s.ready_for_hiring_count),
+    quality_percent: num(s.quality_rate_percent),
+  }));
+
+  const topHiringPositions: TopHiringPosition[] = (json.top_hiring_positions ?? []).map((p) => ({
+    id: slugify(String(p.position_name ?? 'unknown')),
+    title: String(p.position_name ?? 'Unknown'),
+    hired: num(p.ready_for_hiring_count),
+    target: num(p.target_headcount),
+  }));
+
+  const cq = json.candidate_quality ?? {};
+  const topSkills = (cq.top_matching_skills ?? []).map((s, i) => {
+    const name = String(s.skill ?? s.name ?? `Skill ${i + 1}`);
+    return {
+      id: slugify(name),
+      name,
+      candidate_count: num(s.count ?? s.candidate_count),
+    };
+  });
+
+  const aiRecommended = num(cq.ai_recommended_count);
+  const readyFromAi = num(cq.ready_for_hiring_from_ai_recommended_count);
+
   return {
     summary: {
-      total_applicants: 1248,
-      candidates_in_process: 186,
-      total_hired: 312,
-      hiring_conversion_rate: 25.0,
-      average_time_to_hire: 28,
+      total_applicants: num(summary.total_applicant),
+      candidates_in_process: num(summary.candidates_in_process),
+      total_hired: num(summary.total_hired),
+      hiring_conversion_rate: num(summary.hiring_conversion_rate),
+      average_time_to_hire: num(summary.average_time_to_hire_days),
     },
-    candidate_growth: [
-      { month: 'Jul 2025', count: 82 },
-      { month: 'Aug 2025', count: 95 },
-      { month: 'Sep 2025', count: 110 },
-      { month: 'Oct 2025', count: 98 },
-      { month: 'Nov 2025', count: 124 },
-      { month: 'Dec 2025', count: 118 },
-      { month: 'Jan 2026', count: 132 },
-      { month: 'Feb 2026', count: 145 },
-      { month: 'Mar 2026', count: 156 },
-      { month: 'Apr 2026', count: 168 },
-    ],
-    funnel: [
-      { id: 'pipeline_list', title: 'Pipeline List', count: 1248, pass_rate: 85 },
-      { id: 'interview_hr', title: 'Interview HR', count: 892, pass_rate: 72 },
-      { id: 'test_skill', title: 'Test Skill', count: 654, pass_rate: 68 },
-      { id: 'psychological_test', title: 'Psychological Test', count: 445, pass_rate: 65 },
-      { id: 'background_check', title: 'Background Check', count: 312, pass_rate: 70 },
-      { id: 'user_interview', title: 'User Interview', count: 198, pass_rate: 58 },
-      { id: 'ready_to_hire', title: 'Ready to Hire', count: 124, pass_rate: 62 },
-    ],
+    candidate_growth: {
+      categories,
+      series: growthSeries,
+    },
+    funnel,
     fulfillment: {
       metrics: {
-        active_vacancies: 156,
-        active_requested_count: 420,
-        fulfilled_headcount: 248,
-        fulfilment_rate: 59.0,
+        active_vacancies: num(fp.active_vacancies),
+        active_requested_count: num(fp.active_requested_count),
+        fulfilled_headcount: num(fp.ready_for_hiring_headcount),
+        fulfilment_rate: num(fp.fulfillment_rate_percent),
       },
-      candidate_sources: [
-        { label: 'Job Portal', count: 412 },
-        { label: 'Linkedin', count: 328 },
-        { label: 'Jobstreet', count: 265 },
-        { label: 'Job Fair', count: 178 },
-      ],
-      top_hiring_positions: [
-        { id: 'software_engineer', title: 'Software Engineer', hired: 48, target: 100 },
-        { id: 'ui_ux_designer', title: 'UI/UX Designer', hired: 32, target: 50 },
-        { id: 'front_end_engineer', title: 'Front End Engineer', hired: 41, target: 80 },
-        { id: 'qa_automation', title: 'QA Automation', hired: 28, target: 40 },
-        { id: 'project_manager', title: 'Project Manager', hired: 22, target: 35 },
-        { id: 'accounting', title: 'Accounting', hired: 15, target: 25 },
-        { id: 'data_analyst', title: 'Data Analyst', hired: 19, target: 30 },
-        { id: 'devops_engineer', title: 'DevOps Engineer', hired: 14, target: 22 },
-        { id: 'business_analyst', title: 'Business Analyst', hired: 18, target: 28 },
-        { id: 'customer_support', title: 'Customer Support', hired: 24, target: 45 },
-        { id: 'hr_generalist', title: 'HR Generalist', hired: 12, target: 20 },
-        { id: 'marketing_exec', title: 'Marketing Executive', hired: 16, target: 26 },
-      ],
+      candidate_sources: candidateSources,
+      top_hiring_positions: topHiringPositions,
     },
     candidate_quality: {
-      quality_score: 82.5,
-      ai_recommended_percent: 74,
+      quality_score: num(cq.score),
+      ai_recommended_percent: num(cq.ai_recommended_percent),
       ai_vs_hiring_success: {
-        ai_recommendation: 248,
-        hiring_success: 186,
-        tooltip_percent_denominator: 520,
+        ai_recommendation: aiRecommended,
+        hiring_success: readyFromAi,
+        tooltip_percent_denominator:
+          aiRecommended + readyFromAi > 0 ? aiRecommended + readyFromAi : undefined,
       },
-      top_matching_skills: [
-        { id: 'javascript', name: 'JavaScript', candidate_count: 84 },
-        { id: 'python', name: 'Python', candidate_count: 72 },
-        { id: 'react', name: 'React', candidate_count: 65 },
-        { id: 'typescript', name: 'TypeScript', candidate_count: 61 },
-        { id: 'sql', name: 'SQL', candidate_count: 58 },
-        { id: 'communication', name: 'Communication', candidate_count: 52 },
-        { id: 'nodejs', name: 'Node.js', candidate_count: 48 },
-        { id: 'excel', name: 'Excel', candidate_count: 46 },
-        { id: 'project_management', name: 'Project Management', candidate_count: 41 },
-        { id: 'java', name: 'Java', candidate_count: 38 },
-        { id: 'agile', name: 'Agile', candidate_count: 34 },
-        { id: 'leadership', name: 'Leadership', candidate_count: 32 },
-        { id: 'aws', name: 'AWS', candidate_count: 29 },
-        { id: 'problem_solving', name: 'Problem Solving', candidate_count: 27 },
-        { id: 'ui_ux', name: 'UI/UX', candidate_count: 24 },
-        { id: 'docker', name: 'Docker', candidate_count: 22 },
-        { id: 'data_analysis', name: 'Data Analysis', candidate_count: 20 },
-        { id: 'customer_service', name: 'Customer Service', candidate_count: 18 },
-        { id: 'git', name: 'Git', candidate_count: 16 },
-        { id: 'negotiation', name: 'Negotiation', candidate_count: 14 },
-      ],
-      top_sources_by_quality: [
-        { id: 'referral', title: 'Referral', hires: 42, quality_percent: 88 },
-        { id: 'linkedin', title: 'Linkedin', hires: 56, quality_percent: 76 },
-        { id: 'job_portal', title: 'Job Portal', hires: 68, quality_percent: 71 },
-        { id: 'jobstreet', title: 'Jobstreet', hires: 45, quality_percent: 64 },
-        { id: 'job_fair', title: 'Job Fair', hires: 28, quality_percent: 58 },
-        { id: 'campus', title: 'Campus Hiring', hires: 22, quality_percent: 55 },
-        { id: 'agency', title: 'Agency', hires: 19, quality_percent: 52 },
-        { id: 'internal', title: 'Internal Transfer', hires: 14, quality_percent: 49 },
-        { id: 'social_media', title: 'Social Media', hires: 12, quality_percent: 46 },
-      ],
+      top_matching_skills: topSkills,
+      top_sources_by_quality: topSourcesByQuality,
     },
+  };
+}
+
+export const EMPTY_RECRUITMENT_DASHBOARD: RecruitmentDashboardData = {
+  summary: {
+    total_applicants: 0,
+    candidates_in_process: 0,
+    total_hired: 0,
+    hiring_conversion_rate: 0,
+    average_time_to_hire: 0,
+  },
+  candidate_growth: { categories: [], series: [] },
+  funnel: [],
+  fulfillment: {
+    metrics: {
+      active_vacancies: 0,
+      active_requested_count: 0,
+      fulfilled_headcount: 0,
+      fulfilment_rate: 0,
+    },
+    candidate_sources: [],
+    top_hiring_positions: [],
+  },
+  candidate_quality: {
+    quality_score: 0,
+    ai_recommended_percent: 0,
+    ai_vs_hiring_success: { ai_recommendation: 0, hiring_success: 0 },
+    top_matching_skills: [],
+    top_sources_by_quality: [],
+  },
+};
+
+export async function fetchRecruitmentDashboard(
+  filters: RecruitmentFilters
+): Promise<RecruitmentDashboardResult> {
+  if (!AM_MAIN_API_URL) {
+    throw new Error('NEXT_PUBLIC_AM_MAIN_API_URL is not set');
+  }
+
+  const params = buildRecruitmentQueryParams(filters);
+  const url = `${AM_MAIN_API_URL}/analisis/api/recruitment-dashboard?${params.toString()}`;
+
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (AM_MAIN_API_TOKEN) {
+    headers['x-api-key'] = AM_MAIN_API_TOKEN;
+  }
+
+  const res = await fetch(url, { method: 'GET', headers, cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`recruitment-dashboard: ${res.status} ${res.statusText}`);
+  }
+
+  const json = (await res.json()) as ApiRecruitmentDashboardResponse;
+  if (!json.success) {
+    throw new Error(json.message || 'Recruitment dashboard request failed');
+  }
+
+  return {
+    dashboard: mapRecruitmentApiToDashboard(json),
+    filterOptions: mapFilterOptions(json.filter_options),
   };
 }

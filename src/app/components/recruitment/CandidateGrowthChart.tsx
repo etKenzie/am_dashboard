@@ -4,28 +4,25 @@ import { Box, Card, CardContent, CircularProgress, Typography } from '@mui/mater
 import { useTheme } from '@mui/material/styles';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
-import { CandidateGrowthPoint } from '../../api/recruitment/RecruitmentSlice';
+import { CandidateGrowthChartData } from '../../api/recruitment/RecruitmentSlice';
 import { recruitmentCardOuterSx } from './recruitmentStyles';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 interface CandidateGrowthChartProps {
-  data: CandidateGrowthPoint[];
+  data: CandidateGrowthChartData;
   loading?: boolean;
 }
 
-/** Top of bar — light purple */
-const PURPLE_GRADIENT_TOP = '#C4B5FD';
-/** Bottom of bar — medium purple */
-const PURPLE_GRADIENT_BOTTOM = '#A78BFA';
+const SERIES_COLORS = ['#C4B5FD', '#7C3AED'];
 
 const CandidateGrowthChart = ({ data, loading = false }: CandidateGrowthChartProps) => {
   const theme = useTheme();
 
-  const categories = data.map((d) => d.month);
-  const series = [{ name: 'Candidates', data: data.map((d) => d.count) }];
+  const { categories, series } = data;
+  const hasData = categories.length > 0 && series.length > 0;
 
-  const chartOptions: any = useMemo(
+  const chartOptions: ApexCharts.ApexOptions = useMemo(
     () => ({
       chart: {
         type: 'bar',
@@ -37,27 +34,18 @@ const CandidateGrowthChart = ({ data, loading = false }: CandidateGrowthChartPro
       plotOptions: {
         bar: {
           horizontal: false,
-          columnWidth: '55%',
+          columnWidth: series.length > 1 ? '70%' : '55%',
           borderRadius: 6,
           borderRadiusApplication: 'end',
         },
       },
-      colors: [PURPLE_GRADIENT_TOP],
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'dark',
-          type: 'vertical',
-          shadeIntensity: 0.25,
-          gradientToColors: [PURPLE_GRADIENT_BOTTOM],
-          inverseColors: false,
-          opacityFrom: 1,
-          opacityTo: 1,
-          stops: [0, 100],
-        },
-      },
+      colors: SERIES_COLORS,
       dataLabels: { enabled: false },
-      legend: { show: false },
+      legend: {
+        show: series.length > 1,
+        position: 'top',
+        fontSize: '13px',
+      },
       grid: {
         borderColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0,0,0,0.08)',
         strokeDashArray: 3,
@@ -84,7 +72,7 @@ const CandidateGrowthChart = ({ data, loading = false }: CandidateGrowthChartPro
         },
       },
     }),
-    [categories, theme.palette.mode]
+    [categories, series.length, theme.palette.mode]
   );
 
   return (
@@ -98,7 +86,7 @@ const CandidateGrowthChart = ({ data, loading = false }: CandidateGrowthChartPro
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
               <CircularProgress size={24} />
             </Box>
-          ) : data.length > 0 ? (
+          ) : hasData ? (
             <ReactApexChart options={chartOptions} series={series} type="bar" height={340} />
           ) : (
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>

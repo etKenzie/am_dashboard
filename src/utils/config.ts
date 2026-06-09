@@ -92,6 +92,19 @@ export function getCollectionApiToken(): string {
 export const COLLECTION_API_URL = getCollectionApiUrl();
 export const COLLECTION_API_TOKEN = getCollectionApiToken();
 
+/** Main AM API (recruitment dashboard). Optional — empty when unset. */
+export function getMainApiUrl(): string {
+  const url = process.env.NEXT_PUBLIC_AM_MAIN_API_URL ?? '';
+  return url.replace(/\/$/, '');
+}
+
+export function getMainApiToken(): string {
+  return process.env.NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN ?? '';
+}
+
+export const AM_MAIN_API_URL = getMainApiUrl();
+export const AM_MAIN_API_TOKEN = getMainApiToken();
+
 // Log API URL at module load (only once, helps with debugging)
 if (typeof window === 'undefined') {
   // Server-side: log once
