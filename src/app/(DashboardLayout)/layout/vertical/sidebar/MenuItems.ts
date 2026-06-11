@@ -162,7 +162,6 @@ const Menuitems: MenuitemsType[] = [
     title: "Invoice",
     icon: IconFileInvoice,
     href: "/invoice",
-    chip: "New",
   },
 
   {

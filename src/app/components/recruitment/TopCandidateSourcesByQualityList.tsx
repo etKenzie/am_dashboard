@@ -26,7 +26,7 @@ const TopCandidateSourcesByQualityList = ({ sources, loading = false }: TopCandi
       }}
     >
       <Typography variant="h6" sx={{ mb: 2, flexShrink: 0 }}>
-        Top Candidates Sources by Quality
+        Top Hiring Sources by Quality
       </Typography>
 
       <Box

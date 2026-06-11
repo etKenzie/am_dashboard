@@ -8,7 +8,6 @@ import {
   MenuItem,
   Select,
   SelectChangeEvent,
-  TextField,
   Typography,
 } from '@mui/material';
 import {
@@ -56,28 +55,7 @@ function toSelectOptions(items: Array<{ id: string; name: string }>) {
   return [ALL_OPTION, ...items.map((x) => ({ value: x.id, label: x.name }))];
 }
 
-function formatDateYmd(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-const CHART_DATA_START_DATE = '2022-04-01';
-
-function getDefaultDateRange() {
-  return {
-    start: CHART_DATA_START_DATE,
-    end: formatDateYmd(new Date()),
-  };
-}
-
 export default function RecruitmentOverview() {
-  const defaultRange = getDefaultDateRange();
-
-  const [startDate, setStartDate] = useState(defaultRange.start);
-  const [endDate, setEndDate] = useState(defaultRange.end);
-
   const [employer, setEmployer] = useState('0');
   const [sourcedTo, setSourcedTo] = useState('0');
   const [project, setProject] = useState('0');
@@ -95,10 +73,8 @@ export default function RecruitmentOverview() {
       project,
       customer_segment: customerSegment,
       product_type: productType,
-      start_date: startDate,
-      end_date: endDate,
     }),
-    [employer, sourcedTo, project, customerSegment, productType, startDate, endDate]
+    [employer, sourcedTo, project, customerSegment, productType]
   );
 
   const loadDashboard = useCallback(async () => {
@@ -165,32 +141,6 @@ export default function RecruitmentOverview() {
             {error}
           </Typography>
         )}
-
-        <Grid container spacing={2} sx={{ mb: 2 }} width="100%">
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              size="small"
-              fullWidth
-              label="Start date"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              size="small"
-              fullWidth
-              label="End date"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              inputProps={{ min: startDate || undefined }}
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-        </Grid>
 
         <Grid container spacing={2} sx={{ mb: 3 }} width="100%">
           <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>

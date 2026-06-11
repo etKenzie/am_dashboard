@@ -45,7 +45,7 @@ const FulfillmentPerformanceSection = ({ data, loading = false }: FulfillmentPer
           <FulfillmentMetricsQuad metrics={data?.metrics} loading={loading} />
         </Box>
 
-        <Box sx={(theme) => panelSx(theme)}>
+        <Box sx={(theme) => ({ ...panelSx(theme), overflow: 'visible' })}>
           <CandidateSourcesChart data={data?.candidate_sources ?? []} loading={loading} />
         </Box>
 

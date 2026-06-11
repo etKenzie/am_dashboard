@@ -633,6 +633,63 @@ export default function TempInternalPayrollOverview() {
           <TempInternalPayrollMonthlyChart filters={chartFilters} />
         </Box>
 
+        <Grid container spacing={2} alignItems="stretch" sx={{ mt: 3 }}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Box sx={statGridCellSx}>
+              <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+                <Box sx={statCardInnerSx}>
+                  <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                    {bpjsLoading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      formatCurrencyBpjs(bpjsCost.total_bpjs_tk)
+                    )}
+                  </Box>
+                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                    Total BPJS TK
+                  </Typography>
+                </Box>
+              </DashboardCard>
+            </Box>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Box sx={statGridCellSx}>
+              <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+                <Box sx={statCardInnerSx}>
+                  <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                    {bpjsLoading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      formatCurrencyBpjs(bpjsCost.total_bpjs_kesehatan)
+                    )}
+                  </Box>
+                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                    Total BPJS Kesehatan
+                  </Typography>
+                </Box>
+              </DashboardCard>
+            </Box>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Box sx={statGridCellSx}>
+              <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
+                <Box sx={statCardInnerSx}>
+                  <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
+                    {bpjsLoading ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      formatCurrencyBpjs(bpjsCost.total_bpjs_pensiun)
+                    )}
+                  </Box>
+                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                    Total BPJS Pensiun
+                  </Typography>
+                </Box>
+              </DashboardCard>
+            </Box>
+          </Grid>
+        </Grid>
+
         <Typography variant="h5" sx={{ ...sectionTitleSx, mt: 4 }}>
           Collection
         </Typography>
@@ -765,66 +822,6 @@ export default function TempInternalPayrollOverview() {
             showClientRisk
           />
         </Box>
-
-        <Typography variant="h5" sx={{ ...sectionTitleSx, mt: 4 }}>
-          BPJS Company Cost
-        </Typography>
-        <Grid container spacing={2} alignItems="stretch">
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Box sx={statGridCellSx}>
-              <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
-                <Box sx={statCardInnerSx}>
-                  <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
-                    {bpjsLoading ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                      formatCurrencyBpjs(bpjsCost.total_bpjs_tk)
-                    )}
-                  </Box>
-                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
-                    Total BPJS TK
-                  </Typography>
-                </Box>
-              </DashboardCard>
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Box sx={statGridCellSx}>
-              <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
-                <Box sx={statCardInnerSx}>
-                  <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
-                    {bpjsLoading ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                      formatCurrencyBpjs(bpjsCost.total_bpjs_kesehatan)
-                    )}
-                  </Box>
-                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
-                    Total BPJS Kesehatan
-                  </Typography>
-                </Box>
-              </DashboardCard>
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Box sx={statGridCellSx}>
-              <DashboardCard cardSx={statCardStretchCardSx} contentSx={statCardStretchContentSx}>
-                <Box sx={statCardInnerSx}>
-                  <Box sx={{ fontSize: '1.5rem', fontWeight: 'bold', lineHeight: 1.2 }}>
-                    {bpjsLoading ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                      formatCurrencyBpjs(bpjsCost.total_bpjs_pensiun)
-                    )}
-                  </Box>
-                  <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
-                    Total BPJS Pensiun
-                  </Typography>
-                </Box>
-              </DashboardCard>
-            </Box>
-          </Grid>
-        </Grid>
       </Box>
     </PageContainer>
   );
