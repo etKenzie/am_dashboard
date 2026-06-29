@@ -27,13 +27,15 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
   // Log access check result for debugging
   console.log(`${title} Access Check:`, accessCheck);
   
-  // Loan type state - mandatory selection, default to kasbon
-  const [loanType, setLoanType] = useState<'kasbon' | 'extradana' | 'aku_cicil' | ''>('kasbon');
+  // Loan type state — default to all loan types
+  const [loanType, setLoanType] = useState<'all' | 'kasbon' | 'extradana' | 'aku_cicil'>('all');
   
   // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<KasbonOverviewFilterValues>({
     month: '',
-    year: ''
+    year: '',
+    clientSegment: '',
+    productType: '',
   });
 
   const [clientSummaryData, setClientSummaryData] = useState<ClientSummary[]>([]);
@@ -48,7 +50,9 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
     
     setFilters({
       month: currentMonth,
-      year: currentYear
+      year: currentYear,
+      clientSegment: '',
+      productType: '',
     });
   }, []);
 
@@ -64,7 +68,9 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
         const response = await fetchClientSummary({
           month: filters.month,
           year: filters.year,
-          loan_type: loanType
+          loan_type: loanType,
+          client_segment: filters.clientSegment || undefined,
+          product_type: filters.productType || undefined,
         });
         
         setClientSummaryData(response.results || []);
@@ -78,7 +84,7 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
     };
 
     fetchData();
-  }, [filters.month, filters.year, loanType]);
+  }, [filters.month, filters.year, filters.clientSegment, filters.productType, loanType]);
 
   const handleFiltersChange = (newFilters: KasbonOverviewFilterValues) => {
     console.log('Overview filters changed:', newFilters);
@@ -86,7 +92,7 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
   };
 
   const handleLoanTypeChange = (event: SelectChangeEvent<string>) => {
-    const newLoanType = event.target.value as 'kasbon' | 'extradana' | 'aku_cicil';
+    const newLoanType = event.target.value as 'all' | 'kasbon' | 'extradana' | 'aku_cicil';
     setLoanType(newLoanType);
     // Clear data when loan type changes
     setClientSummaryData([]);
@@ -113,6 +119,7 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
               onChange={handleLoanTypeChange}
               required
             >
+              <MenuItem value="all">All</MenuItem>
               <MenuItem value="kasbon">Kasbon</MenuItem>
               <MenuItem value="extradana">Extradana</MenuItem>
               <MenuItem value="aku_cicil">Aku Cicil</MenuItem>
@@ -126,6 +133,7 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
             <KasbonOverviewFilters
               filters={filters}
               onFiltersChange={handleFiltersChange}
+              loanType={loanType}
             />
           </Box>
         )}

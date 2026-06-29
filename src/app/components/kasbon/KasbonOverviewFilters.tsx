@@ -1,18 +1,25 @@
 'use client';
 
 import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { useEffect, useState } from 'react';
+import type { LoanFilters as LoanFiltersType } from '../../api/loan/LoanSlice';
+import { fetchLoanFilters } from '../../api/loan/LoanSlice';
 
 export interface KasbonOverviewFilterValues {
   month: string;
   year: string;
+  clientSegment: string;
+  productType: string;
 }
 
 interface KasbonOverviewFiltersProps {
   filters: KasbonOverviewFilterValues;
   onFiltersChange: (filters: KasbonOverviewFilterValues) => void;
+  loanType?: string;
 }
 
-const KasbonOverviewFilters = ({ filters, onFiltersChange }: KasbonOverviewFiltersProps) => {
+const KasbonOverviewFilters = ({ filters, onFiltersChange, loanType }: KasbonOverviewFiltersProps) => {
+  const [availableFilters, setAvailableFilters] = useState<LoanFiltersType | null>(null);
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const months = [
@@ -30,22 +37,20 @@ const KasbonOverviewFilters = ({ filters, onFiltersChange }: KasbonOverviewFilte
     { value: '12', label: 'December' },
   ];
 
-  const handleMonthChange = (month: string) => {
-    onFiltersChange({ ...filters, month });
-  };
-
-  const handleYearChange = (year: string) => {
-    onFiltersChange({ ...filters, year });
-  };
+  useEffect(() => {
+    fetchLoanFilters(undefined, undefined, loanType)
+      .then((response) => setAvailableFilters(response.filters))
+      .catch((error) => console.error('Failed to fetch loan filters:', error));
+  }, [loanType]);
 
   return (
-    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-      <FormControl sx={{ minWidth: 120 }}>
+    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+      <FormControl sx={{ minWidth: 120 }} size="small">
         <InputLabel>Month</InputLabel>
         <Select
           value={filters.month}
           label="Month"
-          onChange={(e) => handleMonthChange(e.target.value)}
+          onChange={(e) => onFiltersChange({ ...filters, month: e.target.value })}
         >
           {months.map((month) => (
             <MenuItem key={month.value} value={month.value}>
@@ -55,16 +60,48 @@ const KasbonOverviewFilters = ({ filters, onFiltersChange }: KasbonOverviewFilte
         </Select>
       </FormControl>
 
-      <FormControl sx={{ minWidth: 120 }}>
+      <FormControl sx={{ minWidth: 120 }} size="small">
         <InputLabel>Year</InputLabel>
         <Select
           value={filters.year}
           label="Year"
-          onChange={(e) => handleYearChange(e.target.value)}
+          onChange={(e) => onFiltersChange({ ...filters, year: e.target.value })}
         >
           {years.map((year) => (
             <MenuItem key={year} value={year.toString()}>
               {year}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      <FormControl sx={{ minWidth: 160 }} size="small">
+        <InputLabel>Client Segment</InputLabel>
+        <Select
+          value={filters.clientSegment}
+          label="Client Segment"
+          onChange={(e) => onFiltersChange({ ...filters, clientSegment: e.target.value })}
+        >
+          <MenuItem value="">All Segments</MenuItem>
+          {availableFilters?.client_segments?.map((segment) => (
+            <MenuItem key={segment.option_id} value={String(segment.option_id)}>
+              {segment.option_name.trim()}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      <FormControl sx={{ minWidth: 160 }} size="small">
+        <InputLabel>Product Type</InputLabel>
+        <Select
+          value={filters.productType}
+          label="Product Type"
+          onChange={(e) => onFiltersChange({ ...filters, productType: e.target.value })}
+        >
+          <MenuItem value="">All Product Types</MenuItem>
+          {availableFilters?.product_types?.map((type) => (
+            <MenuItem key={type.option_id} value={String(type.option_id)}>
+              {type.option_name.trim()}
             </MenuItem>
           ))}
         </Select>

@@ -13,15 +13,40 @@ export interface KaryawanResponse {
 }
 
 // Types for Loan Filters API
+export interface LoanFilterOption {
+  option_id: number;
+  option_name: string;
+}
+
 export interface LoanFilters {
   employers: string[];
   placements: string[];
   projects: string[];
+  client_segments?: LoanFilterOption[];
+  product_types?: LoanFilterOption[];
 }
 
 export interface LoanFiltersResponse {
   status: string;
   filters: LoanFilters;
+}
+
+interface LoanScopedQueryParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  client_segment?: string;
+  product_type?: string;
+  loan_type?: string;
+}
+
+function appendLoanScopedFilters(queryParams: URLSearchParams, params: LoanScopedQueryParams): void {
+  if (params.employer) queryParams.append('employer', params.employer);
+  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
+  if (params.project) queryParams.append('project', params.project);
+  if (params.client_segment) queryParams.append('client_segment', params.client_segment);
+  if (params.product_type) queryParams.append('product_type', params.product_type);
+  if (params.loan_type) queryParams.append('loan_type', params.loan_type);
 }
 
 
@@ -66,6 +91,8 @@ export interface KaryawanOverdueParams {
   month?: string;
   year?: string;
   loan_type?: string;
+  client_segment?: string;
+  product_type?: string;
 }
 
 
@@ -109,6 +136,8 @@ export interface CoverageUtilizationParams {
   month?: string;
   year?: string;
   loan_type?: string;
+  client_segment?: string;
+  product_type?: string;
 }
 
 // Types for Coverage Utilization Monthly API
@@ -135,6 +164,8 @@ export interface CoverageUtilizationMonthlyParams {
   start_date?: string;
   end_date?: string;
   loan_type?: string;
+  client_segment?: string;
+  product_type?: string;
 }
 
 // Types for Repayment Risk API
@@ -173,6 +204,8 @@ export interface RepaymentRiskParams {
   month?: string;
   year?: string;
   loan_type?: string;
+  client_segment?: string;
+  product_type?: string;
 }
 
 // Types for Repayment Risk Monthly API
@@ -198,6 +231,8 @@ export interface RepaymentRiskMonthlyParams {
   start_date?: string;
   end_date?: string;
   loan_type?: string;
+  client_segment?: string;
+  product_type?: string;
 }
 
 // Types for Loan Requests API
@@ -296,6 +331,8 @@ export interface LoanPurposeParams {
   month?: string;
   year?: string;
   loan_type?: string;
+  client_segment?: string;
+  product_type?: string;
 }
 
 // Types for Client Summary API
@@ -326,6 +363,8 @@ export interface ClientSummaryParams {
   month?: string;
   year?: string;
   loan_type?: string;
+  client_segment?: string;
+  product_type?: string;
 }
 
 // Get API URL from environment variable with validation
@@ -406,13 +445,10 @@ export const fetchKaryawanOverdue = async (params: KaryawanOverdueParams): Promi
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
-  if (params.employer) queryParams.append('employer', params.employer);
-  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
-  if (params.project) queryParams.append('project', params.project);
+  appendLoanScopedFilters(queryParams, params);
   if (params.id_karyawan) queryParams.append('id_karyawan', params.id_karyawan);
   if (params.month) queryParams.append('month', params.month);
   if (params.year) queryParams.append('year', params.year);
-  if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   
   const url = `${baseUrl}/loan/karyawan-overdue?${queryParams.toString()}`;
   
@@ -439,12 +475,9 @@ export const fetchCoverageUtilization = async (params: CoverageUtilizationParams
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
-  if (params.employer) queryParams.append('employer', params.employer);
-  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
-  if (params.project) queryParams.append('project', params.project);
+  appendLoanScopedFilters(queryParams, params);
   if (params.month) queryParams.append('month', params.month);
   if (params.year) queryParams.append('year', params.year);
-  if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   
   const url = `${baseUrl}/loan/coverage-utilization?${queryParams.toString()}`;
   
@@ -471,12 +504,9 @@ export const fetchCoverageUtilizationMonthly = async (params: CoverageUtilizatio
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
-  if (params.employer) queryParams.append('employer', params.employer);
-  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
-  if (params.project) queryParams.append('project', params.project);
+  appendLoanScopedFilters(queryParams, params);
   if (params.start_date) queryParams.append('start_date', params.start_date);
   if (params.end_date) queryParams.append('end_date', params.end_date);
-  if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   
   const url = `${baseUrl}/loan/coverage-utilization-monthly?${queryParams.toString()}`;
   
@@ -503,12 +533,9 @@ export const fetchRepaymentRisk = async (params: RepaymentRiskParams): Promise<R
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
-  if (params.employer) queryParams.append('employer', params.employer);
-  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
-  if (params.project) queryParams.append('project', params.project);
+  appendLoanScopedFilters(queryParams, params);
   if (params.month) queryParams.append('month', params.month);
   if (params.year) queryParams.append('year', params.year);
-  if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   
   const url = `${baseUrl}/loan/repayment-risk?${queryParams.toString()}`;
   
@@ -535,12 +562,9 @@ export const fetchRepaymentRiskMonthly = async (params: RepaymentRiskMonthlyPara
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
-  if (params.employer) queryParams.append('employer', params.employer);
-  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
-  if (params.project) queryParams.append('project', params.project);
+  appendLoanScopedFilters(queryParams, params);
   if (params.start_date) queryParams.append('start_date', params.start_date);
   if (params.end_date) queryParams.append('end_date', params.end_date);
-  if (params.loan_type) queryParams.append('loan_type', params.loan_type);
 
   const url = `${baseUrl}/loan/repayment-risk-monthly?${queryParams.toString()}`;
   
@@ -660,13 +684,10 @@ export const fetchLoanPurpose = async (params: LoanPurposeParams): Promise<LoanP
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
-  if (params.employer) queryParams.append('employer', params.employer);
-  if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
-  if (params.project) queryParams.append('project', params.project);
+  appendLoanScopedFilters(queryParams, params);
   if (params.id_karyawan) queryParams.append('id_karyawan', params.id_karyawan);
   if (params.month) queryParams.append('month', params.month);
   if (params.year) queryParams.append('year', params.year);
-  if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   
   const url = `${baseUrl}/loan/loan-purpose?${queryParams.toString()}`;
   
@@ -696,6 +717,8 @@ export const fetchClientSummary = async (params: ClientSummaryParams): Promise<C
   if (params.month) queryParams.append('month', params.month);
   if (params.year) queryParams.append('year', params.year);
   if (params.loan_type) queryParams.append('loan_type', params.loan_type);
+  if (params.client_segment) queryParams.append('client_segment', params.client_segment);
+  if (params.product_type) queryParams.append('product_type', params.product_type);
   
   const url = `${baseUrl}/loan/client-summary?${queryParams.toString()}`;
   

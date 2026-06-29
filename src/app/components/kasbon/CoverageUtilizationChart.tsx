@@ -25,6 +25,8 @@ interface CoverageUtilizationChartProps {
     employer: string;
     placement: string;
     project: string;
+    clientSegment?: string;
+    productType?: string;
     month?: string;
     year?: string;
     loanType: string;
@@ -104,9 +106,11 @@ const CoverageUtilizationChart = ({ filters }: CoverageUtilizationChartProps) =>
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
+        client_segment: filters.clientSegment || undefined,
+        product_type: filters.productType || undefined,
         start_date: formatDate(startDate),
         end_date: formatDate(endDate),
-        loan_type: filters.loanType
+        loan_type: filters.loanType,
       });
       setChartData(response);
     } catch (error) {
@@ -119,7 +123,7 @@ const CoverageUtilizationChart = ({ filters }: CoverageUtilizationChartProps) =>
   // Fetch data when dates change
   useEffect(() => {
     fetchChartData();
-  }, [startDate, endDate, filters.employer, filters.placement, filters.project, filters.loanType]);
+  }, [startDate, endDate, filters.employer, filters.placement, filters.project, filters.clientSegment, filters.productType, filters.loanType]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);

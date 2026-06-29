@@ -1,11 +1,11 @@
 'use client';
 
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
-import { Box, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
+import { Box, SelectChangeEvent, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import PageContainer from '../container/PageContainer';
 import KaryawanOverdueTable from '../kasbon/KaryawanOverdueTable';
-import KasbonFilters, { KasbonFilterValues } from '../kasbon/KasbonFilters';
+import KasbonFilters, { KasbonFilterValues, LoanTypeValue } from '../kasbon/KasbonFilters';
 
 interface LoanNonPerformingListProps {
   title: string;
@@ -24,8 +24,8 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
   // Log access check result for debugging
   console.log(`${title} Access Check:`, accessCheck);
   
-  // Loan type state - mandatory selection, default to kasbon
-  const [loanType, setLoanType] = useState<'kasbon' | 'extradana' | 'aku_cicil' | ''>('kasbon');
+  // Loan type state — default to all loan types
+  const [loanType, setLoanType] = useState<LoanTypeValue>('all');
   
   // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<KasbonFilterValues>({
@@ -33,7 +33,9 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
     year: '',
     employer: '',
     placement: '',
-    project: ''
+    project: '',
+    clientSegment: '',
+    productType: '',
   });
 
   // Set initial date values in useEffect to avoid hydration issues
@@ -47,7 +49,9 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
       year: currentYear,
       employer: '',
       placement: '',
-      project: ''
+      project: '',
+      clientSegment: '',
+      productType: '',
     });
   }, []);
 
@@ -57,8 +61,7 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
   };
 
   const handleLoanTypeChange = (event: SelectChangeEvent<string>) => {
-    const newLoanType = event.target.value as 'kasbon' | 'extradana' | 'aku_cicil';
-    setLoanType(newLoanType);
+    setLoanType(event.target.value as LoanTypeValue);
   };
 
   return (
@@ -71,34 +74,15 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
           </Typography>
         </Box>
 
-        {/* Loan Type Selector */}
         <Box mb={3}>
-          <FormControl fullWidth>
-            <InputLabel>Loan Type *</InputLabel>
-            <Select
-              value={loanType}
-              label="Loan Type *"
-              onChange={handleLoanTypeChange}
-              required
-            >
-              <MenuItem value="kasbon">Kasbon</MenuItem>
-              <MenuItem value="extradana">Extradana</MenuItem>
-              <MenuItem value="aku_cicil">Aku Cicil</MenuItem>
-            </Select>
-          </FormControl>
+          <KasbonFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            loanType={loanType}
+            onLoanTypeChange={handleLoanTypeChange}
+          />
         </Box>
 
-        {/* Filters - Only show when loan type is selected */}
-        {loanType && (
-          <Box mb={3}>
-            <KasbonFilters
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-            />
-          </Box>
-        )}
-
-        {/* Karyawan Overdue Table - Only show when loan type is selected */}
         {loanType ? (
           <Box mb={3}>
             <KaryawanOverdueTable
@@ -106,9 +90,11 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
                 employer: filters.employer,
                 placement: filters.placement,
                 project: filters.project,
+                clientSegment: filters.clientSegment,
+                productType: filters.productType,
                 month: filters.month,
                 year: filters.year,
-                loanType: loanType
+                loanType,
               }}
             />
           </Box>

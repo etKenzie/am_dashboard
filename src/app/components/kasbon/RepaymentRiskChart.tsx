@@ -25,6 +25,8 @@ interface RepaymentRiskChartProps {
     employer: string;
     placement: string;
     project: string;
+    clientSegment?: string;
+    productType?: string;
     month?: string;
     year?: string;
     loanType: string;
@@ -104,6 +106,8 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
+        client_segment: filters.clientSegment || undefined,
+        product_type: filters.productType || undefined,
         start_date: formatDate(startDate),
         end_date: formatDate(endDate),
         loan_type: filters.loanType,
@@ -119,7 +123,7 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
   // Fetch data when dates change
   useEffect(() => {
     fetchChartData();
-  }, [startDate, endDate, filters.employer, filters.placement, filters.project, filters.loanType]);
+  }, [startDate, endDate, filters.employer, filters.placement, filters.project, filters.clientSegment, filters.productType, filters.loanType]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);

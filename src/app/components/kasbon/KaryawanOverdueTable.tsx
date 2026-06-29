@@ -54,6 +54,8 @@ interface KaryawanOverdueTableProps {
     employer: string;
     placement: string;
     project: string;
+    clientSegment?: string;
+    productType?: string;
     month: string;
     year: string;
     loanType: string;
@@ -90,6 +92,8 @@ const KaryawanOverdueTable = ({
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
+        client_segment: filters.clientSegment || undefined,
+        product_type: filters.productType || undefined,
         id_karyawan: undefined,
         month: selectedMonth,
         year: selectedYear,
@@ -109,7 +113,7 @@ const KaryawanOverdueTable = ({
     if (selectedMonth && selectedYear) {
       fetchOverdueData();
     }
-  }, [selectedMonth, selectedYear, filters.employer, filters.placement, filters.project]);
+  }, [selectedMonth, selectedYear, filters.employer, filters.placement, filters.project, filters.clientSegment, filters.productType, filters.loanType]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';

@@ -1,12 +1,12 @@
 'use client';
 
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
-import { Box, CircularProgress, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Typography } from '@mui/material';
+import { Box, CircularProgress, SelectChangeEvent, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { CoverageUtilizationResponse, fetchCoverageUtilization, fetchLoanPurpose, fetchRepaymentRisk, LoanPurposeResponse, RepaymentRiskResponse } from '../../api/loan/LoanSlice';
 import PageContainer from '../container/PageContainer';
 import CoverageUtilizationChart from '../kasbon/CoverageUtilizationChart';
-import KasbonFilters, { KasbonFilterValues } from '../kasbon/KasbonFilters';
+import KasbonFilters, { KasbonFilterValues, kasbonScopedLoanParams, LoanTypeValue } from '../kasbon/KasbonFilters';
 import LoanPurposeChart from '../kasbon/LoanPurposeChart';
 import RepaymentRiskChart from '../kasbon/RepaymentRiskChart';
 import RepaymentRiskSummary from '../kasbon/RepaymentRiskSummary';
@@ -29,8 +29,8 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
   // Log access check result for debugging
   console.log(`${title} Access Check:`, accessCheck);
 
-  // Loan type state - mandatory selection, default to kasbon
-  const [loanType, setLoanType] = useState<'kasbon' | 'extradana' | 'aku_cicil' | ''>('kasbon');
+  // Loan type state — default to all loan types
+  const [loanType, setLoanType] = useState<LoanTypeValue>('all');
 
   const [coverageUtilizationData, setCoverageUtilizationData] = useState<CoverageUtilizationResponse | null>(null);
   const [coverageUtilizationLoading, setCoverageUtilizationLoading] = useState(false);
@@ -45,7 +45,9 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
     year: '',
     employer: '',
     placement: '',
-    project: ''
+    project: '',
+    clientSegment: '',
+    productType: '',
   });
 
   // Set initial date values in useEffect to avoid hydration issues
@@ -67,9 +69,7 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
       // Only fetch loan purpose if we have month, year, and loan type (required)
       if (currentFilters.month && currentFilters.year && loanType) {
         const response = await fetchLoanPurpose({
-          employer: currentFilters.employer || undefined,
-          sourced_to: currentFilters.placement || undefined,
-          project: currentFilters.project || undefined,
+          ...kasbonScopedLoanParams(currentFilters),
           month: currentFilters.month,
           year: currentFilters.year,
           loan_type: loanType,
@@ -92,12 +92,10 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
       // Only fetch coverage utilization if we have month, year, and loan type (required)
       if (currentFilters.month && currentFilters.year && loanType) {
         const response = await fetchCoverageUtilization({
-          employer: currentFilters.employer || undefined,
-          sourced_to: currentFilters.placement || undefined,
-          project: currentFilters.project || undefined,
+          ...kasbonScopedLoanParams(currentFilters),
           month: currentFilters.month,
           year: currentFilters.year,
-          loan_type: loanType
+          loan_type: loanType,
         });
         setCoverageUtilizationData(response);
       } else {
@@ -117,12 +115,10 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
       // Only fetch repayment risk if we have month, year, and loan type (required)
       if (currentFilters.month && currentFilters.year && loanType) {
         const response = await fetchRepaymentRisk({
-          employer: currentFilters.employer || undefined,
-          sourced_to: currentFilters.placement || undefined,
-          project: currentFilters.project || undefined,
+          ...kasbonScopedLoanParams(currentFilters),
           month: currentFilters.month,
           year: currentFilters.year,
-          loan_type: loanType
+          loan_type: loanType,
         });
         setRepaymentRiskData(response);
       } else {
@@ -145,7 +141,7 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
   }, [fetchLoanPurposeData, fetchCoverageUtilizationData, fetchRepaymentRiskData]);
 
   const handleLoanTypeChange = (event: SelectChangeEvent<string>) => {
-    const newLoanType = event.target.value as 'kasbon' | 'extradana' | 'aku_cicil';
+    const newLoanType = event.target.value as LoanTypeValue;
     setLoanType(newLoanType);
     // Clear data when loan type changes
     setCoverageUtilizationData(null);
@@ -161,7 +157,19 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
       fetchCoverageUtilizationData(filters);
       fetchRepaymentRiskData(filters);
     }
-  }, [filters.month, filters.year, loanType]); // Depend on month, year, and loan type
+  }, [
+    filters.month,
+    filters.year,
+    filters.employer,
+    filters.placement,
+    filters.project,
+    filters.clientSegment,
+    filters.productType,
+    loanType,
+    fetchLoanPurposeData,
+    fetchCoverageUtilizationData,
+    fetchRepaymentRiskData,
+  ]);
 
   return (
     <PageContainer title={title} description={description}>
@@ -173,34 +181,15 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
           </Typography>
         </Box>
 
-        {/* Loan Type Selector */}
         <Box mb={3}>
-          <FormControl fullWidth>
-            <InputLabel>Loan Type *</InputLabel>
-            <Select
-              value={loanType}
-              label="Loan Type *"
-              onChange={handleLoanTypeChange}
-              required
-            >
-              <MenuItem value="kasbon">Kasbon</MenuItem>
-              <MenuItem value="extradana">Extradana</MenuItem>
-              <MenuItem value="aku_cicil">Aku Cicil</MenuItem>
-            </Select>
-          </FormControl>
+          <KasbonFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            loanType={loanType}
+            onLoanTypeChange={handleLoanTypeChange}
+          />
         </Box>
 
-        {/* Filters - Only show when loan type is selected */}
-        {loanType && (
-          <Box mb={3}>
-            <KasbonFilters
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-            />
-          </Box>
-        )}
-
-        {/* Content - Only show when loan type is selected */}
         {loanType ? (
           <>
             {/* User Coverage and Utilization Summary */}
@@ -218,9 +207,11 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
                   employer: filters.employer,
                   placement: filters.placement,
                   project: filters.project,
+                  clientSegment: filters.clientSegment,
+                  productType: filters.productType,
                   month: filters.month,
                   year: filters.year,
-                  loanType: loanType
+                  loanType,
                 }}
               />
             </Box>
@@ -237,9 +228,11 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
                     employer: filters.employer,
                     placement: filters.placement,
                     project: filters.project,
+                    clientSegment: filters.clientSegment,
+                    productType: filters.productType,
                     month: filters.month,
                     year: filters.year,
-                    loanType: loanType
+                    loanType,
                   }}
                 />
               ) : (
@@ -266,9 +259,11 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
                   employer: filters.employer,
                   placement: filters.placement,
                   project: filters.project,
+                  clientSegment: filters.clientSegment,
+                  productType: filters.productType,
                   month: filters.month,
                   year: filters.year,
-                  loanType: loanType
+                  loanType,
                 }}
               />
             </Box>

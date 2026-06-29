@@ -18,6 +18,8 @@ interface LoanPurposeChartProps {
     employer: string;
     placement: string;
     project: string;
+    clientSegment?: string;
+    productType?: string;
     month: string;
     year: string;
     loanType: string;
@@ -37,6 +39,8 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
+        client_segment: filters.clientSegment || undefined,
+        product_type: filters.productType || undefined,
         month: filters.month,
         year: filters.year,
         loan_type: filters.loanType,
@@ -52,7 +56,7 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
   // Fetch data when filters change
   useEffect(() => {
     fetchChartData();
-  }, [filters.month, filters.year, filters.employer, filters.placement, filters.project, filters.loanType]);
+  }, [filters.month, filters.year, filters.employer, filters.placement, filters.project, filters.clientSegment, filters.productType, filters.loanType]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
