@@ -27,6 +27,7 @@ import CandidateQualityInsightsSection from './CandidateQualityInsightsSection';
 import FulfillmentPerformanceSection from './FulfillmentPerformanceSection';
 import RecruitmentFunnelCard from './RecruitmentFunnelCard';
 import RecruitmentMetricCard from './RecruitmentMetricCard';
+import RecruitmentMultiSelect from './RecruitmentMultiSelect';
 import RecruitmentSearchableSelect from './RecruitmentSearchableSelect';
 
 const ALL_OPTION = { value: '0', label: 'All' };
@@ -51,11 +52,15 @@ function toSelectOptions(items: Array<{ id: string; name: string }>) {
   return [ALL_OPTION, ...items.map((x) => ({ value: x.id, label: x.name }))];
 }
 
+function toMultiSelectOptions(items: Array<{ id: string; name: string }>) {
+  return items.map((x) => ({ value: x.id, label: x.name }));
+}
+
 export default function RecruitmentOverview() {
   const [employer, setEmployer] = useState('0');
   const [sourcedTo, setSourcedTo] = useState('0');
   const [project, setProject] = useState('0');
-  const [customerSegment, setCustomerSegment] = useState('0');
+  const [customerSegments, setCustomerSegments] = useState<string[]>([]);
   const [productType, setProductType] = useState('0');
   const [filterOptions, setFilterOptions] = useState<RecruitmentFilterOptions>(EMPTY_FILTER_OPTIONS);
   const [dashboard, setDashboard] = useState<RecruitmentDashboardData>(EMPTY_RECRUITMENT_DASHBOARD);
@@ -67,10 +72,10 @@ export default function RecruitmentOverview() {
       employer,
       sourced_to: sourcedTo,
       project,
-      customer_segment: customerSegment,
+      customer_segments: customerSegments,
       product_type: productType,
     }),
-    [employer, sourcedTo, project, customerSegment, productType]
+    [employer, sourcedTo, project, customerSegments, productType]
   );
 
   const loadDashboard = useCallback(async () => {
@@ -106,7 +111,7 @@ export default function RecruitmentOverview() {
     [filterOptions.projects]
   );
   const segmentOptions = useMemo(
-    () => toSelectOptions(filterOptions.segments),
+    () => toMultiSelectOptions(filterOptions.segments),
     [filterOptions.segments]
   );
   const productTypeOptions = useMemo(
@@ -174,12 +179,12 @@ export default function RecruitmentOverview() {
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <RecruitmentSearchableSelect
+            <RecruitmentMultiSelect
               label="Segment"
-              value={customerSegment}
+              value={customerSegments}
               options={segmentOptions}
-              disabled={loading && segmentOptions.length <= 1}
-              onChange={setCustomerSegment}
+              disabled={loading && segmentOptions.length === 0}
+              onChange={setCustomerSegments}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>

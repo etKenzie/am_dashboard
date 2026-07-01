@@ -9,7 +9,8 @@ export interface RecruitmentFilters {
   employer: string;
   sourced_to: string;
   project: string;
-  customer_segment: string;
+  /** Empty array = all segments */
+  customer_segments: string[];
   product_type: string;
   year?: number;
   month?: number;
@@ -219,7 +220,9 @@ function buildRecruitmentQueryParams(filters: RecruitmentFilters): URLSearchPara
   add('employer_id', filters.employer);
   add('sourced_to_id', filters.sourced_to);
   add('project_id', filters.project);
-  add('segment', filters.customer_segment);
+  (filters.customer_segments ?? [])
+    .filter((id) => id && id !== '0')
+    .forEach((id) => params.append('segment', id));
   add('product_type', filters.product_type);
 
   if (filters.start_date && filters.end_date) {
