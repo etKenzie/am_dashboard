@@ -2,12 +2,7 @@
 
 import {
   Box,
-  FormControl,
   Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
   Typography,
 } from '@mui/material';
 import {
@@ -32,6 +27,7 @@ import CandidateQualityInsightsSection from './CandidateQualityInsightsSection';
 import FulfillmentPerformanceSection from './FulfillmentPerformanceSection';
 import RecruitmentFunnelCard from './RecruitmentFunnelCard';
 import RecruitmentMetricCard from './RecruitmentMetricCard';
+import RecruitmentSearchableSelect from './RecruitmentSearchableSelect';
 
 const ALL_OPTION = { value: '0', label: 'All' };
 
@@ -144,83 +140,56 @@ export default function RecruitmentOverview() {
 
         <Grid container spacing={2} sx={{ mb: 3 }} width="100%">
           <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Employer</InputLabel>
-              <Select
-                value={employer}
-                label="Employer"
-                onChange={(e: SelectChangeEvent<string>) => {
-                  setEmployer(e.target.value);
-                  setSourcedTo('0');
-                  setProject('0');
-                }}
-              >
-                {employerOptions.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <RecruitmentSearchableSelect
+              label="Employer"
+              value={employer}
+              options={employerOptions}
+              disabled={loading && employerOptions.length <= 1}
+              onChange={(next) => {
+                setEmployer(next);
+                setSourcedTo('0');
+                setProject('0');
+              }}
+            />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Sourced To</InputLabel>
-              <Select
-                value={sourcedTo}
-                label="Sourced To"
-                onChange={(e: SelectChangeEvent<string>) => {
-                  setSourcedTo(e.target.value);
-                  setProject('0');
-                }}
-              >
-                {sourcedToOptions.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <RecruitmentSearchableSelect
+              label="Sourced To"
+              value={sourcedTo}
+              options={sourcedToOptions}
+              disabled={loading && sourcedToOptions.length <= 1}
+              onChange={(next) => {
+                setSourcedTo(next);
+                setProject('0');
+              }}
+            />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Project</InputLabel>
-              <Select value={project} label="Project" onChange={(e: SelectChangeEvent<string>) => setProject(e.target.value)}>
-                {projectOptions.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <RecruitmentSearchableSelect
+              label="Project"
+              value={project}
+              options={projectOptions}
+              disabled={loading && projectOptions.length <= 1}
+              onChange={setProject}
+            />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Segment</InputLabel>
-              <Select
-                value={customerSegment}
-                label="Segment"
-                onChange={(e: SelectChangeEvent<string>) => setCustomerSegment(e.target.value)}
-              >
-                {segmentOptions.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <RecruitmentSearchableSelect
+              label="Segment"
+              value={customerSegment}
+              options={segmentOptions}
+              disabled={loading && segmentOptions.length <= 1}
+              onChange={setCustomerSegment}
+            />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Product Type</InputLabel>
-              <Select value={productType} label="Product Type" onChange={(e: SelectChangeEvent<string>) => setProductType(e.target.value)}>
-                {productTypeOptions.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <RecruitmentSearchableSelect
+              label="Product Type"
+              value={productType}
+              options={productTypeOptions}
+              disabled={loading && productTypeOptions.length <= 1}
+              onChange={setProductType}
+            />
           </Grid>
         </Grid>
 

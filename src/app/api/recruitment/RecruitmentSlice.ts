@@ -381,12 +381,30 @@ export async function fetchRecruitmentDashboard(
     headers['x-api-key'] = AM_MAIN_API_TOKEN;
   }
 
+  console.log('[recruitment-dashboard] request', {
+    method: 'GET',
+    url,
+    filters,
+    query: Object.fromEntries(params.entries()),
+    hasApiKey: Boolean(AM_MAIN_API_TOKEN),
+  });
+
   const res = await fetch(url, { method: 'GET', headers, cache: 'no-store' });
+
+  console.log('[recruitment-dashboard] response_meta', {
+    status: res.status,
+    ok: res.ok,
+    contentType: res.headers.get('content-type'),
+  });
+
   if (!res.ok) {
     throw new Error(`recruitment-dashboard: ${res.status} ${res.statusText}`);
   }
 
   const json = (await res.json()) as ApiRecruitmentDashboardResponse;
+
+  console.log('[recruitment-dashboard] response_json', json);
+
   if (!json.success) {
     throw new Error(json.message || 'Recruitment dashboard request failed');
   }
