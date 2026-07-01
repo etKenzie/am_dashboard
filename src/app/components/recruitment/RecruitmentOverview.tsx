@@ -27,7 +27,7 @@ import CandidateQualityInsightsSection from './CandidateQualityInsightsSection';
 import FulfillmentPerformanceSection from './FulfillmentPerformanceSection';
 import RecruitmentFunnelCard from './RecruitmentFunnelCard';
 import RecruitmentMetricCard from './RecruitmentMetricCard';
-import RecruitmentMultiSelect from './RecruitmentMultiSelect';
+import RecruitmentSegmentMultiSelect from './RecruitmentSegmentMultiSelect';
 import RecruitmentSearchableSelect from './RecruitmentSearchableSelect';
 
 const ALL_OPTION = { value: '0', label: 'All' };
@@ -112,7 +112,7 @@ export default function RecruitmentOverview() {
   );
   const segmentOptions = useMemo(
     () => toMultiSelectOptions(filterOptions.segments),
-    [filterOptions.segments]
+    [filterOptions.segments],
   );
   const productTypeOptions = useMemo(
     () => toSelectOptions(filterOptions.product_types),
@@ -179,7 +179,7 @@ export default function RecruitmentOverview() {
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <RecruitmentMultiSelect
+            <RecruitmentSegmentMultiSelect
               label="Segment"
               value={customerSegments}
               options={segmentOptions}

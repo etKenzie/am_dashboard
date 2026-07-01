@@ -169,7 +169,14 @@ const Menuitems: MenuitemsType[] = [
     title: "Recruitment",
     icon: IconUsers,
     href: "/recruitment",
-    chip: "New",
+  },
+
+  {
+    id: uniqueId(),
+    title: "Associates On Payroll",
+    icon: IconBuilding,
+    href: "/aop",
+    requiredRoles: [ROLES.ADMIN, ROLES.PAYROLL],
   },
 
   // {

@@ -220,9 +220,10 @@ function buildRecruitmentQueryParams(filters: RecruitmentFilters): URLSearchPara
   add('employer_id', filters.employer);
   add('sourced_to_id', filters.sourced_to);
   add('project_id', filters.project);
-  (filters.customer_segments ?? [])
-    .filter((id) => id && id !== '0')
-    .forEach((id) => params.append('segment', id));
+  const segmentIds = (filters.customer_segments ?? []).filter((id) => id && id !== '0');
+  if (segmentIds.length > 0) {
+    add('segment', segmentIds.join(','));
+  }
   add('product_type', filters.product_type);
 
   if (filters.start_date && filters.end_date) {
