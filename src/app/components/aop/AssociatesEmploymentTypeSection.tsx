@@ -12,6 +12,7 @@ const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 interface AssociatesEmploymentTypeSectionProps {
   data: AopEmploymentType;
   loading?: boolean;
+  hideZeroValues?: boolean;
 }
 
 const LABELS = [
@@ -21,14 +22,28 @@ const LABELS = [
   'DW Associates',
   'Unmapped Associates',
 ];
-const COLORS = ['#0D9488', '#14B8A6', '#2DD4BF', '#5EEAD4', '#94A3B8'];
+const COLORS = ['#43A047', '#FBC02D', '#E53935', '#1E88E5', '#8E24AA'];
 
 const AssociatesEmploymentTypeSection = ({
   data,
   loading = false,
+  hideZeroValues = false,
 }: AssociatesEmploymentTypeSectionProps) => {
   const theme = useTheme();
-  const values = [data.pkwt, data.pkwtt, data.mitra, data.dw, data.unmapped];
+  const chartItems = useMemo(() => {
+    const items = [
+      { label: LABELS[0], value: data.pkwt, color: COLORS[0] },
+      { label: LABELS[1], value: data.pkwtt, color: COLORS[1] },
+      { label: LABELS[2], value: data.mitra, color: COLORS[2] },
+      { label: LABELS[3], value: data.dw, color: COLORS[3] },
+      { label: LABELS[4], value: data.unmapped, color: COLORS[4] },
+    ];
+    return hideZeroValues ? items.filter((item) => item.value !== 0) : items;
+  }, [data, hideZeroValues]);
+
+  const values = chartItems.map((item) => item.value);
+  const labels = chartItems.map((item) => item.label);
+  const colors = chartItems.map((item) => item.color);
   const total = values.reduce((sum, v) => sum + v, 0);
 
   const chartOptions: ApexCharts.ApexOptions = useMemo(
@@ -47,14 +62,14 @@ const AssociatesEmploymentTypeSection = ({
           distributed: true,
         },
       },
-      colors: COLORS,
+      colors,
       dataLabels: {
         enabled: true,
         formatter: (val: number) => val.toLocaleString('en-US'),
         style: { fontSize: '12px', fontWeight: 600 },
       },
       xaxis: {
-        categories: LABELS,
+        categories: labels,
         labels: { formatter: (val: string) => Number(val).toLocaleString('en-US') },
       },
       yaxis: { labels: { style: { fontSize: '12px' } } },
@@ -64,7 +79,7 @@ const AssociatesEmploymentTypeSection = ({
         y: { formatter: (val: number) => `${val.toLocaleString('en-US')} associates` },
       },
     }),
-    [theme],
+    [theme, labels, colors],
   );
 
   return (
@@ -80,6 +95,10 @@ const AssociatesEmploymentTypeSection = ({
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
+          </Box>
+        ) : values.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <Typography color="text.secondary">No employment type data for this period</Typography>
           </Box>
         ) : (
           <>

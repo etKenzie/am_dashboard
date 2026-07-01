@@ -33,6 +33,7 @@ export interface AopFilters {
 export interface AopSummary {
   total_associates_on_payroll: number;
   first_payroll_associates: number;
+  billable_associates: number;
 }
 
 export interface AopEmploymentType {
@@ -98,6 +99,7 @@ interface ApiPayrollAssociatesSummaryResponse {
     associates_summary?: {
       total_associates_on_payroll?: number;
       first_payroll_associates?: number;
+      billable_associates?: number;
     };
     associates_employment_type?: {
       pkwtt_associates?: number;
@@ -134,13 +136,14 @@ interface ApiPayrollAssociatesFilterOptionsResponse {
 const DEFAULT_TREND_METRIC_OPTIONS: AopTrendMetricOption[] = [
   { key: 'total_associates_on_payroll', label: 'Total Associates on Payroll', enabled: true },
   { key: 'first_payroll_associates', label: 'First Payroll Associates', enabled: true },
-  { key: 'billable_associates', label: 'Billable Associates', enabled: false },
+  { key: 'billable_associates', label: 'Billable Associates', enabled: true },
 ];
 
 export const EMPTY_AOP_DASHBOARD: AopDashboardData = {
   summary: {
     total_associates_on_payroll: 0,
     first_payroll_associates: 0,
+    billable_associates: 0,
   },
   employment_type: { pkwt: 0, pkwtt: 0, mitra: 0, dw: 0, unmapped: 0 },
   payroll_composition: {
@@ -270,6 +273,7 @@ function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): AopDashb
     summary: {
       total_associates_on_payroll: num(summary.total_associates_on_payroll),
       first_payroll_associates: num(summary.first_payroll_associates),
+      billable_associates: num(summary.billable_associates),
     },
     employment_type: {
       pkwt: num(employment.pkwt_associates),

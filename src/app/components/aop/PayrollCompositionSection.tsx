@@ -12,6 +12,7 @@ const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false })
 interface PayrollCompositionSectionProps {
   data: AopPayrollComposition;
   loading?: boolean;
+  hideZeroValues?: boolean;
 }
 
 const SEGMENTS = [
@@ -33,17 +34,28 @@ const SEGMENTS = [
   },
 ] as const;
 
-const SHORT_LABELS = SEGMENTS.map((s) => s.short);
-const COLORS = ['#0D9488', '#0891B2', '#6366F1', '#94A3B8'];
 
-const PayrollCompositionSection = ({ data, loading = false }: PayrollCompositionSectionProps) => {
+const COLORS = ['#1E88E5', '#43A047', '#FB8C00', '#8E24AA'];
+
+const PayrollCompositionSection = ({
+  data,
+  loading = false,
+  hideZeroValues = false,
+}: PayrollCompositionSectionProps) => {
   const theme = useTheme();
-  const values = [
-    data.regular_payroll,
-    data.regular_payroll_with_compensation,
-    data.compensation_only,
-    data.unmapped,
-  ];
+  const chartItems = useMemo(() => {
+    const items = [
+      { segment: SEGMENTS[0], value: data.regular_payroll, color: COLORS[0] },
+      { segment: SEGMENTS[1], value: data.regular_payroll_with_compensation, color: COLORS[1] },
+      { segment: SEGMENTS[2], value: data.compensation_only, color: COLORS[2] },
+      { segment: SEGMENTS[3], value: data.unmapped, color: COLORS[3] },
+    ];
+    return hideZeroValues ? items.filter((item) => item.value !== 0) : items;
+  }, [data, hideZeroValues]);
+
+  const values = chartItems.map((item) => item.value);
+  const shortLabels = chartItems.map((item) => item.segment.short);
+  const colors = chartItems.map((item) => item.color);
   const total = values.reduce((sum, v) => sum + v, 0);
 
   const chartOptions: ApexCharts.ApexOptions = useMemo(
@@ -53,8 +65,8 @@ const PayrollCompositionSection = ({ data, loading = false }: PayrollComposition
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         foreColor: theme.palette.mode === 'dark' ? '#adb0bb' : '#5e5873',
       },
-      labels: SHORT_LABELS,
-      colors: COLORS,
+      labels: shortLabels,
+      colors,
       legend: { position: 'bottom', fontSize: '13px' },
       dataLabels: {
         enabled: true,
@@ -88,7 +100,7 @@ const PayrollCompositionSection = ({ data, loading = false }: PayrollComposition
       },
       tooltip: {
         custom: ({ series, seriesIndex }) => {
-          const label = SEGMENTS[seriesIndex]?.full ?? '';
+          const label = chartItems[seriesIndex]?.segment.full ?? '';
           const value = series[seriesIndex] ?? 0;
           return `<div class="arrow-box" style="padding:8px 12px">
             <div style="font-weight:600;margin-bottom:4px">${label}</div>
@@ -97,7 +109,7 @@ const PayrollCompositionSection = ({ data, loading = false }: PayrollComposition
         },
       },
     }),
-    [theme, total],
+    [theme, total, shortLabels, colors, chartItems],
   );
 
   return (
@@ -113,6 +125,10 @@ const PayrollCompositionSection = ({ data, loading = false }: PayrollComposition
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
             <CircularProgress />
+          </Box>
+        ) : values.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+            <Typography color="text.secondary">No payroll composition data for this period</Typography>
           </Box>
         ) : (
           <ReactApexChart options={chartOptions} series={values} type="donut" height={360} />
