@@ -5,7 +5,8 @@ import { Box, SelectChangeEvent, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import PageContainer from '../container/PageContainer';
 import KaryawanOverdueTable from '../kasbon/KaryawanOverdueTable';
-import KasbonFilters, { KasbonFilterValues, LoanTypeValue } from '../kasbon/KasbonFilters';
+import KasbonFilters, { KasbonFilterValues, LoanDateModeToggle, LoanTypeValue } from '../kasbon/KasbonFilters';
+import { applyLoanDateModeChange, getDefaultKasbonFilterDates } from '../kasbon/kasbonDateHelpers';
 
 interface LoanNonPerformingListProps {
   title: string;
@@ -18,19 +19,13 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
   description, 
   requiredRoles 
 }) => {
-  // Check access for allowed roles
   const accessCheck = useCheckRoles(requiredRoles);
-  
-  // Log access check result for debugging
   console.log(`${title} Access Check:`, accessCheck);
   
-  // Loan type state — default to all loan types
   const [loanType, setLoanType] = useState<LoanTypeValue>('all');
   
-  // Initialize filters with empty values to avoid hydration mismatch
   const [filters, setFilters] = useState<KasbonFilterValues>({
-    month: '',
-    year: '',
+    ...getDefaultKasbonFilterDates(),
     employer: '',
     placement: '',
     project: '',
@@ -38,15 +33,9 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
     productType: '',
   });
 
-  // Set initial date values in useEffect to avoid hydration issues
   useEffect(() => {
-    const currentDate = new Date();
-    const currentMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-    const currentYear = currentDate.getFullYear().toString();
-    
     setFilters({
-      month: currentMonth,
-      year: currentYear,
+      ...getDefaultKasbonFilterDates(),
       employer: '',
       placement: '',
       project: '',
@@ -67,11 +56,23 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
   return (
     <PageContainer title={title} description={description}>
       <Box>
-        {/* Header */}
-        <Box mb={3}>
-          <Typography variant="h3" fontWeight="bold" mb={1}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 2,
+            mb: 3,
+          }}
+        >
+          <Typography variant="h3" fontWeight="bold">
             {title}
           </Typography>
+          <LoanDateModeToggle
+            value={filters.dateMode}
+            onChange={(dateMode) => handleFiltersChange(applyLoanDateModeChange(filters, dateMode))}
+          />
         </Box>
 
         <Box mb={3}>
@@ -92,8 +93,11 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
                 project: filters.project,
                 clientSegment: filters.clientSegment,
                 productType: filters.productType,
+                dateMode: filters.dateMode,
                 month: filters.month,
                 year: filters.year,
+                startDate: filters.startDate,
+                endDate: filters.endDate,
                 loanType,
               }}
             />

@@ -25,6 +25,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { fetchKaryawanOverdue, KaryawanOverdue } from '../../api/loan/LoanSlice';
+import { formatKasbonDateLabel, isKasbonDateFilterReady, kasbonDateParams, type LoanDateMode } from './kasbonDateHelpers';
 
 type Order = 'asc' | 'desc';
 type SortableField = keyof KaryawanOverdue;
@@ -56,8 +57,11 @@ interface KaryawanOverdueTableProps {
     project: string;
     clientSegment?: string;
     productType?: string;
+    dateMode: LoanDateMode;
     month: string;
     year: string;
+    startDate: string;
+    endDate: string;
     loanType: string;
   };
   title?: string;
@@ -78,12 +82,9 @@ const KaryawanOverdueTable = ({
   const [sourcedToFilter, setSourcedToFilter] = useState<string>('');
   const [projectFilter, setProjectFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  // Use month and year from filters prop
-  const selectedMonth = filters.month || '';
-  const selectedYear = filters.year || '';
 
   const fetchOverdueData = async () => {
-    if (!selectedMonth || !selectedYear) return;
+    if (!isKasbonDateFilterReady(filters)) return;
     
     setLoading(true);
     setError(null);
@@ -95,8 +96,7 @@ const KaryawanOverdueTable = ({
         client_segment: filters.clientSegment || undefined,
         product_type: filters.productType || undefined,
         id_karyawan: undefined,
-        month: selectedMonth,
-        year: selectedYear,
+        ...kasbonDateParams(filters),
         loan_type: filters.loanType,
       });
       
@@ -110,10 +110,22 @@ const KaryawanOverdueTable = ({
   };
 
   useEffect(() => {
-    if (selectedMonth && selectedYear) {
+    if (isKasbonDateFilterReady(filters)) {
       fetchOverdueData();
     }
-  }, [selectedMonth, selectedYear, filters.employer, filters.placement, filters.project, filters.clientSegment, filters.productType, filters.loanType]);
+  }, [
+    filters.dateMode,
+    filters.month,
+    filters.year,
+    filters.startDate,
+    filters.endDate,
+    filters.employer,
+    filters.placement,
+    filters.project,
+    filters.clientSegment,
+    filters.productType,
+    filters.loanType,
+  ]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -249,7 +261,7 @@ const KaryawanOverdueTable = ({
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `karyawan-overdue-${selectedMonth}-${selectedYear}.xlsx`;
+    a.download = `karyawan-overdue-${formatKasbonDateLabel(filters).replace(/\s+/g, '_')}.xlsx`;
     a.click();
     window.URL.revokeObjectURL(url);
   };

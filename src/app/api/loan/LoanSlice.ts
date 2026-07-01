@@ -49,6 +49,14 @@ function appendLoanScopedFilters(queryParams: URLSearchParams, params: LoanScope
   if (params.loan_type) queryParams.append('loan_type', params.loan_type);
 }
 
+function appendLoanDateFilters(
+  queryParams: URLSearchParams,
+  params: { start_date?: string; end_date?: string },
+): void {
+  if (params.start_date) queryParams.append('start_date', params.start_date);
+  if (params.end_date) queryParams.append('end_date', params.end_date);
+}
+
 
 // Types for Loan Fees Monthly Query Parameters
 export interface LoanFeesMonthlyParams {
@@ -88,8 +96,8 @@ export interface KaryawanOverdueParams {
   sourced_to?: string;
   project?: string;
   id_karyawan?: string;
-  month?: string;
-  year?: string;
+  start_date?: string;
+  end_date?: string;
   loan_type?: string;
   client_segment?: string;
   product_type?: string;
@@ -133,8 +141,8 @@ export interface CoverageUtilizationParams {
   employer?: string;
   sourced_to?: string;
   project?: string;
-  month?: string;
-  year?: string;
+  start_date?: string;
+  end_date?: string;
   loan_type?: string;
   client_segment?: string;
   product_type?: string;
@@ -201,8 +209,8 @@ export interface RepaymentRiskParams {
   employer?: string;
   sourced_to?: string;
   project?: string;
-  month?: string;
-  year?: string;
+  start_date?: string;
+  end_date?: string;
   loan_type?: string;
   client_segment?: string;
   product_type?: string;
@@ -328,8 +336,8 @@ export interface LoanPurposeParams {
   sourced_to?: string;
   project?: string;
   id_karyawan?: string;
-  month?: string;
-  year?: string;
+  start_date?: string;
+  end_date?: string;
   loan_type?: string;
   client_segment?: string;
   product_type?: string;
@@ -360,8 +368,8 @@ export interface ClientSummaryResponse {
 }
 
 export interface ClientSummaryParams {
-  month?: string;
-  year?: string;
+  start_date?: string;
+  end_date?: string;
   loan_type?: string;
   client_segment?: string;
   product_type?: string;
@@ -447,8 +455,7 @@ export const fetchKaryawanOverdue = async (params: KaryawanOverdueParams): Promi
   
   appendLoanScopedFilters(queryParams, params);
   if (params.id_karyawan) queryParams.append('id_karyawan', params.id_karyawan);
-  if (params.month) queryParams.append('month', params.month);
-  if (params.year) queryParams.append('year', params.year);
+  appendLoanDateFilters(queryParams, params);
   
   const url = `${baseUrl}/loan/karyawan-overdue?${queryParams.toString()}`;
   
@@ -476,8 +483,7 @@ export const fetchCoverageUtilization = async (params: CoverageUtilizationParams
   const queryParams = new URLSearchParams();
   
   appendLoanScopedFilters(queryParams, params);
-  if (params.month) queryParams.append('month', params.month);
-  if (params.year) queryParams.append('year', params.year);
+  appendLoanDateFilters(queryParams, params);
   
   const url = `${baseUrl}/loan/coverage-utilization?${queryParams.toString()}`;
   
@@ -534,8 +540,7 @@ export const fetchRepaymentRisk = async (params: RepaymentRiskParams): Promise<R
   const queryParams = new URLSearchParams();
   
   appendLoanScopedFilters(queryParams, params);
-  if (params.month) queryParams.append('month', params.month);
-  if (params.year) queryParams.append('year', params.year);
+  appendLoanDateFilters(queryParams, params);
   
   const url = `${baseUrl}/loan/repayment-risk?${queryParams.toString()}`;
   
@@ -686,8 +691,7 @@ export const fetchLoanPurpose = async (params: LoanPurposeParams): Promise<LoanP
   
   appendLoanScopedFilters(queryParams, params);
   if (params.id_karyawan) queryParams.append('id_karyawan', params.id_karyawan);
-  if (params.month) queryParams.append('month', params.month);
-  if (params.year) queryParams.append('year', params.year);
+  appendLoanDateFilters(queryParams, params);
   
   const url = `${baseUrl}/loan/loan-purpose?${queryParams.toString()}`;
   
@@ -714,8 +718,7 @@ export const fetchClientSummary = async (params: ClientSummaryParams): Promise<C
   // Build query string from parameters
   const queryParams = new URLSearchParams();
   
-  if (params.month) queryParams.append('month', params.month);
-  if (params.year) queryParams.append('year', params.year);
+  appendLoanDateFilters(queryParams, params);
   if (params.loan_type) queryParams.append('loan_type', params.loan_type);
   if (params.client_segment) queryParams.append('client_segment', params.client_segment);
   if (params.product_type) queryParams.append('product_type', params.product_type);

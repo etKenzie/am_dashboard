@@ -12,25 +12,15 @@ import {
     SelectChangeEvent,
     Typography
 } from '@mui/material';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import dynamic from "next/dynamic";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { fetchRepaymentRiskMonthly, RepaymentRiskMonthlyResponse } from '../../api/loan/LoanSlice';
+import { getLoanChartDateBounds, type LoanTrendChartFilters } from './kasbonDateHelpers';
+
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface RepaymentRiskChartProps {
-  filters: {
-    employer: string;
-    placement: string;
-    project: string;
-    clientSegment?: string;
-    productType?: string;
-    month?: string;
-    year?: string;
-    loanType: string;
-  };
+  filters: LoanTrendChartFilters;
 }
 
 type ChartType = 'amounts' | 'rates' | 'profit';
@@ -39,77 +29,37 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
   const [chartData, setChartData] = useState<RepaymentRiskMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [chartType, setChartType] = useState<ChartType>('amounts');
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [chartYear, setChartYear] = useState(filters.year ?? '');
 
-  // Initialize dates in useEffect to avoid hydration issues
-  useEffect(() => {
-    updateDateRange();
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 6 }, (_, i) => (currentYear - i).toString());
   }, []);
 
-  // Update date range when filters change
   useEffect(() => {
-    updateDateRange();
-  }, [filters.month, filters.year, filters.employer, filters.placement, filters.project]);
-
-  const updateDateRange = () => {
-    let newEndDate: Date;
-    let newStartDate: Date;
-
-    if (filters.month && filters.year) {
-      // Use the selected month and year from filters
-      const selectedYear = parseInt(filters.year);
-      const selectedMonth = parseInt(filters.month) - 1; // Month is 0-indexed
-      
-      // End date: end of the selected month
-      newEndDate = new Date(selectedYear, selectedMonth + 1, 0);
-      
-      // Start date: 6 months before the selected month, start of that month
-      // Handle year boundary correctly
-      let startYear = selectedYear;
-      let startMonth = selectedMonth - 6;
-      
-      if (startMonth < 0) {
-        startYear = selectedYear - 1;
-        startMonth = 12 + startMonth; // Convert negative to positive month
-      }
-      
-      newStartDate = new Date(startYear, startMonth, 1);
-    } else {
-      // Fallback to current month logic
-      newEndDate = new Date();
-      newEndDate.setMonth(newEndDate.getMonth() + 1, 0); // End of current month
-      
-      newStartDate = new Date();
-      newStartDate.setMonth(newStartDate.getMonth() - 6);
-      newStartDate.setDate(1); // Set to first day of the month
+    if (filters.dateMode === 'month' && filters.year) {
+      setChartYear(filters.year);
     }
-    
-    setStartDate(newStartDate);
-    setEndDate(newEndDate);
-  };
+  }, [filters.dateMode, filters.year]);
+
+  const dateBounds = useMemo(
+    () => getLoanChartDateBounds(filters, chartYear),
+    [filters, chartYear],
+  );
 
   const fetchChartData = async () => {
-    if (!startDate || !endDate) return;
+    if (!dateBounds) return;
     
     setLoading(true);
     try {
-      // Format dates as YYYY-MM-DD without timezone issues
-      const formatDate = (date: Date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-
       const response = await fetchRepaymentRiskMonthly({
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
         client_segment: filters.clientSegment || undefined,
         product_type: filters.productType || undefined,
-        start_date: formatDate(startDate),
-        end_date: formatDate(endDate),
+        start_date: dateBounds.startDate,
+        end_date: dateBounds.endDate,
         loan_type: filters.loanType,
       });
       setChartData(response);
@@ -120,10 +70,18 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
     }
   };
 
-  // Fetch data when dates change
   useEffect(() => {
     fetchChartData();
-  }, [startDate, endDate, filters.employer, filters.placement, filters.project, filters.clientSegment, filters.productType, filters.loanType]);
+  }, [
+    dateBounds?.startDate,
+    dateBounds?.endDate,
+    filters.employer,
+    filters.placement,
+    filters.project,
+    filters.clientSegment,
+    filters.productType,
+    filters.loanType,
+  ]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);
@@ -143,11 +101,9 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
     return value.toLocaleString('id-ID');
   };
 
-  // Prepare chart data
   const prepareChartData = () => {
     if (!chartData?.monthly_data) return { categories: [], series: [] };
 
-    // Sort months chronologically (Month Year format like "January 2025")
     const months = Object.keys(chartData.monthly_data).sort((a, b) => {
       const monthNames = [
         'January', 'February', 'March', 'April', 'May', 'June',
@@ -262,8 +218,6 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
   return (
     <Card>
       <CardContent>
-        
-        {/* Controls */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2, mb: 3 }}>
           <Typography variant="h6" sx={{ margin: 0 }}>
             Repayment Risk Monthly Trend
@@ -282,28 +236,26 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
                 <MenuItem value="profit">Admin Fee Profit</MenuItem>
               </Select>
             </FormControl>
-            
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="Start Date"
-                value={startDate}
-                onChange={(newValue) => setStartDate(newValue)}
-                slotProps={{ textField: { size: 'small' } }}
-              />
-            </LocalizationProvider>
-            
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="End Date"
-                value={endDate}
-                onChange={(newValue) => setEndDate(newValue)}
-                slotProps={{ textField: { size: 'small' } }}
-              />
-            </LocalizationProvider>
+
+            {filters.dateMode === 'month' && (
+              <FormControl size="small" sx={{ minWidth: 100 }}>
+                <InputLabel>Year</InputLabel>
+                <Select
+                  value={chartYear}
+                  label="Year"
+                  onChange={(event) => setChartYear(event.target.value)}
+                >
+                  {yearOptions.map((year) => (
+                    <MenuItem key={year} value={year}>
+                      {year}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
           </Box>
         </Box>
 
-        {/* Chart */}
         <Box sx={{ height: 400, position: 'relative' }}>
           {loading ? (
             <Box 
@@ -332,7 +284,7 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
                 height: '100%' 
               }}
             >
-              <Typography color="textSecondary">No data available for the selected date range</Typography>
+              <Typography color="textSecondary">No data available for the selected period</Typography>
             </Box>
           )}
         </Box>

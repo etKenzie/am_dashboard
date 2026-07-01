@@ -9,6 +9,7 @@ import ClientDelinquencyTable from '../kasbon/ClientDelinquencyTable';
 import ClientPenetrationTable from '../kasbon/ClientPenetrationTable';
 import ClientSummaryTable from '../kasbon/ClientSummaryTable';
 import KasbonOverviewFilters, { KasbonOverviewFilterValues } from '../kasbon/KasbonOverviewFilters';
+import { getMonthDateRange } from '../kasbon/kasbonDateHelpers';
 
 interface LoanOverviewProps {
   title: string;
@@ -59,15 +60,16 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
   // Fetch client summary data
   useEffect(() => {
     const fetchData = async () => {
-      if (!filters.month || !filters.year || !loanType) return;
+      const dateRange = getMonthDateRange(filters.month, filters.year);
+      if (!dateRange || !loanType) return;
       
       setLoading(true);
       setError(null);
       
       try {
         const response = await fetchClientSummary({
-          month: filters.month,
-          year: filters.year,
+          start_date: dateRange.startDate,
+          end_date: dateRange.endDate,
           loan_type: loanType,
           client_segment: filters.clientSegment || undefined,
           product_type: filters.productType || undefined,

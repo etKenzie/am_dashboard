@@ -7,22 +7,53 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  SelectChangeEvent
+  SelectChangeEvent,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useEffect, useState } from 'react';
 import type { LoanFilters as LoanFiltersType } from '../../api/loan/LoanSlice';
 import { fetchLoanFilters } from '../../api/loan/LoanSlice';
+import { formatLoanDate, parseLoanDateString } from './kasbonDateHelpers';
 
 export type LoanTypeValue = 'all' | 'kasbon' | 'extradana' | 'aku_cicil';
+export type LoanDateMode = 'month' | 'range';
 
 export interface KasbonFilterValues {
+  dateMode: LoanDateMode;
   month: string;
   year: string;
+  startDate: string;
+  endDate: string;
   employer: string;
   placement: string;
   project: string;
   clientSegment: string;
   productType: string;
+}
+
+interface LoanDateModeToggleProps {
+  value: LoanDateMode;
+  onChange: (mode: LoanDateMode) => void;
+}
+
+export function LoanDateModeToggle({ value, onChange }: LoanDateModeToggleProps) {
+  return (
+    <ToggleButtonGroup
+      size="small"
+      exclusive
+      value={value}
+      onChange={(_, next) => {
+        if (next) onChange(next);
+      }}
+    >
+      <ToggleButton value="month">Month</ToggleButton>
+      <ToggleButton value="range">Date Range</ToggleButton>
+    </ToggleButtonGroup>
+  );
 }
 
 export function kasbonScopedLoanParams(filters: KasbonFilterValues) {
@@ -104,42 +135,74 @@ const KasbonFilters = ({ filters, onFiltersChange, loanType, onLoanTypeChange }:
         </Grid>
       </Grid>
 
-      <Grid container spacing={2} width="100%">
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Month</InputLabel>
-            <Select
-              value={filters.month}
-              label="Month"
-              onChange={handleFilterChange('month')}
-              disabled={loading}
-            >
-              {months.map((month) => (
-                <MenuItem key={month.value} value={month.value}>
-                  {month.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+      {filters.dateMode === 'month' ? (
+        <Grid container spacing={2} width="100%">
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Month</InputLabel>
+              <Select
+                value={filters.month}
+                label="Month"
+                onChange={handleFilterChange('month')}
+                disabled={loading}
+              >
+                {months.map((month) => (
+                  <MenuItem key={month.value} value={month.value}>
+                    {month.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel>Year</InputLabel>
+              <Select
+                value={filters.year}
+                label="Year"
+                onChange={handleFilterChange('year')}
+                disabled={loading}
+              >
+                {years.map((year) => (
+                  <MenuItem key={year} value={year}>
+                    {year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
         </Grid>
-        <Grid size={{ xs: 12, sm: 6 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Year</InputLabel>
-            <Select
-              value={filters.year}
-              label="Year"
-              onChange={handleFilterChange('year')}
-              disabled={loading}
-            >
-              {years.map((year) => (
-                <MenuItem key={year} value={year}>
-                  {year}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
+      ) : (
+        <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <Grid container spacing={2} width="100%">
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <DatePicker
+                label="Start Date"
+                value={parseLoanDateString(filters.startDate)}
+                onChange={(date) => {
+                  if (!date) return;
+                  onFiltersChange({ ...filters, startDate: formatLoanDate(date) });
+                }}
+                disabled={loading}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <DatePicker
+                label="End Date"
+                value={parseLoanDateString(filters.endDate)}
+                onChange={(date) => {
+                  if (!date) return;
+                  onFiltersChange({ ...filters, endDate: formatLoanDate(date) });
+                }}
+                disabled={loading}
+                minDate={parseLoanDateString(filters.startDate) ?? undefined}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+            </Grid>
+          </Grid>
+        </LocalizationProvider>
+      )}
 
       <Grid container spacing={2} width="100%">
         <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>

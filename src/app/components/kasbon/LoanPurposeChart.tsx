@@ -10,20 +10,12 @@ import {
 import dynamic from "next/dynamic";
 import React, { useEffect, useState } from 'react';
 import { fetchLoanPurpose, LoanPurposeResponse } from '../../api/loan/LoanSlice';
+import { formatKasbonDateLabel, isKasbonDateFilterReady, kasbonDateParams, type LoanTrendChartFilters } from './kasbonDateHelpers';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface LoanPurposeChartProps {
-  filters: {
-    employer: string;
-    placement: string;
-    project: string;
-    clientSegment?: string;
-    productType?: string;
-    month: string;
-    year: string;
-    loanType: string;
-  };
+  filters: LoanTrendChartFilters;
 }
 
 const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
@@ -31,7 +23,7 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
   const [loading, setLoading] = useState(false);
 
   const fetchChartData = async () => {
-    if (!filters.month || !filters.year) return;
+    if (!isKasbonDateFilterReady(filters)) return;
     
     setLoading(true);
     try {
@@ -41,8 +33,7 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
         project: filters.project || undefined,
         client_segment: filters.clientSegment || undefined,
         product_type: filters.productType || undefined,
-        month: filters.month,
-        year: filters.year,
+        ...kasbonDateParams(filters),
         loan_type: filters.loanType,
       });
       setChartData(response);
@@ -53,10 +44,21 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
     }
   };
 
-  // Fetch data when filters change
   useEffect(() => {
     fetchChartData();
-  }, [filters.month, filters.year, filters.employer, filters.placement, filters.project, filters.clientSegment, filters.productType, filters.loanType]);
+  }, [
+    filters.dateMode,
+    filters.month,
+    filters.year,
+    filters.startDate,
+    filters.endDate,
+    filters.employer,
+    filters.placement,
+    filters.project,
+    filters.clientSegment,
+    filters.productType,
+    filters.loanType,
+  ]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -230,7 +232,7 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
           Loan Purpose Distribution
         </Typography>
         <Typography variant="body2" color="textSecondary" mb={3}>
-          Distribution of loan purposes by total amount and count for {filters.month}/{filters.year}
+          Distribution of loan purposes by total amount and count for {formatKasbonDateLabel(filters)}
         </Typography>
         
         <Box>
