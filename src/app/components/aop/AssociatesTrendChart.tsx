@@ -14,17 +14,11 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import dynamic from 'next/dynamic';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AopAssociatesTrend, AopTrendMetric } from '../../api/aop/AopSlice';
 import { aopCardOuterSx } from './aopStyles';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
-
-const METRIC_OPTIONS: Array<{ value: AopTrendMetric; label: string }> = [
-  { value: 'total_on_payroll', label: 'Total Associates on Payroll' },
-  { value: 'first_payroll', label: 'First Payroll Associates' },
-  { value: 'billable', label: 'Billable Associates' },
-];
 
 interface AssociatesTrendChartProps {
   data: AopAssociatesTrend;
@@ -33,20 +27,22 @@ interface AssociatesTrendChartProps {
 
 const AssociatesTrendChart = ({ data, loading = false }: AssociatesTrendChartProps) => {
   const theme = useTheme();
-  const [metric, setMetric] = useState<AopTrendMetric>('total_on_payroll');
+  const enabledMetrics = useMemo(
+    () => data.metric_options.filter((option) => option.enabled),
+    [data.metric_options],
+  );
 
-  const seriesData = useMemo(() => {
-    switch (metric) {
-      case 'first_payroll':
-        return data.first_payroll;
-      case 'billable':
-        return data.billable;
-      default:
-        return data.total_on_payroll;
+  const [metric, setMetric] = useState<AopTrendMetric>('total_associates_on_payroll');
+
+  useEffect(() => {
+    const isCurrentEnabled = enabledMetrics.some((option) => option.key === metric);
+    if (!isCurrentEnabled && enabledMetrics.length > 0) {
+      setMetric(enabledMetrics[0].key);
     }
-  }, [data, metric]);
+  }, [enabledMetrics, metric]);
 
-  const metricLabel = METRIC_OPTIONS.find((o) => o.value === metric)?.label ?? '';
+  const seriesData = data.series[metric] ?? [];
+  const metricLabel = data.metric_options.find((option) => option.key === metric)?.label ?? '';
   const hasData = data.categories.length > 0 && seriesData.length > 0;
 
   const chartOptions: ApexCharts.ApexOptions = useMemo(
@@ -104,16 +100,18 @@ const AssociatesTrendChart = ({ data, loading = false }: AssociatesTrendChartPro
             </Typography>
           </Box>
 
-          <FormControl size="small" sx={{ minWidth: 260 }}>
-            <InputLabel>Metric</InputLabel>
-            <Select value={metric} label="Metric" onChange={handleMetricChange}>
-              {METRIC_OPTIONS.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {enabledMetrics.length > 0 && (
+            <FormControl size="small" sx={{ minWidth: 260 }}>
+              <InputLabel>Metric</InputLabel>
+              <Select value={metric} label="Metric" onChange={handleMetricChange}>
+                {enabledMetrics.map((option) => (
+                  <MenuItem key={option.key} value={option.key}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
         </Box>
 
         <Box sx={{ height: 380, position: 'relative' }}>

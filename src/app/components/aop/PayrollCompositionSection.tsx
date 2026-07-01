@@ -27,14 +27,23 @@ const SEGMENTS = [
     short: 'Comp Only',
     full: 'Compensation Only',
   },
+  {
+    short: 'Unmapped',
+    full: 'Unmapped Associates',
+  },
 ] as const;
 
 const SHORT_LABELS = SEGMENTS.map((s) => s.short);
-const COLORS = ['#0D9488', '#0891B2', '#6366F1'];
+const COLORS = ['#0D9488', '#0891B2', '#6366F1', '#94A3B8'];
 
 const PayrollCompositionSection = ({ data, loading = false }: PayrollCompositionSectionProps) => {
   const theme = useTheme();
-  const values = [data.regular_payroll, data.regular_plus_compensation, data.compensation_only];
+  const values = [
+    data.regular_payroll,
+    data.regular_payroll_with_compensation,
+    data.compensation_only,
+    data.unmapped,
+  ];
   const total = values.reduce((sum, v) => sum + v, 0);
 
   const chartOptions: ApexCharts.ApexOptions = useMemo(

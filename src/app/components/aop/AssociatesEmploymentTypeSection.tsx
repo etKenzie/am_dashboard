@@ -14,15 +14,21 @@ interface AssociatesEmploymentTypeSectionProps {
   loading?: boolean;
 }
 
-const LABELS = ['PKWT Associates', 'PKWTT Associates', 'Mitra Associates', 'DW Associates'];
-const COLORS = ['#0D9488', '#14B8A6', '#2DD4BF', '#5EEAD4'];
+const LABELS = [
+  'PKWT Associates',
+  'PKWTT Associates',
+  'Mitra Associates',
+  'DW Associates',
+  'Unmapped Associates',
+];
+const COLORS = ['#0D9488', '#14B8A6', '#2DD4BF', '#5EEAD4', '#94A3B8'];
 
 const AssociatesEmploymentTypeSection = ({
   data,
   loading = false,
 }: AssociatesEmploymentTypeSectionProps) => {
   const theme = useTheme();
-  const values = [data.pkwt, data.pkwtt, data.mitra, data.dw];
+  const values = [data.pkwt, data.pkwtt, data.mitra, data.dw, data.unmapped];
   const total = values.reduce((sum, v) => sum + v, 0);
 
   const chartOptions: ApexCharts.ApexOptions = useMemo(
@@ -84,7 +90,7 @@ const AssociatesEmploymentTypeSection = ({
               options={chartOptions}
               series={[{ name: 'Associates', data: values }]}
               type="bar"
-              height={280}
+              height={320}
             />
           </>
         )}

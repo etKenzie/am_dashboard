@@ -5,7 +5,6 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import {
-  IconCash,
   IconUserCheck,
   IconUsers,
 } from '@tabler/icons-react';
@@ -16,6 +15,7 @@ import {
   AopFilters,
   EMPTY_AOP_DASHBOARD,
   fetchAopDashboard,
+  fetchAopFilterOptions,
 } from '../../api/aop/AopSlice';
 import {
   formatLoanDate,
@@ -58,6 +58,7 @@ export default function AopOverview() {
   const [filterOptions, setFilterOptions] = useState<AopFilterOptions>(EMPTY_FILTER_OPTIONS);
   const [dashboard, setDashboard] = useState<AopDashboardData>(EMPTY_AOP_DASHBOARD);
   const [loading, setLoading] = useState(true);
+  const [filterOptionsLoading, setFilterOptionsLoading] = useState(true);
 
   useEffect(() => {
     const { startDate: start, endDate: end } = getYearToDateRange();
@@ -78,14 +79,32 @@ export default function AopOverview() {
     [employer, sourcedTo, project, branch, clientSegment, startDate, endDate],
   );
 
+  const loadFilterOptions = useCallback(async () => {
+    if (!startDate || !endDate) return;
+
+    setFilterOptionsLoading(true);
+    try {
+      const options = await fetchAopFilterOptions({
+        start_date: startDate,
+        end_date: endDate,
+        employer,
+      });
+      setFilterOptions(options);
+    } catch (err) {
+      console.error('Failed to load Associates On Payroll filter options:', err);
+      setFilterOptions(EMPTY_FILTER_OPTIONS);
+    } finally {
+      setFilterOptionsLoading(false);
+    }
+  }, [startDate, endDate, employer]);
+
   const loadDashboard = useCallback(async () => {
     if (!startDate || !endDate) return;
 
     setLoading(true);
     try {
       const result = await fetchAopDashboard(filters);
-      setDashboard(result.dashboard);
-      setFilterOptions(result.filterOptions);
+      setDashboard(result);
     } catch (err) {
       console.error('Failed to load Associates On Payroll dashboard:', err);
       setDashboard(EMPTY_AOP_DASHBOARD);
@@ -93,6 +112,10 @@ export default function AopOverview() {
       setLoading(false);
     }
   }, [filters, startDate, endDate]);
+
+  useEffect(() => {
+    loadFilterOptions();
+  }, [loadFilterOptions]);
 
   useEffect(() => {
     loadDashboard();
@@ -119,6 +142,7 @@ export default function AopOverview() {
     [filterOptions.segments],
   );
 
+  const filtersBusy = loading || filterOptionsLoading;
   const sectionTitleSx = { mb: 2, mt: 0, fontWeight: 600 } as const;
   const { summary } = dashboard;
 
@@ -140,7 +164,7 @@ export default function AopOverview() {
                     if (!date) return;
                     setStartDate(formatLoanDate(date));
                   }}
-                  disabled={loading}
+                  disabled={filtersBusy}
                   slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
               </Grid>
@@ -152,7 +176,7 @@ export default function AopOverview() {
                     if (!date) return;
                     setEndDate(formatLoanDate(date));
                   }}
-                  disabled={loading}
+                  disabled={filtersBusy}
                   minDate={parseLoanDateString(startDate) ?? undefined}
                   slotProps={{ textField: { size: 'small', fullWidth: true } }}
                 />
@@ -166,7 +190,7 @@ export default function AopOverview() {
                 label="Employer"
                 value={employer}
                 options={employerOptions}
-                disabled={loading && employerOptions.length <= 1}
+                disabled={filtersBusy && employerOptions.length <= 1}
                 onChange={(next) => {
                   setEmployer(next);
                   setSourcedTo('0');
@@ -180,7 +204,7 @@ export default function AopOverview() {
                 label="Sourced To"
                 value={sourcedTo}
                 options={sourcedToOptions}
-                disabled={loading && sourcedToOptions.length <= 1}
+                disabled={filtersBusy && sourcedToOptions.length <= 1}
                 onChange={(next) => {
                   setSourcedTo(next);
                   setProject('0');
@@ -193,7 +217,7 @@ export default function AopOverview() {
                 label="Project"
                 value={project}
                 options={projectOptions}
-                disabled={loading && projectOptions.length <= 1}
+                disabled={filtersBusy && projectOptions.length <= 1}
                 onChange={setProject}
               />
             </Grid>
@@ -202,7 +226,7 @@ export default function AopOverview() {
                 label="Branch"
                 value={branch}
                 options={branchOptions}
-                disabled={loading && branchOptions.length <= 1}
+                disabled={filtersBusy && branchOptions.length <= 1}
                 onChange={setBranch}
               />
             </Grid>
@@ -211,7 +235,7 @@ export default function AopOverview() {
                 label="Client Segment"
                 value={clientSegment}
                 options={segmentOptions}
-                disabled={loading && segmentOptions.length <= 1}
+                disabled={filtersBusy && segmentOptions.length <= 1}
                 onChange={setClientSegment}
               />
             </Grid>
@@ -228,8 +252,7 @@ export default function AopOverview() {
             gap: 2,
             gridTemplateColumns: {
               xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              lg: 'repeat(3, minmax(0, 1fr))',
+              sm: 'repeat(2, minmax(0, 1fr))',
             },
             mb: 3,
           }}
@@ -244,12 +267,6 @@ export default function AopOverview() {
             title="First Payroll Associates"
             value={formatNumber(summary.first_payroll_associates)}
             icon={IconUserCheck}
-            loading={loading}
-          />
-          <AopMetricCard
-            title="Billable Associates"
-            value={formatNumber(summary.billable_associates)}
-            icon={IconCash}
             loading={loading}
           />
         </Box>

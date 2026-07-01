@@ -102,8 +102,18 @@ export function getMainApiToken(): string {
   return process.env.NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN ?? '';
 }
 
+/** Executive dashboard / AOP API key. Optional — empty when unset. */
+export function getMainApiToken2(): string {
+  return (
+    process.env.AM_MAIN_API_URL_TOKEN_2 ??
+    process.env.NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN_2 ??
+    ''
+  );
+}
+
 export const AM_MAIN_API_URL = getMainApiUrl();
 export const AM_MAIN_API_TOKEN = getMainApiToken();
+export const AM_MAIN_API_TOKEN_2 = getMainApiToken2();
 
 // Log API URL at module load (only once, helps with debugging)
 if (typeof window === 'undefined') {
