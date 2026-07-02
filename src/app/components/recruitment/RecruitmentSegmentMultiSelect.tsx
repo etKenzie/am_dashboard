@@ -76,18 +76,32 @@ function partitionSegmentOptions(options: RecruitmentSelectOption[]) {
   return { bfsi, nonBfsi, other };
 }
 
-function resolveSegmentSelection(previous: string[], next: string[]): string[] {
+function resolveSegmentSelection(
+  previous: string[],
+  next: string[],
+  options: RecruitmentSelectOption[],
+): string[] {
+  const allBfsiId = options.find(isAllBfsiOption)?.value ?? ALL_BFSI_ID;
+  const allNonBfsiId = options.find(isAllNonBfsiOption)?.value ?? ALL_NON_BFSI_ID;
+
   const prevSet = new Set(previous);
   const added = next.filter((id) => !prevSet.has(id));
 
-  if (added.includes(ALL_BFSI_ID)) {
-    return [ALL_BFSI_ID];
+  if (added.includes(allBfsiId)) {
+    return [allBfsiId];
   }
-  if (added.includes(ALL_NON_BFSI_ID)) {
-    return [ALL_NON_BFSI_ID];
+  if (added.includes(allNonBfsiId)) {
+    return [allNonBfsiId];
   }
 
-  return next.filter((id) => id !== ALL_BFSI_ID && id !== ALL_NON_BFSI_ID);
+  if (previous.includes(allBfsiId) && next.includes(allBfsiId) && next.length > 1) {
+    return [allBfsiId];
+  }
+  if (previous.includes(allNonBfsiId) && next.includes(allNonBfsiId) && next.length > 1) {
+    return [allNonBfsiId];
+  }
+
+  return next.filter((id) => id !== allBfsiId && id !== allNonBfsiId);
 }
 
 const RecruitmentSegmentMultiSelect = ({
@@ -109,17 +123,28 @@ const RecruitmentSegmentMultiSelect = ({
   const labelByValue = useMemo(() => new Map(options.map((o) => [o.value, o.label])), [options]);
   const selectedSet = useMemo(() => new Set(value), [value]);
 
+  const allBfsiId = allBfsiOption?.value ?? ALL_BFSI_ID;
+  const allNonBfsiId = allNonBfsiOption?.value ?? ALL_NON_BFSI_ID;
+  const isAllBfsiSelected = selectedSet.has(allBfsiId);
+  const isAllNonBfsiSelected = selectedSet.has(allNonBfsiId);
+
   const handleChange = (event: SelectChangeEvent<string[]>) => {
     const rawNext =
       typeof event.target.value === 'string' ? event.target.value.split(',') : [...event.target.value];
-    onChange(resolveSegmentSelection(value, rawNext));
+    onChange(resolveSegmentSelection(value, rawNext, options));
   };
 
-  const renderGroupItem = (option: RecruitmentSelectOption | undefined) => {
+  const renderGroupItem = (option: RecruitmentSelectOption | undefined, itemDisabled = false) => {
     if (!option) return null;
 
     return (
-      <MenuItem key={option.value} value={option.value} dense sx={{ fontWeight: 600 }}>
+      <MenuItem
+        key={option.value}
+        value={option.value}
+        dense
+        disabled={itemDisabled}
+        sx={{ fontWeight: 600 }}
+      >
         <ListItemText
           primary={option.label}
           primaryTypographyProps={{ fontWeight: 600, color: 'primary.main' }}
@@ -128,9 +153,14 @@ const RecruitmentSegmentMultiSelect = ({
     );
   };
 
-  const renderCheckboxItem = (option: RecruitmentSelectOption) => (
-    <MenuItem key={option.value} value={option.value} dense>
-      <Checkbox size="small" checked={selectedSet.has(option.value)} sx={{ py: 0, mr: 1 }} />
+  const renderCheckboxItem = (option: RecruitmentSelectOption, itemDisabled = false) => (
+    <MenuItem key={option.value} value={option.value} dense disabled={itemDisabled}>
+      <Checkbox
+        size="small"
+        checked={selectedSet.has(option.value)}
+        disabled={itemDisabled}
+        sx={{ py: 0, mr: 1 }}
+      />
       <ListItemText primary={option.label} />
     </MenuItem>
   );
@@ -156,15 +186,15 @@ const RecruitmentSegmentMultiSelect = ({
         }}
       >
         {renderGroupItem(allBfsiOption)}
-        {bfsi.map(renderCheckboxItem)}
+        {bfsi.map((option) => renderCheckboxItem(option, isAllBfsiSelected || isAllNonBfsiSelected))}
 
         {showBfsiGroup && showNonBfsiGroup && <Divider sx={{ my: 0.5 }} />}
 
         {renderGroupItem(allNonBfsiOption)}
-        {nonBfsi.map(renderCheckboxItem)}
+        {nonBfsi.map((option) => renderCheckboxItem(option, isAllBfsiSelected || isAllNonBfsiSelected))}
 
         {other.length > 0 && (showBfsiGroup || showNonBfsiGroup) && <Divider sx={{ my: 0.5 }} />}
-        {other.map(renderCheckboxItem)}
+        {other.map((option) => renderCheckboxItem(option, isAllBfsiSelected || isAllNonBfsiSelected))}
       </Select>
     </FormControl>
   );

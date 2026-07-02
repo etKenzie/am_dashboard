@@ -6,7 +6,7 @@ export interface LoanTrendChartFilters {
   employer: string;
   placement: string;
   project: string;
-  clientSegment?: string;
+  clientSegments?: string[];
   productType?: string;
   loanType: string;
   dateMode: LoanDateMode;

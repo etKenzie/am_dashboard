@@ -26,6 +26,7 @@ import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { fetchKaryawanOverdue, KaryawanOverdue } from '../../api/loan/LoanSlice';
 import { formatKasbonDateLabel, isKasbonDateFilterReady, kasbonDateParams, type LoanDateMode } from './kasbonDateHelpers';
+import { formatClientSegmentParam } from './KasbonFilters';
 
 type Order = 'asc' | 'desc';
 type SortableField = keyof KaryawanOverdue;
@@ -55,7 +56,7 @@ interface KaryawanOverdueTableProps {
     employer: string;
     placement: string;
     project: string;
-    clientSegment?: string;
+    clientSegments?: string[];
     productType?: string;
     dateMode: LoanDateMode;
     month: string;
@@ -65,11 +66,13 @@ interface KaryawanOverdueTableProps {
     loanType: string;
   };
   title?: string;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 const KaryawanOverdueTable = ({ 
   filters,
-  title = 'Overdue Karyawan' 
+  title = 'Overdue Karyawan',
+  onLoadingChange,
 }: KaryawanOverdueTableProps) => {
   const [karyawan, setKaryawan] = useState<KaryawanOverdue[]>([]);
   const [loading, setLoading] = useState(false);
@@ -93,7 +96,7 @@ const KaryawanOverdueTable = ({
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
-        client_segment: filters.clientSegment || undefined,
+        client_segment: formatClientSegmentParam(filters.clientSegments),
         product_type: filters.productType || undefined,
         id_karyawan: undefined,
         ...kasbonDateParams(filters),
@@ -122,10 +125,14 @@ const KaryawanOverdueTable = ({
     filters.employer,
     filters.placement,
     filters.project,
-    filters.clientSegment,
+    filters.clientSegments,
     filters.productType,
     filters.loanType,
   ]);
+
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
 
   const handleRequestSort = (property: SortableField) => {
     const isAsc = orderBy === property && order === 'asc';

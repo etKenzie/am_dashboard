@@ -11,14 +11,16 @@ import dynamic from "next/dynamic";
 import React, { useEffect, useState } from 'react';
 import { fetchLoanPurpose, LoanPurposeResponse } from '../../api/loan/LoanSlice';
 import { formatKasbonDateLabel, isKasbonDateFilterReady, kasbonDateParams, type LoanTrendChartFilters } from './kasbonDateHelpers';
+import { formatClientSegmentParam } from './KasbonFilters';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface LoanPurposeChartProps {
   filters: LoanTrendChartFilters;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
-const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
+const LoanPurposeChart = ({ filters, onLoadingChange }: LoanPurposeChartProps) => {
   const [chartData, setChartData] = useState<LoanPurposeResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +33,7 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
-        client_segment: filters.clientSegment || undefined,
+        client_segment: formatClientSegmentParam(filters.clientSegments),
         product_type: filters.productType || undefined,
         ...kasbonDateParams(filters),
         loan_type: filters.loanType,
@@ -55,10 +57,14 @@ const LoanPurposeChart = ({ filters }: LoanPurposeChartProps) => {
     filters.employer,
     filters.placement,
     filters.project,
-    filters.clientSegment,
+    filters.clientSegments,
     filters.productType,
     filters.loanType,
   ]);
+
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {

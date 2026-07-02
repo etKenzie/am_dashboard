@@ -197,7 +197,7 @@ export default function AopOverview() {
         employer: '',
         placement: '',
         project: '',
-        clientSegment: '',
+        clientSegments: [],
         productType: '',
       },
       nextMode,

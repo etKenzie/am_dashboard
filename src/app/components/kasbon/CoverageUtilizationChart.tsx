@@ -16,16 +16,18 @@ import dynamic from "next/dynamic";
 import React, { useEffect, useMemo, useState } from 'react';
 import { CoverageUtilizationMonthlyResponse, fetchCoverageUtilizationMonthly } from '../../api/loan/LoanSlice';
 import { getLoanChartDateBounds, type LoanTrendChartFilters } from './kasbonDateHelpers';
+import { formatClientSegmentParam } from './KasbonFilters';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface CoverageUtilizationChartProps {
   filters: LoanTrendChartFilters;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 type ChartType = 'requests' | 'amounts' | 'rates';
 
-const CoverageUtilizationChart = ({ filters }: CoverageUtilizationChartProps) => {
+const CoverageUtilizationChart = ({ filters, onLoadingChange }: CoverageUtilizationChartProps) => {
   const [chartData, setChartData] = useState<CoverageUtilizationMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [chartType, setChartType] = useState<ChartType>('requests');
@@ -56,7 +58,7 @@ const CoverageUtilizationChart = ({ filters }: CoverageUtilizationChartProps) =>
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
-        client_segment: filters.clientSegment || undefined,
+        client_segment: formatClientSegmentParam(filters.clientSegments),
         product_type: filters.productType || undefined,
         start_date: dateBounds.startDate,
         end_date: dateBounds.endDate,
@@ -78,10 +80,14 @@ const CoverageUtilizationChart = ({ filters }: CoverageUtilizationChartProps) =>
     filters.employer,
     filters.placement,
     filters.project,
-    filters.clientSegment,
+    filters.clientSegments,
     filters.productType,
     filters.loanType,
   ]);
+
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);

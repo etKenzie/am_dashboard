@@ -2,11 +2,12 @@
 
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { Box, SelectChangeEvent, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PageContainer from '../container/PageContainer';
 import KaryawanOverdueTable from '../kasbon/KaryawanOverdueTable';
 import KasbonFilters, { KasbonFilterValues, LoanDateModeToggle, LoanTypeValue } from '../kasbon/KasbonFilters';
-import { applyLoanDateModeChange, getDefaultKasbonFilterDates } from '../kasbon/kasbonDateHelpers';
+import { areKasbonFiltersEqual } from '../kasbon/kasbonFilterHelpers';
+import { applyLoanDateModeChange, getDefaultKasbonFilterDates, isKasbonDateFilterReady } from '../kasbon/kasbonDateHelpers';
 
 interface LoanNonPerformingListProps {
   title: string;
@@ -22,36 +23,45 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
   const accessCheck = useCheckRoles(requiredRoles);
   console.log(`${title} Access Check:`, accessCheck);
   
-  const [loanType, setLoanType] = useState<LoanTypeValue>('all');
-  
-  const [filters, setFilters] = useState<KasbonFilterValues>({
+  const [pendingLoanType, setPendingLoanType] = useState<LoanTypeValue>('all');
+  const [appliedLoanType, setAppliedLoanType] = useState<LoanTypeValue>('all');
+
+  const defaultFilterValues = (): KasbonFilterValues => ({
     ...getDefaultKasbonFilterDates(),
     employer: '',
     placement: '',
     project: '',
-    clientSegment: '',
+    clientSegments: [],
     productType: '',
   });
 
+  const [pendingFilters, setPendingFilters] = useState<KasbonFilterValues>(defaultFilterValues);
+  const [appliedFilters, setAppliedFilters] = useState<KasbonFilterValues>(defaultFilterValues);
+  const [isDataLoading, setIsDataLoading] = useState(false);
+
   useEffect(() => {
-    setFilters({
-      ...getDefaultKasbonFilterDates(),
-      employer: '',
-      placement: '',
-      project: '',
-      clientSegment: '',
-      productType: '',
-    });
+    const defaults = defaultFilterValues();
+    setPendingFilters(defaults);
+    setAppliedFilters(defaults);
   }, []);
 
-  const handleFiltersChange = (newFilters: KasbonFilterValues) => {
-    console.log('Non-performing list filters changed:', newFilters);
-    setFilters(newFilters);
+  const handlePendingFiltersChange = (newFilters: KasbonFilterValues) => {
+    setPendingFilters(newFilters);
+  };
+
+  const handleApplyFilters = () => {
+    setAppliedFilters(pendingFilters);
+    setAppliedLoanType(pendingLoanType);
   };
 
   const handleLoanTypeChange = (event: SelectChangeEvent<string>) => {
-    setLoanType(event.target.value as LoanTypeValue);
+    setPendingLoanType(event.target.value as LoanTypeValue);
   };
+
+  const hasPendingChanges = useMemo(
+    () => !areKasbonFiltersEqual(pendingFilters, appliedFilters) || pendingLoanType !== appliedLoanType,
+    [pendingFilters, appliedFilters, pendingLoanType, appliedLoanType],
+  );
 
   return (
     <PageContainer title={title} description={description}>
@@ -70,35 +80,38 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
             {title}
           </Typography>
           <LoanDateModeToggle
-            value={filters.dateMode}
-            onChange={(dateMode) => handleFiltersChange(applyLoanDateModeChange(filters, dateMode))}
+            value={pendingFilters.dateMode}
+            onChange={(dateMode) => handlePendingFiltersChange(applyLoanDateModeChange(pendingFilters, dateMode))}
           />
         </Box>
 
         <Box mb={3}>
           <KasbonFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            loanType={loanType}
+            filters={pendingFilters}
+            onFiltersChange={handlePendingFiltersChange}
+            onApply={handleApplyFilters}
+            applyDisabled={!isKasbonDateFilterReady(pendingFilters) || !hasPendingChanges || isDataLoading}
+            loanType={pendingLoanType}
             onLoanTypeChange={handleLoanTypeChange}
           />
         </Box>
 
-        {loanType ? (
+        {appliedLoanType ? (
           <Box mb={3}>
             <KaryawanOverdueTable
+              onLoadingChange={setIsDataLoading}
               filters={{
-                employer: filters.employer,
-                placement: filters.placement,
-                project: filters.project,
-                clientSegment: filters.clientSegment,
-                productType: filters.productType,
-                dateMode: filters.dateMode,
-                month: filters.month,
-                year: filters.year,
-                startDate: filters.startDate,
-                endDate: filters.endDate,
-                loanType,
+                employer: appliedFilters.employer,
+                placement: appliedFilters.placement,
+                project: appliedFilters.project,
+                clientSegments: appliedFilters.clientSegments,
+                productType: appliedFilters.productType,
+                dateMode: appliedFilters.dateMode,
+                month: appliedFilters.month,
+                year: appliedFilters.year,
+                startDate: appliedFilters.startDate,
+                endDate: appliedFilters.endDate,
+                loanType: appliedLoanType,
               }}
             />
           </Box>

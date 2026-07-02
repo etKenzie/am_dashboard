@@ -132,6 +132,18 @@ const AssociatesTrendChart = ({ filters }: AssociatesTrendChartProps) => {
   const metricLabel = data.metric_options.find((option) => option.key === metric)?.label ?? '';
   const hasData = chartCategories.length > 0 && seriesData.length > 0;
 
+  const trendAverage = useMemo(() => {
+    if (seriesData.length === 0) return 0;
+    return seriesData.reduce((sum, value) => sum + value, 0) / seriesData.length;
+  }, [seriesData]);
+
+  const averageLineData = useMemo(
+    () => seriesData.map(() => trendAverage),
+    [seriesData, trendAverage],
+  );
+
+  const averageLineColor = theme.palette.mode === 'dark' ? '#94A3B8' : '#64748B';
+
   const chartOptions: ApexCharts.ApexOptions = useMemo(
     () => ({
       chart: {
@@ -141,9 +153,24 @@ const AssociatesTrendChart = ({ filters }: AssociatesTrendChartProps) => {
         toolbar: { show: true },
         zoom: { enabled: false },
       },
-      stroke: { curve: 'smooth', width: 3 },
-      colors: ['#0D9488'],
-      markers: { size: 5, strokeColors: '#fff', strokeWidth: 2 },
+      stroke: {
+        curve: 'smooth',
+        width: [3, 2],
+        dashArray: [0, 5],
+      },
+      colors: ['#0D9488', averageLineColor],
+      markers: {
+        size: [5, 0],
+        strokeColors: '#fff',
+        strokeWidth: 2,
+      },
+      legend: {
+        show: true,
+        position: 'top',
+        horizontalAlign: 'right',
+        fontSize: '12px',
+        labels: { colors: theme.palette.mode === 'dark' ? '#adb0bb' : '#5e5873' },
+      },
       xaxis: {
         categories: chartCategories,
         labels: { style: { fontSize: '12px' }, rotate: -45 },
@@ -155,10 +182,10 @@ const AssociatesTrendChart = ({ filters }: AssociatesTrendChartProps) => {
       },
       grid: { borderColor: theme.palette.divider, strokeDashArray: 4 },
       tooltip: {
-        y: { formatter: (val: number) => val.toLocaleString('en-US') },
+        y: { formatter: (val: number) => val.toLocaleString('en-US', { maximumFractionDigits: 1 }) },
       },
     }),
-    [theme, chartCategories],
+    [theme, chartCategories, averageLineColor],
   );
 
   const handleMetricChange = (event: SelectChangeEvent<AopTrendMetric>) => {
@@ -229,7 +256,10 @@ const AssociatesTrendChart = ({ filters }: AssociatesTrendChartProps) => {
           ) : hasData ? (
             <ReactApexChart
               options={chartOptions}
-              series={[{ name: metricLabel, data: seriesData }]}
+              series={[
+                { name: metricLabel, data: seriesData },
+                { name: 'Average', data: averageLineData },
+              ]}
               type="line"
               height={360}
             />
