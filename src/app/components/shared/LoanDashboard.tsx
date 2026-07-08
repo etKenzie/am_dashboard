@@ -2,11 +2,12 @@
 
 import { useCheckRoles } from '@/app/hooks/useCheckRoles';
 import { Box, CircularProgress, SelectChangeEvent, Typography } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CoverageUtilizationResponse, fetchCoverageUtilization, fetchLoanPurpose, fetchRepaymentRisk, LoanPurposeResponse, RepaymentRiskResponse } from '../../api/loan/LoanSlice';
 import PageContainer from '../container/PageContainer';
 import CoverageUtilizationChart from '../kasbon/CoverageUtilizationChart';
 import KasbonFilters, { KasbonFilterValues, kasbonScopedLoanParams, LoanDateModeToggle, LoanTypeValue } from '../kasbon/KasbonFilters';
+import { areKasbonFiltersEqual } from '../kasbon/kasbonFilterHelpers';
 import { getDefaultKasbonFilterDates, applyLoanDateModeChange, isKasbonDateFilterReady, kasbonDateParams } from '../kasbon/kasbonDateHelpers';
 import LoanPurposeChart from '../kasbon/LoanPurposeChart';
 import RepaymentRiskChart from '../kasbon/RepaymentRiskChart';
@@ -27,7 +28,8 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
   const accessCheck = useCheckRoles(requiredRoles);
   console.log(`${title} Access Check:`, accessCheck);
 
-  const [loanType, setLoanType] = useState<LoanTypeValue>('all');
+  const [pendingLoanType, setPendingLoanType] = useState<LoanTypeValue>('all');
+  const [appliedLoanType, setAppliedLoanType] = useState<LoanTypeValue>('all');
 
   const [coverageUtilizationData, setCoverageUtilizationData] = useState<CoverageUtilizationResponse | null>(null);
   const [coverageUtilizationLoading, setCoverageUtilizationLoading] = useState(false);
@@ -35,31 +37,51 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
   const [repaymentRiskLoading, setRepaymentRiskLoading] = useState(false);
   const [loanPurposeData, setLoanPurposeData] = useState<LoanPurposeResponse | null>(null);
   const [loanPurposeLoading, setLoanPurposeLoading] = useState(false);
+  const [coverageChartLoading, setCoverageChartLoading] = useState(false);
+  const [loanPurposeChartLoading, setLoanPurposeChartLoading] = useState(false);
+  const [repaymentChartLoading, setRepaymentChartLoading] = useState(false);
   
-  const [filters, setFilters] = useState<KasbonFilterValues>({
+  const [pendingFilters, setPendingFilters] = useState<KasbonFilterValues>({
     ...getDefaultKasbonFilterDates(),
     employer: '',
     placement: '',
     project: '',
-    clientSegment: '',
+    clientSegments: [],
+    productType: '',
+  });
+  const [appliedFilters, setAppliedFilters] = useState<KasbonFilterValues>({
+    ...getDefaultKasbonFilterDates(),
+    employer: '',
+    placement: '',
+    project: '',
+    clientSegments: [],
     productType: '',
   });
 
   useEffect(() => {
-    setFilters((prev) => ({
-      ...prev,
+    const defaults = {
       ...getDefaultKasbonFilterDates(),
-    }));
+      employer: '',
+      placement: '',
+      project: '',
+      clientSegments: [],
+      productType: '',
+    };
+    setPendingFilters(defaults);
+    setAppliedFilters(defaults);
   }, []);
 
-  const fetchLoanPurposeData = useCallback(async (currentFilters: KasbonFilterValues) => {
+  const fetchLoanPurposeData = useCallback(async (
+    currentFilters: KasbonFilterValues,
+    currentLoanType: LoanTypeValue,
+  ) => {
     setLoanPurposeLoading(true);
     try {
-      if (isKasbonDateFilterReady(currentFilters) && loanType) {
+      if (isKasbonDateFilterReady(currentFilters) && currentLoanType) {
         const response = await fetchLoanPurpose({
           ...kasbonScopedLoanParams(currentFilters),
           ...kasbonDateParams(currentFilters),
-          loan_type: loanType,
+          loan_type: currentLoanType,
         });
         setLoanPurposeData(response);
       } else {
@@ -71,16 +93,19 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
     } finally {
       setLoanPurposeLoading(false);
     }
-  }, [loanType]);
+  }, []);
 
-  const fetchCoverageUtilizationData = useCallback(async (currentFilters: KasbonFilterValues) => {
+  const fetchCoverageUtilizationData = useCallback(async (
+    currentFilters: KasbonFilterValues,
+    currentLoanType: LoanTypeValue,
+  ) => {
     setCoverageUtilizationLoading(true);
     try {
-      if (isKasbonDateFilterReady(currentFilters) && loanType) {
+      if (isKasbonDateFilterReady(currentFilters) && currentLoanType) {
         const response = await fetchCoverageUtilization({
           ...kasbonScopedLoanParams(currentFilters),
           ...kasbonDateParams(currentFilters),
-          loan_type: loanType,
+          loan_type: currentLoanType,
         });
         setCoverageUtilizationData(response);
       } else {
@@ -92,16 +117,19 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
     } finally {
       setCoverageUtilizationLoading(false);
     }
-  }, [loanType]);
+  }, []);
 
-  const fetchRepaymentRiskData = useCallback(async (currentFilters: KasbonFilterValues) => {
+  const fetchRepaymentRiskData = useCallback(async (
+    currentFilters: KasbonFilterValues,
+    currentLoanType: LoanTypeValue,
+  ) => {
     setRepaymentRiskLoading(true);
     try {
-      if (isKasbonDateFilterReady(currentFilters) && loanType) {
+      if (isKasbonDateFilterReady(currentFilters) && currentLoanType) {
         const response = await fetchRepaymentRisk({
           ...kasbonScopedLoanParams(currentFilters),
           ...kasbonDateParams(currentFilters),
-          loan_type: loanType,
+          loan_type: currentLoanType,
         });
         setRepaymentRiskData(response);
       } else {
@@ -113,59 +141,60 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
     } finally {
       setRepaymentRiskLoading(false);
     }
-  }, [loanType]);
+  }, []);
 
-  const handleFiltersChange = useCallback((newFilters: KasbonFilterValues) => {
-    console.log('Filters changed:', newFilters);
-    setFilters(newFilters);
-    fetchLoanPurposeData(newFilters);
-    fetchCoverageUtilizationData(newFilters);
-    fetchRepaymentRiskData(newFilters);
-  }, [fetchLoanPurposeData, fetchCoverageUtilizationData, fetchRepaymentRiskData]);
+  const handlePendingFiltersChange = useCallback((newFilters: KasbonFilterValues) => {
+    setPendingFilters(newFilters);
+  }, []);
+
+  const handleApplyFilters = useCallback(() => {
+    setAppliedFilters(pendingFilters);
+    setAppliedLoanType(pendingLoanType);
+  }, [pendingFilters, pendingLoanType]);
 
   const handleLoanTypeChange = (event: SelectChangeEvent<string>) => {
-    const newLoanType = event.target.value as LoanTypeValue;
-    setLoanType(newLoanType);
-    setCoverageUtilizationData(null);
-    setRepaymentRiskData(null);
-    setLoanPurposeData(null);
+    setPendingLoanType(event.target.value as LoanTypeValue);
   };
 
   useEffect(() => {
-    if (isKasbonDateFilterReady(filters) && loanType) {
-      fetchLoanPurposeData(filters);
-      fetchCoverageUtilizationData(filters);
-      fetchRepaymentRiskData(filters);
-    }
+    if (!isKasbonDateFilterReady(appliedFilters) || !appliedLoanType) return;
+
+    fetchLoanPurposeData(appliedFilters, appliedLoanType);
+    fetchCoverageUtilizationData(appliedFilters, appliedLoanType);
+    fetchRepaymentRiskData(appliedFilters, appliedLoanType);
   }, [
-    filters.dateMode,
-    filters.month,
-    filters.year,
-    filters.startDate,
-    filters.endDate,
-    filters.employer,
-    filters.placement,
-    filters.project,
-    filters.clientSegment,
-    filters.productType,
-    loanType,
+    appliedFilters,
+    appliedLoanType,
     fetchLoanPurposeData,
     fetchCoverageUtilizationData,
     fetchRepaymentRiskData,
   ]);
 
+  const hasPendingChanges = useMemo(
+    () => !areKasbonFiltersEqual(pendingFilters, appliedFilters) || pendingLoanType !== appliedLoanType,
+    [pendingFilters, appliedFilters, pendingLoanType, appliedLoanType],
+  );
+
+  const isDataLoading =
+    coverageUtilizationLoading
+    || repaymentRiskLoading
+    || loanPurposeLoading
+    || coverageChartLoading
+    || loanPurposeChartLoading
+    || repaymentChartLoading;
+
   const chartFilters = {
-    employer: filters.employer,
-    placement: filters.placement,
-    project: filters.project,
-    clientSegment: filters.clientSegment,
-    productType: filters.productType,
-    dateMode: filters.dateMode,
-    month: filters.month,
-    year: filters.year,
-    startDate: filters.startDate,
-    endDate: filters.endDate,
-    loanType,
+    employer: appliedFilters.employer,
+    placement: appliedFilters.placement,
+    project: appliedFilters.project,
+    clientSegments: appliedFilters.clientSegments,
+    productType: appliedFilters.productType,
+    dateMode: appliedFilters.dateMode,
+    month: appliedFilters.month,
+    year: appliedFilters.year,
+    startDate: appliedFilters.startDate,
+    endDate: appliedFilters.endDate,
+    loanType: appliedLoanType,
   };
 
   return (
@@ -185,21 +214,23 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
             {title}
           </Typography>
           <LoanDateModeToggle
-            value={filters.dateMode}
-            onChange={(dateMode) => handleFiltersChange(applyLoanDateModeChange(filters, dateMode))}
+            value={pendingFilters.dateMode}
+            onChange={(dateMode) => handlePendingFiltersChange(applyLoanDateModeChange(pendingFilters, dateMode))}
           />
         </Box>
 
         <Box mb={3}>
           <KasbonFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            loanType={loanType}
+            filters={pendingFilters}
+            onFiltersChange={handlePendingFiltersChange}
+            onApply={handleApplyFilters}
+            applyDisabled={!isKasbonDateFilterReady(pendingFilters) || !hasPendingChanges || isDataLoading}
+            loanType={pendingLoanType}
             onLoanTypeChange={handleLoanTypeChange}
           />
         </Box>
 
-        {loanType ? (
+        {appliedLoanType ? (
           <>
             <Box mb={3}>
               <UserCoverageUtilizationSummary
@@ -209,7 +240,10 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
             </Box>
 
             <Box mb={3}>
-              <CoverageUtilizationChart filters={chartFilters} />
+              <CoverageUtilizationChart
+                filters={chartFilters}
+                onLoadingChange={setCoverageChartLoading}
+              />
             </Box>
 
             <Box mb={3}>
@@ -218,7 +252,10 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
                   <CircularProgress />
                 </Box>
               ) : loanPurposeData ? (
-                <LoanPurposeChart filters={chartFilters} />
+                <LoanPurposeChart
+                  filters={chartFilters}
+                  onLoadingChange={setLoanPurposeChartLoading}
+                />
               ) : (
                 <Box display="flex" justifyContent="center" alignItems="center" height="300px">
                   <Typography variant="body1" color="textSecondary">
@@ -236,7 +273,10 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
             </Box>
 
             <Box mb={3}>
-              <RepaymentRiskChart filters={chartFilters} />
+              <RepaymentRiskChart
+                filters={chartFilters}
+                onLoadingChange={setRepaymentChartLoading}
+              />
             </Box>
           </>
         ) : (

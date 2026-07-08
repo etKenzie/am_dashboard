@@ -16,16 +16,18 @@ import dynamic from "next/dynamic";
 import React, { useEffect, useMemo, useState } from 'react';
 import { fetchRepaymentRiskMonthly, RepaymentRiskMonthlyResponse } from '../../api/loan/LoanSlice';
 import { getLoanChartDateBounds, type LoanTrendChartFilters } from './kasbonDateHelpers';
+import { formatClientSegmentParam } from './KasbonFilters';
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface RepaymentRiskChartProps {
   filters: LoanTrendChartFilters;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
 type ChartType = 'amounts' | 'rates' | 'profit';
 
-const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
+const RepaymentRiskChart = ({ filters, onLoadingChange }: RepaymentRiskChartProps) => {
   const [chartData, setChartData] = useState<RepaymentRiskMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [chartType, setChartType] = useState<ChartType>('amounts');
@@ -56,7 +58,7 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
-        client_segment: filters.clientSegment || undefined,
+        client_segment: formatClientSegmentParam(filters.clientSegments),
         product_type: filters.productType || undefined,
         start_date: dateBounds.startDate,
         end_date: dateBounds.endDate,
@@ -78,10 +80,14 @@ const RepaymentRiskChart = ({ filters }: RepaymentRiskChartProps) => {
     filters.employer,
     filters.placement,
     filters.project,
-    filters.clientSegment,
+    filters.clientSegments,
     filters.productType,
     filters.loanType,
   ]);
+
+  useEffect(() => {
+    onLoadingChange?.(loading);
+  }, [loading, onLoadingChange]);
 
   const handleChartTypeChange = (event: SelectChangeEvent<ChartType>) => {
     setChartType(event.target.value as ChartType);
