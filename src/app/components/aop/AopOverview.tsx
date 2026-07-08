@@ -68,7 +68,7 @@ export default function AopOverview() {
   const [sourcedTo, setSourcedTo] = useState('0');
   const [project, setProject] = useState('0');
   const [branch, setBranch] = useState('0');
-  const [clientSegment, setClientSegment] = useState('0');
+  const [clientSegment, setClientSegment] = useState('');
   const [dateMode, setDateMode] = useState<LoanDateMode>('month');
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
@@ -225,10 +225,12 @@ export default function AopOverview() {
     () => toSelectOptions(filterOptions.branches),
     [filterOptions.branches],
   );
-  const segmentOptions = useMemo(
-    () => toSelectOptions(filterOptions.segments),
-    [filterOptions.segments],
-  );
+
+  useEffect(() => {
+    if (!clientSegment) return;
+    const isValid = filterOptions.segments.some((segment) => segment.id === clientSegment);
+    if (!isValid) setClientSegment('');
+  }, [clientSegment, filterOptions.segments]);
 
   const filtersBusy = loading || filterOptionsLoading;
   const hideZeroChartValues = isAopCurrentYearMonthMode(dateMode, year);
@@ -371,13 +373,22 @@ export default function AopOverview() {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <RecruitmentSearchableSelect
-                label="Client Segment"
-                value={clientSegment}
-                options={segmentOptions}
-                disabled={filtersBusy && segmentOptions.length <= 1}
-                onChange={setClientSegment}
-              />
+              <FormControl fullWidth size="small">
+                <InputLabel>Client Segment</InputLabel>
+                <Select
+                  value={clientSegment}
+                  label="Client Segment"
+                  onChange={(e: SelectChangeEvent) => setClientSegment(e.target.value)}
+                  disabled={filtersBusy}
+                >
+                  <MenuItem value="">All Segments</MenuItem>
+                  {filterOptions.segments.map((segment) => (
+                    <MenuItem key={segment.id} value={segment.id}>
+                      {segment.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
           </Grid>
         </Box>

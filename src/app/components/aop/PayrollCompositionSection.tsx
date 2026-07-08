@@ -116,7 +116,7 @@ const PayrollCompositionSection = ({
     <Card sx={(t) => ({ height: '100%', ...aopCardOuterSx(t) })}>
       <CardContent>
         <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-          Payroll Composition
+          Compensation and Benefit
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Breakdown by payment type received by associates.
@@ -128,7 +128,7 @@ const PayrollCompositionSection = ({
           </Box>
         ) : values.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <Typography color="text.secondary">No payroll composition data for this period</Typography>
+            <Typography color="text.secondary">No compensation and benefit data for this period</Typography>
           </Box>
         ) : (
           <ReactApexChart options={chartOptions} series={values} type="donut" height={360} />

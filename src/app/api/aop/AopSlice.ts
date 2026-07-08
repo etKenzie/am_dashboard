@@ -62,10 +62,17 @@ export interface AopTrendMetricOption {
   enabled: boolean;
 }
 
+export interface AopTrendEmployerSeries {
+  employer_id: string;
+  label: string;
+  values: number[];
+}
+
 export interface AopAssociatesTrend {
   categories: string[];
   metric_options: AopTrendMetricOption[];
   series: Record<AopTrendMetric, number[]>;
+  employer_series: Record<AopTrendMetric, AopTrendEmployerSeries[]>;
 }
 
 export interface AopDashboardData {
@@ -80,10 +87,17 @@ interface ApiIdName {
   name: string;
 }
 
+interface ApiEmployerBreakdown {
+  employer_id: string | number;
+  label: string;
+  value: number;
+}
+
 interface ApiTrendPoint {
   period: string;
   period_label: string;
   value: number;
+  employer_breakdown?: ApiEmployerBreakdown[];
 }
 
 interface ApiTrendMetricOption {
@@ -156,6 +170,11 @@ export const EMPTY_AOP_DASHBOARD: AopDashboardData = {
     categories: [],
     metric_options: DEFAULT_TREND_METRIC_OPTIONS,
     series: {
+      total_associates_on_payroll: [],
+      first_payroll_associates: [],
+      billable_associates: [],
+    },
+    employer_series: {
       total_associates_on_payroll: [],
       first_payroll_associates: [],
       billable_associates: [],
@@ -235,12 +254,38 @@ function mapFilterOptions(raw?: ApiPayrollAssociatesFilterOptionsResponse['data'
   };
 }
 
-function mapTrendSeries(points?: ApiTrendPoint[]): { categories: string[]; values: number[] } {
+function mapTrendSeries(points?: ApiTrendPoint[]): {
+  categories: string[];
+  values: number[];
+  employers: AopTrendEmployerSeries[];
+} {
   const list = points ?? [];
-  return {
-    categories: list.map((p) => p.period_label || p.period),
-    values: list.map((p) => num(p.value)),
-  };
+  const categories = list.map((p) => p.period_label || p.period);
+  const values = list.map((p) => num(p.value));
+  const employerMap = new Map<string, { label: string; values: number[] }>();
+
+  list.forEach((point, pointIndex) => {
+    for (const entry of point.employer_breakdown ?? []) {
+      const employerId = String(entry.employer_id);
+      if (!employerMap.has(employerId)) {
+        employerMap.set(employerId, {
+          label: String(entry.label).trim(),
+          values: new Array(list.length).fill(0),
+        });
+      }
+      employerMap.get(employerId)!.values[pointIndex] = num(entry.value);
+    }
+  });
+
+  const employers = Array.from(employerMap.entries())
+    .map(([employer_id, { label, values: employerValues }]) => ({
+      employer_id,
+      label,
+      values: employerValues,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  return { categories, values, employers };
 }
 
 function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): AopDashboardData {
@@ -295,6 +340,11 @@ function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): AopDashb
         total_associates_on_payroll: totalSeries.values,
         first_payroll_associates: firstSeries.values,
         billable_associates: billableSeries.values,
+      },
+      employer_series: {
+        total_associates_on_payroll: totalSeries.employers,
+        first_payroll_associates: firstSeries.employers,
+        billable_associates: billableSeries.employers,
       },
     },
   };
