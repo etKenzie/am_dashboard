@@ -15,6 +15,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import {
   IconCash,
+  IconCashOff,
   IconUserCheck,
   IconUsers,
 } from '@tabler/icons-react';
@@ -38,6 +39,7 @@ import {
   type LoanDateMode,
 } from '../kasbon/kasbonDateHelpers';
 import PageContainer from '../container/PageContainer';
+import RecruitmentSegmentMultiSelect from '../recruitment/RecruitmentSegmentMultiSelect';
 import RecruitmentSearchableSelect from '../recruitment/RecruitmentSearchableSelect';
 import AssociatesEmploymentTypeSection from './AssociatesEmploymentTypeSection';
 import AssociatesTrendChart from './AssociatesTrendChart';
@@ -63,12 +65,16 @@ function toSelectOptions(items: Array<{ id: string; name: string }>) {
   return [ALL_OPTION, ...items.map((x) => ({ value: x.id, label: x.name }))];
 }
 
+function toMultiSelectOptions(items: Array<{ id: string; name: string }>) {
+  return items.map((x) => ({ value: x.id, label: x.name }));
+}
+
 export default function AopOverview() {
   const [employer, setEmployer] = useState('0');
   const [sourcedTo, setSourcedTo] = useState('0');
   const [project, setProject] = useState('0');
   const [branch, setBranch] = useState('0');
-  const [clientSegment, setClientSegment] = useState('');
+  const [clientSegments, setClientSegments] = useState<string[]>([]);
   const [dateMode, setDateMode] = useState<LoanDateMode>('month');
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
@@ -119,11 +125,11 @@ export default function AopOverview() {
       sourced_to: sourcedTo,
       project,
       branch,
-      client_segment: clientSegment,
+      client_segments: clientSegments,
       start_date: summaryDateParams.start_date ?? '',
       end_date: summaryDateParams.end_date ?? '',
     }),
-    [employer, sourcedTo, project, branch, clientSegment, summaryDateParams],
+    [employer, sourcedTo, project, branch, clientSegments, summaryDateParams],
   );
 
   const trendChartFilters = useMemo(
@@ -132,14 +138,14 @@ export default function AopOverview() {
       sourced_to: sourcedTo,
       project,
       branch,
-      client_segment: clientSegment,
+      client_segments: clientSegments,
       dateMode,
       month,
       year,
       startDate,
       endDate,
     }),
-    [employer, sourcedTo, project, branch, clientSegment, dateMode, month, year, startDate, endDate],
+    [employer, sourcedTo, project, branch, clientSegments, dateMode, month, year, startDate, endDate],
   );
 
   const loadFilterOptions = useCallback(async () => {
@@ -226,11 +232,19 @@ export default function AopOverview() {
     [filterOptions.branches],
   );
 
+  const segmentOptions = useMemo(
+    () => toMultiSelectOptions(filterOptions.segments),
+    [filterOptions.segments],
+  );
+
   useEffect(() => {
-    if (!clientSegment) return;
-    const isValid = filterOptions.segments.some((segment) => segment.id === clientSegment);
-    if (!isValid) setClientSegment('');
-  }, [clientSegment, filterOptions.segments]);
+    if (clientSegments.length === 0) return;
+    const validIds = new Set(segmentOptions.map((option) => option.value));
+    const next = clientSegments.filter((id) => validIds.has(id));
+    if (next.length !== clientSegments.length) {
+      setClientSegments(next);
+    }
+  }, [clientSegments, segmentOptions]);
 
   const filtersBusy = loading || filterOptionsLoading;
   const hideZeroChartValues = isAopCurrentYearMonthMode(dateMode, year);
@@ -373,22 +387,13 @@ export default function AopOverview() {
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Client Segment</InputLabel>
-                <Select
-                  value={clientSegment}
-                  label="Client Segment"
-                  onChange={(e: SelectChangeEvent) => setClientSegment(e.target.value)}
-                  disabled={filtersBusy}
-                >
-                  <MenuItem value="">All Segments</MenuItem>
-                  {filterOptions.segments.map((segment) => (
-                    <MenuItem key={segment.id} value={segment.id}>
-                      {segment.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <RecruitmentSegmentMultiSelect
+                label="Segment"
+                value={clientSegments}
+                options={segmentOptions}
+                disabled={filtersBusy && segmentOptions.length === 0}
+                onChange={setClientSegments}
+              />
             </Grid>
           </Grid>
         </Box>
@@ -404,7 +409,7 @@ export default function AopOverview() {
             gridTemplateColumns: {
               xs: '1fr',
               sm: 'repeat(2, 1fr)',
-              lg: 'repeat(3, minmax(0, 1fr))',
+              lg: 'repeat(4, minmax(0, 1fr))',
             },
             mb: 3,
           }}
@@ -425,6 +430,12 @@ export default function AopOverview() {
             title="Billable Associates"
             value={formatNumber(summary.billable_associates)}
             icon={IconCash}
+            loading={loading}
+          />
+          <AopMetricCard
+            title="Non-Billable Associates"
+            value={formatNumber(summary.non_billable_associates)}
+            icon={IconCashOff}
             loading={loading}
           />
         </Box>

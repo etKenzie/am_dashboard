@@ -25,7 +25,8 @@ export interface AopFilters {
   sourced_to: string;
   project: string;
   branch: string;
-  client_segment: string;
+  /** Empty array = all segments */
+  client_segments: string[];
   start_date: string;
   end_date: string;
 }
@@ -34,6 +35,7 @@ export interface AopSummary {
   total_associates_on_payroll: number;
   first_payroll_associates: number;
   billable_associates: number;
+  non_billable_associates: number;
 }
 
 export interface AopEmploymentType {
@@ -54,7 +56,8 @@ export interface AopPayrollComposition {
 export type AopTrendMetric =
   | 'total_associates_on_payroll'
   | 'first_payroll_associates'
-  | 'billable_associates';
+  | 'billable_associates'
+  | 'non_billable_associates';
 
 export interface AopTrendMetricOption {
   key: AopTrendMetric;
@@ -151,6 +154,7 @@ const DEFAULT_TREND_METRIC_OPTIONS: AopTrendMetricOption[] = [
   { key: 'total_associates_on_payroll', label: 'Total Associates on Payroll', enabled: true },
   { key: 'first_payroll_associates', label: 'First Payroll Associates', enabled: true },
   { key: 'billable_associates', label: 'Billable Associates', enabled: true },
+  { key: 'non_billable_associates', label: 'Non-Billable Associates', enabled: true },
 ];
 
 export const EMPTY_AOP_DASHBOARD: AopDashboardData = {
@@ -158,6 +162,7 @@ export const EMPTY_AOP_DASHBOARD: AopDashboardData = {
     total_associates_on_payroll: 0,
     first_payroll_associates: 0,
     billable_associates: 0,
+    non_billable_associates: 0,
   },
   employment_type: { pkwt: 0, pkwtt: 0, mitra: 0, dw: 0, unmapped: 0 },
   payroll_composition: {
@@ -173,11 +178,13 @@ export const EMPTY_AOP_DASHBOARD: AopDashboardData = {
       total_associates_on_payroll: [],
       first_payroll_associates: [],
       billable_associates: [],
+      non_billable_associates: [],
     },
     employer_series: {
       total_associates_on_payroll: [],
       first_payroll_associates: [],
       billable_associates: [],
+      non_billable_associates: [],
     },
   },
 };
@@ -205,7 +212,10 @@ function buildSummaryQueryParams(filters: AopFilters): URLSearchParams {
   add('sourced_to_id', filters.sourced_to);
   add('project_id', filters.project);
   add('branch', filters.branch);
-  add('client_segment_id', filters.client_segment);
+  const segmentIds = (filters.client_segments ?? []).filter((id) => id && id !== '0');
+  if (segmentIds.length > 0) {
+    params.set('client_segment_id', segmentIds.join(','));
+  }
 
   return params;
 }
@@ -288,6 +298,65 @@ function mapTrendSeries(points?: ApiTrendPoint[]): {
   return { categories, values, employers };
 }
 
+function subtractSeries(total: number[], billable: number[]): number[] {
+  const length = Math.max(total.length, billable.length);
+  return Array.from({ length }, (_, index) => num(total[index]) - num(billable[index]));
+}
+
+function subtractEmployerSeries(
+  total: AopTrendEmployerSeries[],
+  billable: AopTrendEmployerSeries[],
+): AopTrendEmployerSeries[] {
+  const totalById = new Map(total.map((series) => [series.employer_id, series]));
+  const billableById = new Map(billable.map((series) => [series.employer_id, series]));
+  const employerIds = new Set([
+    ...Array.from(totalById.keys()),
+    ...Array.from(billableById.keys()),
+  ]);
+
+  return Array.from(employerIds)
+    .map((employer_id) => {
+      const totalSeries = totalById.get(employer_id);
+      const billableSeries = billableById.get(employer_id);
+      const label = totalSeries?.label ?? billableSeries?.label ?? employer_id;
+      const length = Math.max(totalSeries?.values.length ?? 0, billableSeries?.values.length ?? 0);
+      const values = Array.from({ length }, (_, index) =>
+        num(totalSeries?.values[index]) - num(billableSeries?.values[index]),
+      );
+
+      return { employer_id, label, values };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+const KNOWN_TREND_METRICS = new Set<AopTrendMetric>([
+  'total_associates_on_payroll',
+  'first_payroll_associates',
+  'billable_associates',
+  'non_billable_associates',
+]);
+
+function ensureNonBillableMetricOption(options: AopTrendMetricOption[]): AopTrendMetricOption[] {
+  if (options.some((option) => option.key === 'non_billable_associates')) {
+    return options;
+  }
+
+  const billableIndex = options.findIndex((option) => option.key === 'billable_associates');
+  const nonBillableOption: AopTrendMetricOption = {
+    key: 'non_billable_associates',
+    label: 'Non-Billable Associates',
+    enabled: true,
+  };
+
+  if (billableIndex >= 0) {
+    const next = [...options];
+    next.splice(billableIndex + 1, 0, nonBillableOption);
+    return next;
+  }
+
+  return [...options, nonBillableOption];
+}
+
 function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): AopDashboardData {
   const data = json.data ?? {};
   const summary = data.associates_summary ?? {};
@@ -299,6 +368,11 @@ function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): AopDashb
   const firstSeries = mapTrendSeries(trend.series?.first_payroll_associates);
   const billableSeries = mapTrendSeries(trend.series?.billable_associates);
 
+  const totalAssociates = num(summary.total_associates_on_payroll);
+  const billableAssociates = num(summary.billable_associates);
+  const nonBillableValues = subtractSeries(totalSeries.values, billableSeries.values);
+  const nonBillableEmployers = subtractEmployerSeries(totalSeries.employers, billableSeries.employers);
+
   const categories =
     totalSeries.categories.length > 0
       ? totalSeries.categories
@@ -306,19 +380,22 @@ function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): AopDashb
         ? firstSeries.categories
         : billableSeries.categories;
 
-  const metricOptions: AopTrendMetricOption[] = (trend.metric_options ?? DEFAULT_TREND_METRIC_OPTIONS).map(
-    (option) => ({
-      key: option.key as AopTrendMetric,
-      label: option.label,
-      enabled: Boolean(option.enabled),
-    }),
+  const metricOptions = ensureNonBillableMetricOption(
+    (trend.metric_options ?? DEFAULT_TREND_METRIC_OPTIONS)
+      .map((option) => ({
+        key: option.key as AopTrendMetric,
+        label: option.label,
+        enabled: Boolean(option.enabled),
+      }))
+      .filter((option) => KNOWN_TREND_METRICS.has(option.key)),
   );
 
   return {
     summary: {
-      total_associates_on_payroll: num(summary.total_associates_on_payroll),
+      total_associates_on_payroll: totalAssociates,
       first_payroll_associates: num(summary.first_payroll_associates),
-      billable_associates: num(summary.billable_associates),
+      billable_associates: billableAssociates,
+      non_billable_associates: totalAssociates - billableAssociates,
     },
     employment_type: {
       pkwt: num(employment.pkwt_associates),
@@ -340,11 +417,13 @@ function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): AopDashb
         total_associates_on_payroll: totalSeries.values,
         first_payroll_associates: firstSeries.values,
         billable_associates: billableSeries.values,
+        non_billable_associates: nonBillableValues,
       },
       employer_series: {
         total_associates_on_payroll: totalSeries.employers,
         first_payroll_associates: firstSeries.employers,
         billable_associates: billableSeries.employers,
+        non_billable_associates: nonBillableEmployers,
       },
     },
   };

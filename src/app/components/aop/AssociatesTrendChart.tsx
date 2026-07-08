@@ -42,7 +42,7 @@ export interface AopTrendChartFilters {
   sourced_to: string;
   project: string;
   branch: string;
-  client_segment: string;
+  client_segments: string[];
   dateMode: LoanDateMode;
   month?: string;
   year?: string;
@@ -59,9 +59,13 @@ interface TrendSeriesItem {
   color: string;
 }
 
+function seriesHasTrendData(values: (number | null)[]): boolean {
+  return values.some((value) => value !== null && value !== 0);
+}
+
 function averageSeriesValue(values: (number | null)[]): number | null {
   const numeric = values.filter((value): value is number => value !== null);
-  if (numeric.length === 0) return null;
+  if (numeric.length === 0 || !seriesHasTrendData(values)) return null;
   return numeric.reduce((sum, value) => sum + value, 0) / numeric.length;
 }
 
@@ -129,7 +133,7 @@ const AssociatesTrendChart = ({ filters }: AssociatesTrendChartProps) => {
       sourced_to: filters.sourced_to,
       project: filters.project,
       branch: filters.branch,
-      client_segment: filters.client_segment,
+      client_segments: filters.client_segments,
       start_date: dateBounds.startDate,
       end_date: dateBounds.endDate,
     };
@@ -201,11 +205,14 @@ const AssociatesTrendChart = ({ filters }: AssociatesTrendChartProps) => {
       color: TOTAL_LINE_COLOR,
     };
 
-    const employerLines = displayTrend.employerSeries.map((employer, index) => ({
-      name: employer.label,
-      data: employer.values,
-      color: EMPLOYER_LINE_COLORS[index % EMPLOYER_LINE_COLORS.length],
-    }));
+    const employerLines = displayTrend.employerSeries
+      .map((employer, index) => ({ employer, index }))
+      .filter(({ employer }) => seriesHasTrendData(employer.values))
+      .map(({ employer, index }) => ({
+        name: employer.label,
+        data: employer.values,
+        color: EMPLOYER_LINE_COLORS[index % EMPLOYER_LINE_COLORS.length],
+      }));
 
     if (!canShowEmployerGroup || groupMode === 'overall') {
       return [totalLine];
@@ -467,7 +474,11 @@ const AssociatesTrendChart = ({ filters }: AssociatesTrendChartProps) => {
             </Box>
           ) : visibleChartSeries.length === 0 ? (
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-              <Typography color="text.secondary">All series hidden — click a legend item to show again</Typography>
+              <Typography color="text.secondary">
+                {allSeriesMeta.length === 0
+                  ? 'No trend data available'
+                  : 'All series hidden — click a legend item to show again'}
+              </Typography>
             </Box>
           ) : hasData ? (
             <>
