@@ -41,6 +41,7 @@ import {
 } from '../kasbon/kasbonDateHelpers';
 import ClientScopeFilters from '../shared/ClientScopeFilters';
 import AopMetricCard from './AopMetricCard';
+import AssociatesByBranchChart from './AssociatesByBranchChart';
 import AssociatesEmploymentTypeSection from './AssociatesEmploymentTypeSection';
 import AssociatesTrendChart from './AssociatesTrendChart';
 import PayrollCompositionSection from './PayrollCompositionSection';
@@ -432,6 +433,16 @@ export default function AopOverview() {
             hideZeroValues={hideZeroChartValues}
           />
         </Box>
+
+        {branch === '0' && (
+          <Box mt={4}>
+            <AssociatesByBranchChart
+              data={dashboard.associates_by_branch}
+              loading={loading}
+              hideZeroValues={hideZeroChartValues}
+            />
+          </Box>
+        )}
       </Box>
     </PageContainer>
   );
