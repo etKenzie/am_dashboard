@@ -10,6 +10,7 @@ export function areKasbonFiltersEqual(a: KasbonFilterValues, b: KasbonFilterValu
     && a.employer === b.employer
     && a.placement === b.placement
     && a.project === b.project
+    && a.branch === b.branch
     && a.productType === b.productType
     && JSON.stringify(a.clientSegments) === JSON.stringify(b.clientSegments)
   );

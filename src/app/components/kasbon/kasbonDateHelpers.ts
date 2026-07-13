@@ -1,6 +1,5 @@
-import type { KasbonFilterValues } from './KasbonFilters';
+import type { KasbonFilterValues, LoanDateMode } from './KasbonFilters';
 export type { LoanDateMode } from './KasbonFilters';
-import type { LoanDateMode } from './KasbonFilters';
 
 export interface LoanTrendChartFilters {
   employer: string;

@@ -22,6 +22,7 @@ export interface LoanFilters {
   employers: string[];
   placements: string[];
   projects: string[];
+  branches?: string[];
   client_segments?: LoanFilterOption[];
   product_types?: LoanFilterOption[];
 }
@@ -35,6 +36,7 @@ interface LoanScopedQueryParams {
   employer?: string;
   sourced_to?: string;
   project?: string;
+  branch?: string;
   client_segment?: string;
   product_type?: string;
   loan_type?: string;
@@ -44,6 +46,7 @@ function appendLoanScopedFilters(queryParams: URLSearchParams, params: LoanScope
   if (params.employer) queryParams.append('employer', params.employer);
   if (params.sourced_to) queryParams.append('sourced_to', params.sourced_to);
   if (params.project) queryParams.append('project', params.project);
+  if (params.branch) queryParams.append('branch', params.branch);
   if (params.client_segment) queryParams.append('client_segment', params.client_segment);
   if (params.product_type) queryParams.append('product_type', params.product_type);
   if (params.loan_type) queryParams.append('loan_type', params.loan_type);
@@ -95,6 +98,7 @@ export interface KaryawanOverdueParams {
   employer?: string;
   sourced_to?: string;
   project?: string;
+  branch?: string;
   id_karyawan?: string;
   start_date?: string;
   end_date?: string;
@@ -371,6 +375,10 @@ export interface ClientSummaryParams {
   start_date?: string;
   end_date?: string;
   loan_type?: string;
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  branch?: string;
   client_segment?: string;
   product_type?: string;
 }
@@ -719,9 +727,7 @@ export const fetchClientSummary = async (params: ClientSummaryParams): Promise<C
   const queryParams = new URLSearchParams();
   
   appendLoanDateFilters(queryParams, params);
-  if (params.loan_type) queryParams.append('loan_type', params.loan_type);
-  if (params.client_segment) queryParams.append('client_segment', params.client_segment);
-  if (params.product_type) queryParams.append('product_type', params.product_type);
+  appendLoanScopedFilters(queryParams, params);
   
   const url = `${baseUrl}/loan/client-summary?${queryParams.toString()}`;
   

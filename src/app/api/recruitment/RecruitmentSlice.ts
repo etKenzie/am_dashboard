@@ -9,6 +9,7 @@ export interface RecruitmentFilters {
   employer: string;
   sourced_to: string;
   project: string;
+  branch: string;
   /** Empty array = all segments */
   customer_segments: string[];
   product_type: string;
@@ -27,6 +28,7 @@ export interface RecruitmentFilterOptions {
   employers: RecruitmentFilterOption[];
   sourced_to: RecruitmentFilterOption[];
   projects: RecruitmentFilterOption[];
+  branches: RecruitmentFilterOption[];
   segments: RecruitmentFilterOption[];
   product_types: RecruitmentFilterOption[];
 }
@@ -184,6 +186,7 @@ interface ApiRecruitmentDashboardResponse {
     employers?: ApiIdName[];
     sourced_to?: ApiIdName[];
     projects?: ApiIdName[];
+    branches?: ApiIdName[];
     segments?: ApiIdName[];
     product_types?: ApiIdName[];
   };
@@ -220,6 +223,7 @@ function buildRecruitmentQueryParams(filters: RecruitmentFilters): URLSearchPara
   add('employer_id', filters.employer);
   add('sourced_to_id', filters.sourced_to);
   add('project_id', filters.project);
+  add('branch', filters.branch);
   const segmentIds = (filters.customer_segments ?? []).filter((id) => id && id !== '0');
   if (segmentIds.length > 0) {
     add('segment', segmentIds.join(','));
@@ -245,6 +249,7 @@ function mapFilterOptions(raw?: ApiRecruitmentDashboardResponse['filter_options'
     employers: mapList(raw?.employers),
     sourced_to: mapList(raw?.sourced_to),
     projects: mapList(raw?.projects),
+    branches: mapList(raw?.branches),
     segments: mapList(raw?.segments),
     product_types: mapList(raw?.product_types),
   };

@@ -56,6 +56,7 @@ interface KaryawanOverdueTableProps {
     employer: string;
     placement: string;
     project: string;
+    branch?: string;
     clientSegments?: string[];
     productType?: string;
     dateMode: LoanDateMode;
@@ -96,6 +97,7 @@ const KaryawanOverdueTable = ({
         employer: filters.employer || undefined,
         sourced_to: filters.placement || undefined,
         project: filters.project || undefined,
+        branch: filters.branch || undefined,
         client_segment: formatClientSegmentParam(filters.clientSegments),
         product_type: filters.productType || undefined,
         id_karyawan: undefined,
@@ -125,6 +127,7 @@ const KaryawanOverdueTable = ({
     filters.employer,
     filters.placement,
     filters.project,
+    filters.branch,
     filters.clientSegments,
     filters.productType,
     filters.loanType,

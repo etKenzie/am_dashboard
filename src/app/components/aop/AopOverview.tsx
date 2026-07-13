@@ -1,51 +1,50 @@
 'use client';
 
 import {
-  Box,
-  FormControl,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Typography,
+    Box,
+    FormControl,
+    Grid,
+    InputLabel,
+    MenuItem,
+    Select,
+    SelectChangeEvent,
+    Typography,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import {
-  IconCash,
-  IconCashOff,
-  IconUserCheck,
-  IconUsers,
+    IconCash,
+    IconCashOff,
+    IconUserCheck,
+    IconUsers,
 } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  AopDashboardData,
-  AopFilterOptions,
-  AopFilters,
-  EMPTY_AOP_DASHBOARD,
-  fetchAopDashboard,
-  fetchAopFilterOptions,
+    AopDashboardData,
+    AopFilterOptions,
+    AopFilters,
+    EMPTY_AOP_DASHBOARD,
+    fetchAopDashboard,
+    fetchAopFilterOptions,
 } from '../../api/aop/AopSlice';
+import PageContainer from '../container/PageContainer';
 import { LoanDateModeToggle } from '../kasbon/KasbonFilters';
 import {
-  applyLoanDateModeChange,
-  formatLoanDate,
-  getDefaultKasbonFilterDates,
-  isKasbonDateFilterReady,
-  kasbonDateParams,
-  parseLoanDateString,
-  type LoanDateMode,
+    applyLoanDateModeChange,
+    formatLoanDate,
+    getDefaultKasbonFilterDates,
+    isKasbonDateFilterReady,
+    kasbonDateParams,
+    parseLoanDateString,
+    type LoanDateMode,
 } from '../kasbon/kasbonDateHelpers';
-import PageContainer from '../container/PageContainer';
-import RecruitmentSegmentMultiSelect from '../recruitment/RecruitmentSegmentMultiSelect';
-import RecruitmentSearchableSelect from '../recruitment/RecruitmentSearchableSelect';
+import ClientScopeFilters from '../shared/ClientScopeFilters';
+import AopMetricCard from './AopMetricCard';
 import AssociatesEmploymentTypeSection from './AssociatesEmploymentTypeSection';
 import AssociatesTrendChart from './AssociatesTrendChart';
-import { isAopCurrentYearMonthMode } from './aopChartHelpers';
-import AopMetricCard from './AopMetricCard';
 import PayrollCompositionSection from './PayrollCompositionSection';
+import { isAopCurrentYearMonthMode } from './aopChartHelpers';
 
 const ALL_OPTION = { value: '0', label: 'All' };
 
@@ -203,6 +202,7 @@ export default function AopOverview() {
         employer: '',
         placement: '',
         project: '',
+        branch: '',
         clientSegments: [],
         productType: '',
       },
@@ -340,62 +340,30 @@ export default function AopOverview() {
             </LocalizationProvider>
           )}
 
-          <Grid container spacing={2} width="100%">
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <RecruitmentSearchableSelect
-                label="Employer"
-                value={employer}
-                options={employerOptions}
-                disabled={filtersBusy && employerOptions.length <= 1}
-                onChange={(next) => {
-                  setEmployer(next);
-                  setSourcedTo('0');
-                  setProject('0');
-                  setBranch('0');
-                }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <RecruitmentSearchableSelect
-                label="Sourced To"
-                value={sourcedTo}
-                options={sourcedToOptions}
-                disabled={filtersBusy && sourcedToOptions.length <= 1}
-                onChange={(next) => {
-                  setSourcedTo(next);
-                  setProject('0');
-                  setBranch('0');
-                }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <RecruitmentSearchableSelect
-                label="Project"
-                value={project}
-                options={projectOptions}
-                disabled={filtersBusy && projectOptions.length <= 1}
-                onChange={setProject}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <RecruitmentSearchableSelect
-                label="Branch"
-                value={branch}
-                options={branchOptions}
-                disabled={filtersBusy && branchOptions.length <= 1}
-                onChange={setBranch}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-              <RecruitmentSegmentMultiSelect
-                label="Segment"
-                value={clientSegments}
-                options={segmentOptions}
-                disabled={filtersBusy && segmentOptions.length === 0}
-                onChange={setClientSegments}
-              />
-            </Grid>
-          </Grid>
+          <ClientScopeFilters
+            disabled={filtersBusy}
+            values={{
+              employer,
+              sourcedTo,
+              project,
+              branch,
+              segments: clientSegments,
+            }}
+            options={{
+              employers: employerOptions,
+              sourcedTo: sourcedToOptions,
+              projects: projectOptions,
+              branches: branchOptions,
+              segments: segmentOptions,
+            }}
+            onChange={(next) => {
+              setEmployer(next.employer);
+              setSourcedTo(next.sourcedTo);
+              setProject(next.project);
+              setBranch(next.branch);
+              setClientSegments(next.segments);
+            }}
+          />
         </Box>
 
         <Typography variant="h5" sx={sectionTitleSx}>

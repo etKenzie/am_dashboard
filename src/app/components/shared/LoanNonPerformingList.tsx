@@ -6,8 +6,8 @@ import { useEffect, useMemo, useState } from 'react';
 import PageContainer from '../container/PageContainer';
 import KaryawanOverdueTable from '../kasbon/KaryawanOverdueTable';
 import KasbonFilters, { KasbonFilterValues, LoanDateModeToggle, LoanTypeValue } from '../kasbon/KasbonFilters';
-import { areKasbonFiltersEqual } from '../kasbon/kasbonFilterHelpers';
 import { applyLoanDateModeChange, getDefaultKasbonFilterDates, isKasbonDateFilterReady } from '../kasbon/kasbonDateHelpers';
+import { areKasbonFiltersEqual } from '../kasbon/kasbonFilterHelpers';
 
 interface LoanNonPerformingListProps {
   title: string;
@@ -31,6 +31,7 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
     employer: '',
     placement: '',
     project: '',
+    branch: '',
     clientSegments: [],
     productType: '',
   });
@@ -104,6 +105,7 @@ const LoanNonPerformingList: React.FC<LoanNonPerformingListProps> = ({
                 employer: appliedFilters.employer,
                 placement: appliedFilters.placement,
                 project: appliedFilters.project,
+                branch: appliedFilters.branch,
                 clientSegments: appliedFilters.clientSegments,
                 productType: appliedFilters.productType,
                 dateMode: appliedFilters.dateMode,

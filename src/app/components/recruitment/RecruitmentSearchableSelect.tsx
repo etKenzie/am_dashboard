@@ -14,6 +14,8 @@ interface RecruitmentSearchableSelectProps {
   options: RecruitmentSelectOption[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  /** Value used when cleared / no match. Defaults to `'0'` (AOP/Recruitment). Use `''` for loan/payroll. */
+  allValue?: string;
 }
 
 const RecruitmentSearchableSelect = ({
@@ -22,10 +24,15 @@ const RecruitmentSearchableSelect = ({
   options,
   onChange,
   disabled = false,
+  allValue = '0',
 }: RecruitmentSearchableSelectProps) => {
   const selected = useMemo(
-    () => options.find((o) => o.value === value) ?? options[0] ?? { value: '0', label: 'All' },
-    [options, value]
+    () =>
+      options.find((o) => o.value === value)
+      ?? options.find((o) => o.value === allValue)
+      ?? options[0]
+      ?? { value: allValue, label: 'All' },
+    [options, value, allValue],
   );
 
   return (
@@ -35,7 +42,7 @@ const RecruitmentSearchableSelect = ({
       disabled={disabled}
       options={options}
       value={selected}
-      onChange={(_, option) => onChange(option?.value ?? '0')}
+      onChange={(_, option) => onChange(option?.value ?? allValue)}
       getOptionLabel={(option) => option.label}
       isOptionEqualToValue={(a, b) => a.value === b.value}
       autoHighlight

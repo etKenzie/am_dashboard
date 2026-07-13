@@ -6,9 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CoverageUtilizationResponse, fetchCoverageUtilization, fetchLoanPurpose, fetchRepaymentRisk, LoanPurposeResponse, RepaymentRiskResponse } from '../../api/loan/LoanSlice';
 import PageContainer from '../container/PageContainer';
 import CoverageUtilizationChart from '../kasbon/CoverageUtilizationChart';
-import KasbonFilters, { KasbonFilterValues, kasbonScopedLoanParams, LoanDateModeToggle, LoanTypeValue } from '../kasbon/KasbonFilters';
+import { applyLoanDateModeChange, getDefaultKasbonFilterDates, isKasbonDateFilterReady, kasbonDateParams } from '../kasbon/kasbonDateHelpers';
 import { areKasbonFiltersEqual } from '../kasbon/kasbonFilterHelpers';
-import { getDefaultKasbonFilterDates, applyLoanDateModeChange, isKasbonDateFilterReady, kasbonDateParams } from '../kasbon/kasbonDateHelpers';
+import KasbonFilters, { KasbonFilterValues, kasbonScopedLoanParams, LoanDateModeToggle, LoanTypeValue } from '../kasbon/KasbonFilters';
 import LoanPurposeChart from '../kasbon/LoanPurposeChart';
 import RepaymentRiskChart from '../kasbon/RepaymentRiskChart';
 import RepaymentRiskSummary from '../kasbon/RepaymentRiskSummary';
@@ -46,6 +46,7 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
     employer: '',
     placement: '',
     project: '',
+    branch: '',
     clientSegments: [],
     productType: '',
   });
@@ -54,6 +55,7 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
     employer: '',
     placement: '',
     project: '',
+    branch: '',
     clientSegments: [],
     productType: '',
   });
@@ -64,6 +66,7 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
       employer: '',
       placement: '',
       project: '',
+      branch: '',
       clientSegments: [],
       productType: '',
     };
@@ -187,6 +190,7 @@ const LoanDashboard: React.FC<LoanDashboardProps> = ({
     employer: appliedFilters.employer,
     placement: appliedFilters.placement,
     project: appliedFilters.project,
+    branch: appliedFilters.branch,
     clientSegments: appliedFilters.clientSegments,
     productType: appliedFilters.productType,
     dateMode: appliedFilters.dateMode,

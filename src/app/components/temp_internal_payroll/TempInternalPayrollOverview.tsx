@@ -25,6 +25,7 @@ import {
   TempInternalPayrollSummaryResponse,
 } from '../../api/temp_internal_payroll/TempInternalPayrollSlice';
 import PageContainer from '../container/PageContainer';
+import ClientScopeFilters from '../shared/ClientScopeFilters';
 import DashboardCard from '../shared/DashboardCard';
 import ClientRankingTable from './ClientRankingTable';
 import CollectionRateCard from './CollectionRateCard';
@@ -102,7 +103,6 @@ const PRODUCT_TYPE_OPTIONS = [
 ];
 
 const CUSTOMER_SEGMENT_OPTIONS = [
-  { value: '0', label: 'All' },
   { value: '98', label: 'All BFSI' },
   { value: '3', label: 'BFSI Bank' },
   { value: '7', label: 'BFSI Insurance' },
@@ -115,6 +115,11 @@ const CUSTOMER_SEGMENT_OPTIONS = [
   { value: '5', label: 'Non BFSI Distribution' },
   { value: '6', label: 'Non BFSI E-commerce' },
 ];
+
+function formatInvoiceCustomerSegment(segments: string[]): string {
+  if (segments.length === 0) return '0';
+  return segments.join(',');
+}
 
 /** Row: month ~2/3, year ~1/3 — standard outlined fields like other filters (no nested border). */
 const periodRowSx = {
@@ -146,15 +151,24 @@ export default function TempInternalPayrollOverview() {
   const [endYear, setEndYear] = useState('');
   const [employer, setEmployer] = useState('0');
   const [productType, setProductType] = useState('0');
-  const [customerSegment, setCustomerSegment] = useState('0');
+  const [customerSegments, setCustomerSegments] = useState<string[]>([]);
   const [sourcedTo, setSourcedTo] = useState('0');
   const [project, setProject] = useState('0');
+  const [branch, setBranch] = useState('0');
   const [sourcedToOptions, setSourcedToOptions] = useState<Array<{ value: string; label: string }>>([
     { value: '0', label: 'All' },
   ]);
   const [projectOptions, setProjectOptions] = useState<Array<{ value: string; label: string }>>([
     { value: '0', label: 'All' },
   ]);
+  const branchOptions = useMemo(() => [{ value: '0', label: 'All' }], []);
+  const employerOptions = useMemo(() => EMPLOYER_OPTIONS, []);
+  const productTypeOptions = useMemo(() => PRODUCT_TYPE_OPTIONS, []);
+  const segmentOptions = useMemo(() => CUSTOMER_SEGMENT_OPTIONS, []);
+  const customerSegment = useMemo(
+    () => formatInvoiceCustomerSegment(customerSegments),
+    [customerSegments],
+  );
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearchOutstanding(searchOutstanding.trim()), 350);
@@ -215,16 +229,18 @@ export default function TempInternalPayrollOverview() {
       customer_segment: customerSegment,
       sourced_to: sourcedTo || '0',
       project: project || '0',
+      branch: branch || '0',
     }),
     [
-      apiDateRange.start_date,
       apiDateRange.end_date,
+      apiDateRange.start_date,
+      branch,
+      customerSegment,
       employer,
       productType,
-      customerSegment,
-      sourcedTo,
       project,
-    ]
+      sourcedTo,
+    ],
   );
 
   const loadSummary = useCallback(async () => {
@@ -243,6 +259,7 @@ export default function TempInternalPayrollOverview() {
         customer_segment: customerSegment,
         sourced_to: sourcedTo || '0',
         project: project || '0',
+        branch: branch || '0',
       };
       const data = await fetchTempInternalPayrollSummary(params);
       setSummary(data);
@@ -259,6 +276,7 @@ export default function TempInternalPayrollOverview() {
     customerSegment,
     sourcedTo,
     project,
+    branch,
   ]);
 
   useEffect(() => {
@@ -351,9 +369,6 @@ export default function TempInternalPayrollOverview() {
   const handleStartYearChange = (e: SelectChangeEvent<string>) => setStartYear(e.target.value);
   const handleEndMonthChange = (e: SelectChangeEvent<string>) => setEndMonth(e.target.value);
   const handleEndYearChange = (e: SelectChangeEvent<string>) => setEndYear(e.target.value);
-  const handleEmployerChange = (e: SelectChangeEvent<string>) => setEmployer(e.target.value);
-  const handleProductTypeChange = (e: SelectChangeEvent<string>) => setProductType(e.target.value);
-  const handleCustomerSegmentChange = (e: SelectChangeEvent<string>) => setCustomerSegment(e.target.value);
 
   const chartFilters = {
     start_date: apiDateRange.start_date,
@@ -363,6 +378,7 @@ export default function TempInternalPayrollOverview() {
     customerSegment,
     sourcedTo,
     project,
+    branch,
   };
 
   const sectionTitleSx = { mb: 2, mt: 0, fontWeight: 600 } as const;
@@ -482,57 +498,36 @@ export default function TempInternalPayrollOverview() {
               </FormControl>
             </Box>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Employer</InputLabel>
-              <Select value={employer} label="Employer" onChange={handleEmployerChange}>
-                {EMPLOYER_OPTIONS.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Sourced To</InputLabel>
-              <Select value={sourcedTo} label="Sourced To" onChange={(e: SelectChangeEvent<string>) => setSourcedTo(e.target.value)}>
-                {sourcedToOptions.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Project</InputLabel>
-              <Select value={project} label="Project" onChange={(e: SelectChangeEvent<string>) => setProject(e.target.value)}>
-                {projectOptions.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Segment</InputLabel>
-              <Select value={customerSegment} label="Segment" onChange={handleCustomerSegmentChange}>
-                {CUSTOMER_SEGMENT_OPTIONS.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Product Type</InputLabel>
-              <Select value={productType} label="Product Type" onChange={handleProductTypeChange}>
-                {PRODUCT_TYPE_OPTIONS.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
         </Grid>
+
+        <Box sx={{ mb: 3 }}>
+          <ClientScopeFilters
+            values={{
+              employer,
+              sourcedTo,
+              project,
+              branch,
+              segments: customerSegments,
+              productType,
+            }}
+            options={{
+              employers: employerOptions,
+              sourcedTo: sourcedToOptions,
+              projects: projectOptions,
+              branches: branchOptions,
+              segments: segmentOptions,
+              productTypes: productTypeOptions,
+            }}
+            onChange={(next) => {
+              setEmployer(next.employer);
+              setSourcedTo(next.sourcedTo);
+              setProject(next.project);
+              setBranch(next.branch);
+              setCustomerSegments(next.segments);
+              if (next.productType !== undefined) setProductType(next.productType);
+            }}
+          />
+        </Box>
 
         <Typography variant="h5" sx={{ ...sectionTitleSx, mt: 1 }}>
           Revenue &amp; Billing

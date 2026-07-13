@@ -2,7 +2,6 @@
 
 import {
   Box,
-  Grid,
   Typography,
 } from '@mui/material';
 import {
@@ -21,14 +20,13 @@ import {
   RecruitmentFilters,
 } from '../../api/recruitment/RecruitmentSlice';
 import PageContainer from '../container/PageContainer';
+import ClientScopeFilters from '../shared/ClientScopeFilters';
 import CandidateGrowthChart from './CandidateGrowthChart';
 import CandidateQualityInsightsBreakdownSection from './CandidateQualityInsightsBreakdownSection';
 import CandidateQualityInsightsSection from './CandidateQualityInsightsSection';
 import FulfillmentPerformanceSection from './FulfillmentPerformanceSection';
 import RecruitmentFunnelCard from './RecruitmentFunnelCard';
 import RecruitmentMetricCard from './RecruitmentMetricCard';
-import RecruitmentSegmentMultiSelect from './RecruitmentSegmentMultiSelect';
-import RecruitmentSearchableSelect from './RecruitmentSearchableSelect';
 
 const ALL_OPTION = { value: '0', label: 'All' };
 
@@ -36,6 +34,7 @@ const EMPTY_FILTER_OPTIONS: RecruitmentFilterOptions = {
   employers: [],
   sourced_to: [],
   projects: [],
+  branches: [],
   segments: [],
   product_types: [],
 };
@@ -60,6 +59,7 @@ export default function RecruitmentOverview() {
   const [employer, setEmployer] = useState('0');
   const [sourcedTo, setSourcedTo] = useState('0');
   const [project, setProject] = useState('0');
+  const [branch, setBranch] = useState('0');
   const [customerSegments, setCustomerSegments] = useState<string[]>([]);
   const [productType, setProductType] = useState('0');
   const [filterOptions, setFilterOptions] = useState<RecruitmentFilterOptions>(EMPTY_FILTER_OPTIONS);
@@ -72,10 +72,11 @@ export default function RecruitmentOverview() {
       employer,
       sourced_to: sourcedTo,
       project,
+      branch,
       customer_segments: customerSegments,
       product_type: productType,
     }),
-    [employer, sourcedTo, project, customerSegments, productType]
+    [employer, sourcedTo, project, branch, customerSegments, productType],
   );
 
   const loadDashboard = useCallback(async () => {
@@ -100,15 +101,19 @@ export default function RecruitmentOverview() {
 
   const employerOptions = useMemo(
     () => toSelectOptions(filterOptions.employers),
-    [filterOptions.employers]
+    [filterOptions.employers],
   );
   const sourcedToOptions = useMemo(
     () => toSelectOptions(filterOptions.sourced_to),
-    [filterOptions.sourced_to]
+    [filterOptions.sourced_to],
   );
   const projectOptions = useMemo(
     () => toSelectOptions(filterOptions.projects),
-    [filterOptions.projects]
+    [filterOptions.projects],
+  );
+  const branchOptions = useMemo(
+    () => toSelectOptions(filterOptions.branches),
+    [filterOptions.branches],
   );
   const segmentOptions = useMemo(
     () => toMultiSelectOptions(filterOptions.segments),
@@ -116,7 +121,7 @@ export default function RecruitmentOverview() {
   );
   const productTypeOptions = useMemo(
     () => toSelectOptions(filterOptions.product_types),
-    [filterOptions.product_types]
+    [filterOptions.product_types],
   );
 
   const summary = dashboard.summary;
@@ -143,60 +148,35 @@ export default function RecruitmentOverview() {
           </Typography>
         )}
 
-        <Grid container spacing={2} sx={{ mb: 3 }} width="100%">
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <RecruitmentSearchableSelect
-              label="Employer"
-              value={employer}
-              options={employerOptions}
-              disabled={loading && employerOptions.length <= 1}
-              onChange={(next) => {
-                setEmployer(next);
-                setSourcedTo('0');
-                setProject('0');
-              }}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <RecruitmentSearchableSelect
-              label="Sourced To"
-              value={sourcedTo}
-              options={sourcedToOptions}
-              disabled={loading && sourcedToOptions.length <= 1}
-              onChange={(next) => {
-                setSourcedTo(next);
-                setProject('0');
-              }}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <RecruitmentSearchableSelect
-              label="Project"
-              value={project}
-              options={projectOptions}
-              disabled={loading && projectOptions.length <= 1}
-              onChange={setProject}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <RecruitmentSegmentMultiSelect
-              label="Segment"
-              value={customerSegments}
-              options={segmentOptions}
-              disabled={loading && segmentOptions.length === 0}
-              onChange={setCustomerSegments}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-            <RecruitmentSearchableSelect
-              label="Product Type"
-              value={productType}
-              options={productTypeOptions}
-              disabled={loading && productTypeOptions.length <= 1}
-              onChange={setProductType}
-            />
-          </Grid>
-        </Grid>
+        <Box sx={{ mb: 3 }}>
+          <ClientScopeFilters
+            values={{
+              employer,
+              sourcedTo,
+              project,
+              branch,
+              segments: customerSegments,
+              productType,
+            }}
+            options={{
+              employers: employerOptions,
+              sourcedTo: sourcedToOptions,
+              projects: projectOptions,
+              branches: branchOptions,
+              segments: segmentOptions,
+              productTypes: productTypeOptions,
+            }}
+            disabled={loading}
+            onChange={(next) => {
+              setEmployer(next.employer);
+              setSourcedTo(next.sourcedTo);
+              setProject(next.project);
+              setBranch(next.branch);
+              setCustomerSegments(next.segments);
+              if (next.productType !== undefined) setProductType(next.productType);
+            }}
+          />
+        </Box>
 
         <Typography variant="h5" sx={sectionTitleSx}>
           Summary

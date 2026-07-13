@@ -18,7 +18,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useEffect, useMemo, useState } from 'react';
 import type { LoanFilters as LoanFiltersType } from '../../api/loan/LoanSlice';
 import { fetchLoanFilters } from '../../api/loan/LoanSlice';
-import RecruitmentSegmentMultiSelect from '../recruitment/RecruitmentSegmentMultiSelect';
+import ClientScopeFilters from '../shared/ClientScopeFilters';
 import { formatLoanDate, parseLoanDateString } from './kasbonDateHelpers';
 
 export type LoanTypeValue = 'all' | 'kasbon' | 'extradana' | 'aku_cicil';
@@ -33,13 +33,25 @@ export interface KasbonFilterValues {
   employer: string;
   placement: string;
   project: string;
+  branch: string;
   /** Empty array = all segments */
   clientSegments: string[];
   productType: string;
 }
 
+const CLIENT_SEGMENT_API_IDS: Record<string, string> = {
+  bfsi_all: 'all_bfsi',
+  non_bfsi_all: 'all_non_bfsi',
+};
+
+export function normalizeClientSegmentId(id: string): string {
+  return CLIENT_SEGMENT_API_IDS[id] ?? id;
+}
+
 export function formatClientSegmentParam(segments?: string[]): string | undefined {
-  const ids = (segments ?? []).filter((id) => id && id !== '0');
+  const ids = (segments ?? [])
+    .filter((id) => id && id !== '0')
+    .map(normalizeClientSegmentId);
   return ids.length > 0 ? ids.join(',') : undefined;
 }
 
@@ -69,6 +81,7 @@ export function kasbonScopedLoanParams(filters: KasbonFilterValues) {
     employer: filters.employer || undefined,
     sourced_to: filters.placement || undefined,
     project: filters.project || undefined,
+    branch: filters.branch || undefined,
     client_segment: formatClientSegmentParam(filters.clientSegments),
     product_type: filters.productType || undefined,
   };
@@ -138,6 +151,61 @@ const KasbonFilters = ({
         label: segment.option_name.trim(),
       })),
     [availableFilters?.client_segments],
+  );
+
+  const employerOptions = useMemo(
+    () => [
+      { value: '', label: 'All' },
+      ...(availableFilters?.employers ?? []).map((employer) => ({
+        value: employer,
+        label: employer,
+      })),
+    ],
+    [availableFilters?.employers],
+  );
+
+  const sourcedToOptions = useMemo(
+    () => [
+      { value: '', label: 'All' },
+      ...(availableFilters?.placements ?? []).map((placement) => ({
+        value: placement,
+        label: placement,
+      })),
+    ],
+    [availableFilters?.placements],
+  );
+
+  const projectOptions = useMemo(
+    () => [
+      { value: '', label: 'All' },
+      ...(availableFilters?.projects ?? []).map((project) => ({
+        value: project,
+        label: project,
+      })),
+    ],
+    [availableFilters?.projects],
+  );
+
+  const branchOptions = useMemo(
+    () => [
+      { value: '', label: 'All' },
+      ...(availableFilters?.branches ?? []).map((branch) => ({
+        value: branch,
+        label: branch,
+      })),
+    ],
+    [availableFilters?.branches],
+  );
+
+  const productTypeOptions = useMemo(
+    () => [
+      { value: '', label: 'All' },
+      ...(availableFilters?.product_types ?? []).map((type) => ({
+        value: String(type.option_id),
+        label: type.option_name.trim(),
+      })),
+    ],
+    [availableFilters?.product_types],
   );
 
   const applyButton = (
@@ -251,93 +319,37 @@ const KasbonFilters = ({
         </LocalizationProvider>
       )}
 
-      <Grid container spacing={2} width="100%">
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Employer</InputLabel>
-            <Select
-              value={filters.employer}
-              label="Employer"
-              onChange={handleFilterChange('employer')}
-              disabled={loading}
-            >
-              <MenuItem value="">All Employers</MenuItem>
-              {availableFilters?.employers.map((employer) => (
-                <MenuItem key={employer} value={employer}>
-                  {employer}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Placement</InputLabel>
-            <Select
-              value={filters.placement}
-              label="Placement"
-              onChange={handleFilterChange('placement')}
-              disabled={loading}
-            >
-              <MenuItem value="">All Placements</MenuItem>
-              {availableFilters?.placements.map((placement) => (
-                <MenuItem key={placement} value={placement}>
-                  {placement}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Project</InputLabel>
-            <Select
-              value={filters.project}
-              label="Project"
-              onChange={handleFilterChange('project')}
-              disabled={loading}
-            >
-              <MenuItem value="">All Projects</MenuItem>
-              {availableFilters?.projects.map((project) => (
-                <MenuItem key={project} value={project}>
-                  {project}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-          <RecruitmentSegmentMultiSelect
-            label="Segment"
-            value={filters.clientSegments}
-            options={segmentOptions}
-            disabled={loading && segmentOptions.length === 0}
-            onChange={(next) => onFiltersChange({ ...filters, clientSegments: next })}
-          />
-        </Grid>
-
-        <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Product Type</InputLabel>
-            <Select
-              value={filters.productType}
-              label="Product Type"
-              onChange={handleFilterChange('productType')}
-              disabled={loading}
-            >
-              <MenuItem value="">All Product Types</MenuItem>
-              {availableFilters?.product_types?.map((type) => (
-                <MenuItem key={type.option_id} value={String(type.option_id)}>
-                  {type.option_name.trim()}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
+      <ClientScopeFilters
+        allValue=""
+        disabled={loading}
+        values={{
+          employer: filters.employer,
+          sourcedTo: filters.placement,
+          project: filters.project,
+          branch: filters.branch,
+          segments: filters.clientSegments,
+          productType: filters.productType,
+        }}
+        options={{
+          employers: employerOptions,
+          sourcedTo: sourcedToOptions,
+          projects: projectOptions,
+          branches: branchOptions,
+          segments: segmentOptions,
+          productTypes: productTypeOptions,
+        }}
+        onChange={(next) =>
+          onFiltersChange({
+            ...filters,
+            employer: next.employer,
+            placement: next.sourcedTo,
+            project: next.project,
+            branch: next.branch,
+            clientSegments: next.segments,
+            productType: next.productType ?? filters.productType,
+          })
+        }
+      />
 
       <Box sx={{ display: { xs: 'flex', md: 'none' }, justifyContent: 'flex-end' }}>
         {applyButton}

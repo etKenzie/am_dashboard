@@ -32,12 +32,17 @@ function normalizeLabel(label: string): string {
 }
 
 function isAllBfsiOption(option: RecruitmentSelectOption): boolean {
-  return option.value === ALL_BFSI_ID || normalizeLabel(option.label) === 'all bfsi';
+  return (
+    option.value === ALL_BFSI_ID
+    || option.value === 'all_bfsi'
+    || normalizeLabel(option.label) === 'all bfsi'
+  );
 }
 
 function isAllNonBfsiOption(option: RecruitmentSelectOption): boolean {
   return (
     option.value === ALL_NON_BFSI_ID
+    || option.value === 'all_non_bfsi'
     || normalizeLabel(option.label) === 'all non-bfsi'
     || normalizeLabel(option.label) === 'all non bfsi'
   );

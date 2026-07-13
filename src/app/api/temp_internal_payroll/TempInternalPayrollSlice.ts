@@ -62,6 +62,7 @@ function dashboardForm(params: TempInternalPayrollSummaryParams): FormData {
   form.append('customer_segment', params.customer_segment ?? '0');
   form.append('sourced_to', params.sourced_to ?? '0');
   form.append('project', params.project ?? '0');
+  form.append('branch', params.branch ?? '0');
   form.append('start_date', params.start_date ?? '');
   form.append('end_date', params.end_date ?? '');
   return form;
@@ -89,6 +90,7 @@ export interface InvoiceTrendParams {
   customer_segment?: string;
   sourced_to?: string;
   project?: string;
+  branch?: string;
 }
 
 /** Calendar month of a `YYYY-MM-DD` date as `MM-YYYY` for invoice_trend. */
@@ -110,6 +112,7 @@ function invoiceTrendForm(params: InvoiceTrendParams): FormData {
   form.append('customer_segment', params.customer_segment ?? '0');
   form.append('sourced_to', params.sourced_to ?? '0');
   form.append('project', params.project ?? '0');
+  form.append('branch', params.branch ?? '0');
   return form;
 }
 
@@ -124,6 +127,7 @@ function revenueTrendForm(params: InvoiceTrendParams): FormData {
   form.append('customer_segment', params.customer_segment ?? '0');
   form.append('sourced_to', params.sourced_to ?? '0');
   form.append('project', params.project ?? '0');
+  form.append('branch', params.branch ?? '0');
   return form;
 }
 
@@ -135,6 +139,7 @@ export interface TempInternalPayrollSummaryParams {
   customer_segment?: string; // 0 => All, 1-9 segments, 98 => All BFSI, 99 => All non BFSI
   sourced_to?: string;      // 0 => All
   project?: string;         // 0 => All
+  branch?: string;          // 0 => All
 }
 
 export interface TempInternalPayrollSummaryResponse {
