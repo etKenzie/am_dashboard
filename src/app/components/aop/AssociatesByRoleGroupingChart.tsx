@@ -4,32 +4,32 @@ import { Box, Card, CardContent, CircularProgress, Typography } from '@mui/mater
 import { useTheme } from '@mui/material/styles';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
-import { AopAssociatesByBranch } from '../../api/aop/AopSlice';
+import { AopAssociatesByRoleGrouping } from '../../api/aop/AopSlice';
 import AopOtherCategoriesPanel from './AopOtherCategoriesPanel';
 import { splitTopNHeadcount } from './aopChartHelpers';
 import { aopCardOuterSx } from './aopStyles';
 
 const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
-interface AssociatesByBranchChartProps {
-  data: AopAssociatesByBranch[];
+interface AssociatesByRoleGroupingChartProps {
+  data: AopAssociatesByRoleGrouping[];
   loading?: boolean;
   hideZeroValues?: boolean;
 }
 
-const BAR_COLOR = '#0D9488';
+const BAR_COLOR = '#6366F1';
 
-const AssociatesByBranchChart = ({
+const AssociatesByRoleGroupingChart = ({
   data,
   loading = false,
   hideZeroValues = false,
-}: AssociatesByBranchChartProps) => {
+}: AssociatesByRoleGroupingChartProps) => {
   const theme = useTheme();
 
   const { chartItems, otherItems, otherTotal, total, allCount } = useMemo(() => {
     const filtered = hideZeroValues ? data.filter((row) => row.total_associates !== 0) : data;
     const categories = filtered.map((row) => ({
-      label: row.branch,
+      label: row.role_grouping_name,
       value: row.total_associates,
     }));
     const split = splitTopNHeadcount(categories);
@@ -75,7 +75,7 @@ const AssociatesByBranchChart = ({
       yaxis: {
         labels: {
           style: { fontSize: '12px' },
-          maxWidth: 160,
+          maxWidth: 180,
         },
       },
       legend: { show: false },
@@ -96,10 +96,10 @@ const AssociatesByBranchChart = ({
     <Card sx={(t) => ({ ...aopCardOuterSx(t) })}>
       <CardContent>
         <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-          Associates by Branch
+          Associates by Role Grouping
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Headcount breakdown across all branches for the selected period.
+          Headcount breakdown across role groupings for the selected period.
         </Typography>
 
         {loading ? (
@@ -108,12 +108,12 @@ const AssociatesByBranchChart = ({
           </Box>
         ) : values.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <Typography color="text.secondary">No branch data for this period</Typography>
+            <Typography color="text.secondary">No role grouping data for this period</Typography>
           </Box>
         ) : (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Total: {total.toLocaleString('en-US')} associates across {allCount} branches
+              Total: {total.toLocaleString('en-US')} associates across {allCount} role groupings
             </Typography>
             <ReactApexChart
               options={chartOptions}
@@ -125,7 +125,7 @@ const AssociatesByBranchChart = ({
               items={otherItems}
               otherTotal={otherTotal}
               total={total}
-              categoryHeader="Branch"
+              categoryHeader="Role grouping"
             />
           </>
         )}
@@ -134,4 +134,4 @@ const AssociatesByBranchChart = ({
   );
 };
 
-export default AssociatesByBranchChart;
+export default AssociatesByRoleGroupingChart;

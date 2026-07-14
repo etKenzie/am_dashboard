@@ -83,11 +83,18 @@ export interface AopAssociatesByBranch {
   total_associates: number;
 }
 
+export interface AopAssociatesByRoleGrouping {
+  role_grouping_id: number;
+  role_grouping_name: string;
+  total_associates: number;
+}
+
 export interface AopDashboardData {
   summary: AopSummary;
   employment_type: AopEmploymentType;
   payroll_composition: AopPayrollComposition;
   associates_by_branch: AopAssociatesByBranch[];
+  associates_by_role_grouping: AopAssociatesByRoleGrouping[];
   associates_trend: AopAssociatesTrend;
 }
 
@@ -141,6 +148,11 @@ interface ApiPayrollAssociatesSummaryResponse {
       branch?: string;
       total_associates?: number;
     }>;
+    associates_by_role_grouping?: Array<{
+      role_grouping_id?: number | string;
+      role_grouping_name?: string;
+      total_associates?: number;
+    }>;
     trend?: {
       metric_options?: ApiTrendMetricOption[];
       series?: Partial<Record<AopTrendMetric, ApiTrendPoint[]>>;
@@ -182,6 +194,7 @@ export const EMPTY_AOP_DASHBOARD: AopDashboardData = {
     unmapped: 0,
   },
   associates_by_branch: [],
+  associates_by_role_grouping: [],
   associates_trend: {
     categories: [],
     metric_options: DEFAULT_TREND_METRIC_OPTIONS,
@@ -427,6 +440,14 @@ function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): AopDashb
         total_associates: num(row.total_associates),
       }))
       .filter((row) => row.branch)
+      .sort((a, b) => b.total_associates - a.total_associates),
+    associates_by_role_grouping: (data.associates_by_role_grouping ?? [])
+      .map((row) => ({
+        role_grouping_id: num(row.role_grouping_id),
+        role_grouping_name: String(row.role_grouping_name ?? '').trim(),
+        total_associates: num(row.total_associates),
+      }))
+      .filter((row) => row.role_grouping_name)
       .sort((a, b) => b.total_associates - a.total_associates),
     associates_trend: {
       categories,

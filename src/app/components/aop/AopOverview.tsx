@@ -42,6 +42,7 @@ import {
 import ClientScopeFilters from '../shared/ClientScopeFilters';
 import AopMetricCard from './AopMetricCard';
 import AssociatesByBranchChart from './AssociatesByBranchChart';
+import AssociatesByRoleGroupingChart from './AssociatesByRoleGroupingChart';
 import AssociatesEmploymentTypeSection from './AssociatesEmploymentTypeSection';
 import AssociatesTrendChart from './AssociatesTrendChart';
 import PayrollCompositionSection from './PayrollCompositionSection';
@@ -434,15 +435,31 @@ export default function AopOverview() {
           />
         </Box>
 
-        {branch === '0' && (
-          <Box mt={4}>
+        <Box
+          mt={4}
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: {
+              xs: '1fr',
+              lg: branch === '0' ? '1fr 1fr' : '1fr',
+            },
+            alignItems: 'stretch',
+          }}
+        >
+          {branch === '0' && (
             <AssociatesByBranchChart
               data={dashboard.associates_by_branch}
               loading={loading}
               hideZeroValues={hideZeroChartValues}
             />
-          </Box>
-        )}
+          )}
+          <AssociatesByRoleGroupingChart
+            data={dashboard.associates_by_role_grouping}
+            loading={loading}
+            hideZeroValues={hideZeroChartValues}
+          />
+        </Box>
       </Box>
     </PageContainer>
   );
