@@ -21,7 +21,7 @@ import {
   AopFilters,
   AopTrendMetric,
   EMPTY_AOP_DASHBOARD,
-  fetchAopDashboard,
+  fetchAopTrend,
 } from '../../api/aop/AopSlice';
 import {
   getLoanChartDateBounds,
@@ -140,8 +140,8 @@ const AssociatesTrendChart = ({ filters }: AssociatesTrendChartProps) => {
 
     setLoading(true);
     try {
-      const result = await fetchAopDashboard(apiFilters);
-      setData(result.associates_trend);
+      const result = await fetchAopTrend(apiFilters);
+      setData(result);
     } catch (err) {
       console.error('Failed to load associates trend:', err);
       setData(EMPTY_AOP_DASHBOARD.associates_trend);

@@ -14,6 +14,7 @@ const baseUrl = BASE.replace(/\/$/, '');
  * Proxy for executive-dashboard APIs (AOP). Avoids browser CORS to akumaju.com.
  * GET /api/executive-dashboard/payroll-associates/summary?...
  * GET /api/executive-dashboard/payroll-associates/filter-options?...
+ * Additional segments (trend, by-branch, …) are proxied the same way when added.
  */
 export async function GET(
   request: NextRequest,

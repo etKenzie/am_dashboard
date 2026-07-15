@@ -2,6 +2,10 @@
  * Associates On Payroll — proxied via Next.js (avoids CORS)
  * GET /api/executive-dashboard/payroll-associates/summary
  * GET /api/executive-dashboard/payroll-associates/filter-options
+ * GET /api/executive-dashboard/payroll-associates/branch-breakdown
+ * GET /api/executive-dashboard/payroll-associates/role-grouping-breakdown
+ * GET /api/executive-dashboard/payroll-associates/trend
+ * GET /api/executive-dashboard/payroll-associates/top-breakdown
  *
  * Server env (proxy): AM_MAIN_API_URL, AM_MAIN_API_URL_TOKEN_2
  * Or NEXT_PUBLIC_AM_MAIN_API_URL / NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN_2
@@ -89,37 +93,24 @@ export interface AopAssociatesByRoleGrouping {
   total_associates: number;
 }
 
+export interface AopAssociatesByTermsOfPayment {
+  terms_of_payment: string;
+  total_associates: number;
+}
+
 export interface AopDashboardData {
   summary: AopSummary;
   employment_type: AopEmploymentType;
   payroll_composition: AopPayrollComposition;
   associates_by_branch: AopAssociatesByBranch[];
   associates_by_role_grouping: AopAssociatesByRoleGrouping[];
+  associates_by_terms_of_payment: AopAssociatesByTermsOfPayment[];
   associates_trend: AopAssociatesTrend;
 }
 
 interface ApiIdName {
   id: string | number;
   name: string;
-}
-
-interface ApiEmployerBreakdown {
-  employer_id: string | number;
-  label: string;
-  value: number;
-}
-
-interface ApiTrendPoint {
-  period: string;
-  period_label: string;
-  value: number;
-  employer_breakdown?: ApiEmployerBreakdown[];
-}
-
-interface ApiTrendMetricOption {
-  key: string;
-  label: string;
-  enabled: boolean;
 }
 
 interface ApiPayrollAssociatesSummaryResponse {
@@ -144,19 +135,6 @@ interface ApiPayrollAssociatesSummaryResponse {
       compensation_only?: number;
       unmapped_associates?: number;
     };
-    associates_by_branch?: Array<{
-      branch?: string;
-      total_associates?: number;
-    }>;
-    associates_by_role_grouping?: Array<{
-      role_grouping_id?: number | string;
-      role_grouping_name?: string;
-      total_associates?: number;
-    }>;
-    trend?: {
-      metric_options?: ApiTrendMetricOption[];
-      series?: Partial<Record<AopTrendMetric, ApiTrendPoint[]>>;
-    };
   };
 }
 
@@ -169,6 +147,68 @@ interface ApiPayrollAssociatesFilterOptionsResponse {
     projects?: ApiIdName[];
     branches?: ApiIdName[];
     client_segments?: ApiIdName[];
+  };
+}
+
+interface ApiPayrollAssociatesBranchBreakdownResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    associates_by_branch?: Array<{
+      branch?: string;
+      total_associates?: number;
+    }>;
+  };
+}
+
+interface ApiPayrollAssociatesRoleGroupingBreakdownResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    associates_by_role_grouping?: Array<{
+      role_grouping_id?: number | string;
+      role_grouping_name?: string;
+      total_associates?: number;
+    }>;
+  };
+}
+
+interface ApiEmployerBreakdown {
+  employer_id: string | number;
+  label: string;
+  value: number;
+}
+
+interface ApiTrendPoint {
+  period: string;
+  period_label: string;
+  value: number;
+  employer_breakdown?: ApiEmployerBreakdown[];
+}
+
+interface ApiTrendMetricOption {
+  key: string;
+  label: string;
+  enabled: boolean;
+}
+
+interface ApiPayrollAssociatesTrendResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    metric_options?: ApiTrendMetricOption[];
+    series?: Partial<Record<AopTrendMetric, ApiTrendPoint[]>>;
+  };
+}
+
+interface ApiPayrollAssociatesTopBreakdownResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    associates_by_terms_of_payment?: Array<{
+      terms_of_payment?: string | number;
+      total_associates?: number;
+    }>;
   };
 }
 
@@ -195,6 +235,7 @@ export const EMPTY_AOP_DASHBOARD: AopDashboardData = {
   },
   associates_by_branch: [],
   associates_by_role_grouping: [],
+  associates_by_terms_of_payment: [],
   associates_trend: {
     categories: [],
     metric_options: DEFAULT_TREND_METRIC_OPTIONS,
@@ -222,7 +263,7 @@ function toApiDate(date: string): string {
   return date.replace(/-/g, '/');
 }
 
-function buildSummaryQueryParams(filters: AopFilters): URLSearchParams {
+function buildAopQueryParams(filters: AopFilters): URLSearchParams {
   const params = new URLSearchParams();
   const add = (key: string, val: string | undefined) => {
     if (!val || val === '0') return;
@@ -239,18 +280,6 @@ function buildSummaryQueryParams(filters: AopFilters): URLSearchParams {
   const segmentIds = (filters.client_segments ?? []).filter((id) => id && id !== '0');
   if (segmentIds.length > 0) {
     params.set('client_segment_id', segmentIds.join(','));
-  }
-
-  return params;
-}
-
-function buildFilterOptionsQueryParams(filters: Pick<AopFilters, 'start_date' | 'end_date' | 'employer'>): URLSearchParams {
-  const params = new URLSearchParams();
-
-  if (filters.start_date) params.set('start_date', toApiDate(filters.start_date));
-  if (filters.end_date) params.set('end_date', toApiDate(filters.end_date));
-  if (filters.employer && filters.employer !== '0') {
-    params.set('employer_id', filters.employer);
   }
 
   return params;
@@ -286,6 +315,115 @@ function mapFilterOptions(raw?: ApiPayrollAssociatesFilterOptionsResponse['data'
     branches: mapList(raw?.branches),
     segments: mapList(raw?.client_segments),
   };
+}
+
+function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): Pick<
+  AopDashboardData,
+  'summary' | 'employment_type' | 'payroll_composition'
+> {
+  const data = json.data ?? {};
+  const summary = data.associates_summary ?? {};
+  const employment = data.associates_employment_type ?? {};
+  const composition = data.payroll_composition ?? {};
+
+  const totalAssociates = num(summary.total_associates_on_payroll);
+  const billableAssociates = num(summary.billable_associates);
+
+  return {
+    summary: {
+      total_associates_on_payroll: totalAssociates,
+      first_payroll_associates: num(summary.first_payroll_associates),
+      billable_associates: billableAssociates,
+      non_billable_associates: totalAssociates - billableAssociates,
+    },
+    employment_type: {
+      pkwt: num(employment.pkwt_associates),
+      pkwtt: num(employment.pkwtt_associates),
+      mitra: num(employment.mitra_associates),
+      dw: num(employment.dw_associates),
+      unmapped: num(employment.unmapped_associates),
+    },
+    payroll_composition: {
+      regular_payroll: num(composition.regular_payroll),
+      regular_payroll_with_compensation: num(composition.regular_payroll_with_compensation),
+      compensation_only: num(composition.compensation_only),
+      unmapped: num(composition.unmapped_associates),
+    },
+  };
+}
+
+export async function fetchAopFilterOptions(filters: AopFilters): Promise<AopFilterOptions> {
+  const params = buildAopQueryParams(filters);
+  const json = await fetchAopApi<ApiPayrollAssociatesFilterOptionsResponse>(
+    'payroll-associates/filter-options',
+    params,
+  );
+
+  return mapFilterOptions(json.data);
+}
+
+/** Summary cards + employment type + compensation/benefit composition. */
+export async function fetchAopSummary(filters: AopFilters): Promise<
+  Pick<AopDashboardData, 'summary' | 'employment_type' | 'payroll_composition'>
+> {
+  const params = buildAopQueryParams(filters);
+  const json = await fetchAopApi<ApiPayrollAssociatesSummaryResponse>(
+    'payroll-associates/summary',
+    params,
+  );
+
+  return mapSummaryResponse(json);
+}
+
+function mapBranchBreakdown(
+  raw?: ApiPayrollAssociatesBranchBreakdownResponse['data'],
+): AopAssociatesByBranch[] {
+  return (raw?.associates_by_branch ?? [])
+    .map((row) => ({
+      branch: String(row.branch ?? '').trim(),
+      total_associates: num(row.total_associates),
+    }))
+    .filter((row) => row.branch)
+    .sort((a, b) => b.total_associates - a.total_associates);
+}
+
+/** Associates by branch breakdown. */
+export async function fetchAopBranchBreakdown(
+  filters: AopFilters,
+): Promise<AopAssociatesByBranch[]> {
+  const params = buildAopQueryParams(filters);
+  const json = await fetchAopApi<ApiPayrollAssociatesBranchBreakdownResponse>(
+    'payroll-associates/branch-breakdown',
+    params,
+  );
+
+  return mapBranchBreakdown(json.data);
+}
+
+function mapRoleGroupingBreakdown(
+  raw?: ApiPayrollAssociatesRoleGroupingBreakdownResponse['data'],
+): AopAssociatesByRoleGrouping[] {
+  return (raw?.associates_by_role_grouping ?? [])
+    .map((row) => ({
+      role_grouping_id: num(row.role_grouping_id),
+      role_grouping_name: String(row.role_grouping_name ?? '').trim(),
+      total_associates: num(row.total_associates),
+    }))
+    .filter((row) => row.role_grouping_name)
+    .sort((a, b) => b.total_associates - a.total_associates);
+}
+
+/** Associates by role grouping breakdown. */
+export async function fetchAopRoleGroupingBreakdown(
+  filters: AopFilters,
+): Promise<AopAssociatesByRoleGrouping[]> {
+  const params = buildAopQueryParams(filters);
+  const json = await fetchAopApi<ApiPayrollAssociatesRoleGroupingBreakdownResponse>(
+    'payroll-associates/role-grouping-breakdown',
+    params,
+  );
+
+  return mapRoleGroupingBreakdown(json.data);
 }
 
 function mapTrendSeries(points?: ApiTrendPoint[]): {
@@ -381,19 +519,11 @@ function ensureNonBillableMetricOption(options: AopTrendMetricOption[]): AopTren
   return [...options, nonBillableOption];
 }
 
-function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): AopDashboardData {
-  const data = json.data ?? {};
-  const summary = data.associates_summary ?? {};
-  const employment = data.associates_employment_type ?? {};
-  const composition = data.payroll_composition ?? {};
-  const trend = data.trend ?? {};
-
+function mapTrendResponse(json: ApiPayrollAssociatesTrendResponse): AopAssociatesTrend {
+  const trend = json.data ?? {};
   const totalSeries = mapTrendSeries(trend.series?.total_associates_on_payroll);
   const firstSeries = mapTrendSeries(trend.series?.first_payroll_associates);
   const billableSeries = mapTrendSeries(trend.series?.billable_associates);
-
-  const totalAssociates = num(summary.total_associates_on_payroll);
-  const billableAssociates = num(summary.billable_associates);
   const nonBillableValues = subtractSeries(totalSeries.values, billableSeries.values);
   const nonBillableEmployers = subtractEmployerSeries(totalSeries.employers, billableSeries.employers);
 
@@ -415,77 +545,78 @@ function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): AopDashb
   );
 
   return {
-    summary: {
-      total_associates_on_payroll: totalAssociates,
-      first_payroll_associates: num(summary.first_payroll_associates),
-      billable_associates: billableAssociates,
-      non_billable_associates: totalAssociates - billableAssociates,
+    categories,
+    metric_options: metricOptions,
+    series: {
+      total_associates_on_payroll: totalSeries.values,
+      first_payroll_associates: firstSeries.values,
+      billable_associates: billableSeries.values,
+      non_billable_associates: nonBillableValues,
     },
-    employment_type: {
-      pkwt: num(employment.pkwt_associates),
-      pkwtt: num(employment.pkwtt_associates),
-      mitra: num(employment.mitra_associates),
-      dw: num(employment.dw_associates),
-      unmapped: num(employment.unmapped_associates),
-    },
-    payroll_composition: {
-      regular_payroll: num(composition.regular_payroll),
-      regular_payroll_with_compensation: num(composition.regular_payroll_with_compensation),
-      compensation_only: num(composition.compensation_only),
-      unmapped: num(composition.unmapped_associates),
-    },
-    associates_by_branch: (data.associates_by_branch ?? [])
-      .map((row) => ({
-        branch: String(row.branch ?? '').trim(),
-        total_associates: num(row.total_associates),
-      }))
-      .filter((row) => row.branch)
-      .sort((a, b) => b.total_associates - a.total_associates),
-    associates_by_role_grouping: (data.associates_by_role_grouping ?? [])
-      .map((row) => ({
-        role_grouping_id: num(row.role_grouping_id),
-        role_grouping_name: String(row.role_grouping_name ?? '').trim(),
-        total_associates: num(row.total_associates),
-      }))
-      .filter((row) => row.role_grouping_name)
-      .sort((a, b) => b.total_associates - a.total_associates),
-    associates_trend: {
-      categories,
-      metric_options: metricOptions,
-      series: {
-        total_associates_on_payroll: totalSeries.values,
-        first_payroll_associates: firstSeries.values,
-        billable_associates: billableSeries.values,
-        non_billable_associates: nonBillableValues,
-      },
-      employer_series: {
-        total_associates_on_payroll: totalSeries.employers,
-        first_payroll_associates: firstSeries.employers,
-        billable_associates: billableSeries.employers,
-        non_billable_associates: nonBillableEmployers,
-      },
+    employer_series: {
+      total_associates_on_payroll: totalSeries.employers,
+      first_payroll_associates: firstSeries.employers,
+      billable_associates: billableSeries.employers,
+      non_billable_associates: nonBillableEmployers,
     },
   };
 }
 
-export async function fetchAopFilterOptions(
-  filters: Pick<AopFilters, 'start_date' | 'end_date' | 'employer'>,
-): Promise<AopFilterOptions> {
-  const params = buildFilterOptionsQueryParams(filters);
-  const json = await fetchAopApi<ApiPayrollAssociatesFilterOptionsResponse>(
-    'payroll-associates/filter-options',
+/** Associates trend time series (non-billable = total − billable). */
+export async function fetchAopTrend(filters: AopFilters): Promise<AopAssociatesTrend> {
+  const params = buildAopQueryParams(filters);
+  const json = await fetchAopApi<ApiPayrollAssociatesTrendResponse>(
+    'payroll-associates/trend',
     params,
   );
 
-  return mapFilterOptions(json.data);
+  return mapTrendResponse(json);
 }
 
-export async function fetchAopDashboard(filters: AopFilters): Promise<AopDashboardData> {
-  const params = buildSummaryQueryParams(filters);
-  const json = await fetchAopApi<ApiPayrollAssociatesSummaryResponse>(
-    'payroll-associates/summary',
+function mapTermsOfPaymentBreakdown(
+  raw?: ApiPayrollAssociatesTopBreakdownResponse['data'],
+): AopAssociatesByTermsOfPayment[] {
+  return (raw?.associates_by_terms_of_payment ?? [])
+    .map((row) => ({
+      terms_of_payment: String(row.terms_of_payment ?? '').trim(),
+      total_associates: num(row.total_associates),
+    }))
+    .filter((row) => row.terms_of_payment)
+    .sort((a, b) => b.total_associates - a.total_associates);
+}
+
+/** Top breakdown (e.g. associates by terms of payment). */
+export async function fetchAopTopBreakdown(
+  filters: AopFilters,
+): Promise<AopAssociatesByTermsOfPayment[]> {
+  const params = buildAopQueryParams(filters);
+  const json = await fetchAopApi<ApiPayrollAssociatesTopBreakdownResponse>(
+    'payroll-associates/top-breakdown',
     params,
   );
 
-  return mapSummaryResponse(json);
+  return mapTermsOfPaymentBreakdown(json.data);
+}
+
+/** Loads summary + breakdown endpoints. Trend is fetched separately by the chart. */
+export async function fetchAopDashboard(filters: AopFilters): Promise<AopDashboardData> {
+  const [
+    summaryPart,
+    associates_by_branch,
+    associates_by_role_grouping,
+    associates_by_terms_of_payment,
+  ] = await Promise.all([
+    fetchAopSummary(filters),
+    fetchAopBranchBreakdown(filters),
+    fetchAopRoleGroupingBreakdown(filters),
+    fetchAopTopBreakdown(filters),
+  ]);
+
+  return {
+    ...EMPTY_AOP_DASHBOARD,
+    ...summaryPart,
+    associates_by_branch,
+    associates_by_role_grouping,
+    associates_by_terms_of_payment,
+  };
 }

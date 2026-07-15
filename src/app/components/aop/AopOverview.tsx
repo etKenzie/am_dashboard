@@ -21,12 +21,16 @@ import {
 } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+    AopAssociatesByBranch,
     AopDashboardData,
     AopFilterOptions,
     AopFilters,
     EMPTY_AOP_DASHBOARD,
-    fetchAopDashboard,
+    fetchAopBranchBreakdown,
     fetchAopFilterOptions,
+    fetchAopRoleGroupingBreakdown,
+    fetchAopSummary,
+    fetchAopTopBreakdown,
 } from '../../api/aop/AopSlice';
 import PageContainer from '../container/PageContainer';
 import { LoanDateModeToggle } from '../kasbon/KasbonFilters';
@@ -43,6 +47,7 @@ import ClientScopeFilters from '../shared/ClientScopeFilters';
 import AopMetricCard from './AopMetricCard';
 import AssociatesByBranchChart from './AssociatesByBranchChart';
 import AssociatesByRoleGroupingChart from './AssociatesByRoleGroupingChart';
+import AssociatesByTermsOfPaymentChart from './AssociatesByTermsOfPaymentChart';
 import AssociatesEmploymentTypeSection from './AssociatesEmploymentTypeSection';
 import AssociatesTrendChart from './AssociatesTrendChart';
 import PayrollCompositionSection from './PayrollCompositionSection';
@@ -151,15 +156,11 @@ export default function AopOverview() {
 
   const loadFilterOptions = useCallback(async () => {
     if (!isKasbonDateFilterReady(dateFilterInputs)) return;
-    if (!summaryDateParams.start_date || !summaryDateParams.end_date) return;
+    if (!summaryFilters.start_date || !summaryFilters.end_date) return;
 
     setFilterOptionsLoading(true);
     try {
-      const options = await fetchAopFilterOptions({
-        start_date: summaryDateParams.start_date,
-        end_date: summaryDateParams.end_date,
-        employer,
-      });
+      const options = await fetchAopFilterOptions(summaryFilters);
       setFilterOptions(options);
     } catch (err) {
       console.error('Failed to load Associates On Payroll filter options:', err);
@@ -167,7 +168,7 @@ export default function AopOverview() {
     } finally {
       setFilterOptionsLoading(false);
     }
-  }, [dateFilterInputs, summaryDateParams.start_date, summaryDateParams.end_date, employer]);
+  }, [dateFilterInputs, summaryFilters]);
 
   const loadDashboard = useCallback(async () => {
     if (!isKasbonDateFilterReady(dateFilterInputs)) return;
@@ -175,15 +176,33 @@ export default function AopOverview() {
 
     setLoading(true);
     try {
-      const result = await fetchAopDashboard(summaryFilters);
-      setDashboard(result);
+      const [
+        summaryPart,
+        associates_by_branch,
+        associates_by_role_grouping,
+        associates_by_terms_of_payment,
+      ] = await Promise.all([
+        fetchAopSummary(summaryFilters),
+        branch === '0'
+          ? fetchAopBranchBreakdown(summaryFilters)
+          : Promise.resolve([] as AopAssociatesByBranch[]),
+        fetchAopRoleGroupingBreakdown(summaryFilters),
+        fetchAopTopBreakdown(summaryFilters),
+      ]);
+      setDashboard((prev) => ({
+        ...prev,
+        ...summaryPart,
+        associates_by_branch,
+        associates_by_role_grouping,
+        associates_by_terms_of_payment,
+      }));
     } catch (err) {
       console.error('Failed to load Associates On Payroll dashboard:', err);
       setDashboard(EMPTY_AOP_DASHBOARD);
     } finally {
       setLoading(false);
     }
-  }, [summaryFilters, dateFilterInputs]);
+  }, [summaryFilters, dateFilterInputs, branch]);
 
   useEffect(() => {
     loadFilterOptions();
@@ -430,6 +449,14 @@ export default function AopOverview() {
           />
           <PayrollCompositionSection
             data={dashboard.payroll_composition}
+            loading={loading}
+            hideZeroValues={hideZeroChartValues}
+          />
+        </Box>
+
+        <Box mt={4}>
+          <AssociatesByTermsOfPaymentChart
+            data={dashboard.associates_by_terms_of_payment}
             loading={loading}
             hideZeroValues={hideZeroChartValues}
           />
