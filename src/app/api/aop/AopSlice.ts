@@ -47,6 +47,7 @@ export interface AopEmploymentType {
   pkwtt: number;
   mitra: number;
   dw: number;
+  inactive_resigned: number;
   unmapped: number;
 }
 
@@ -127,6 +128,7 @@ interface ApiPayrollAssociatesSummaryResponse {
       pkwt_associates?: number;
       mitra_associates?: number;
       dw_associates?: number;
+      inactive_resigned?: number;
       unmapped_associates?: number;
     };
     payroll_composition?: {
@@ -226,7 +228,7 @@ export const EMPTY_AOP_DASHBOARD: AopDashboardData = {
     billable_associates: 0,
     non_billable_associates: 0,
   },
-  employment_type: { pkwt: 0, pkwtt: 0, mitra: 0, dw: 0, unmapped: 0 },
+  employment_type: { pkwt: 0, pkwtt: 0, mitra: 0, dw: 0, inactive_resigned: 0, unmapped: 0 },
   payroll_composition: {
     regular_payroll: 0,
     regular_payroll_with_compensation: 0,
@@ -341,6 +343,7 @@ function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): Pick<
       pkwtt: num(employment.pkwtt_associates),
       mitra: num(employment.mitra_associates),
       dw: num(employment.dw_associates),
+      inactive_resigned: num(employment.inactive_resigned),
       unmapped: num(employment.unmapped_associates),
     },
     payroll_composition: {

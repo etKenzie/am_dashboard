@@ -20,9 +20,10 @@ const LABELS = [
   'PKWTT Associates',
   'Mitra Associates',
   'DW Associates',
+  'Inactive Resigned',
   'Unmapped Associates',
 ];
-const COLORS = ['#43A047', '#FBC02D', '#E53935', '#1E88E5', '#8E24AA'];
+const COLORS = ['#43A047', '#FBC02D', '#E53935', '#1E88E5', '#6D4C41', '#8E24AA'];
 
 const AssociatesEmploymentTypeSection = ({
   data,
@@ -36,7 +37,8 @@ const AssociatesEmploymentTypeSection = ({
       { label: LABELS[1], value: data.pkwtt, color: COLORS[1] },
       { label: LABELS[2], value: data.mitra, color: COLORS[2] },
       { label: LABELS[3], value: data.dw, color: COLORS[3] },
-      { label: LABELS[4], value: data.unmapped, color: COLORS[4] },
+      { label: LABELS[4], value: data.inactive_resigned, color: COLORS[4] },
+      { label: LABELS[5], value: data.unmapped, color: COLORS[5] },
     ];
     return hideZeroValues ? items.filter((item) => item.value !== 0) : items;
   }, [data, hideZeroValues]);

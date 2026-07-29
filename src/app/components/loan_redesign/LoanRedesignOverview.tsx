@@ -98,7 +98,8 @@ const EMPTY_ADMIN_FEE: AdminFeeRepaymentCardData = {
 
 const EMPTY_PERFORMANCE: PerformanceCardData = {
   adminFeeProfit: 0,
-  delinquenciesRate: 0,
+  delinquencyByExpectedRepayment: 0,
+  delinquencyByAdminFee: 0,
 };
 
 const EMPTY_BAD_DEBT: BadDebtRecoveryCardData = {
@@ -365,7 +366,10 @@ const LoanRedesignOverview = () => {
     if (!repaymentData) return EMPTY_PERFORMANCE;
     return {
       adminFeeProfit: repaymentData.admin_fee_profit ?? 0,
-      delinquenciesRate: toPercent(repaymentData.delinquencies_rate),
+      delinquencyByExpectedRepayment: toPercent(
+        repaymentData.delinquency_by_expected_repayment,
+      ),
+      delinquencyByAdminFee: toPercent(repaymentData.delinquency_by_admin_fee),
     };
   }, [repaymentData]);
 

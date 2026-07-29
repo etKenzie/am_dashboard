@@ -50,7 +50,6 @@ const ClientPenetrationTable = ({
       'Eligible Employees': item.eligible_employees,
       'Eligible Rate': formatPercentage(item.eligible_rate),
       'Approved Requests': item.approved_requests,
-      'Penetration Rate': formatPercentage(item.penetration_rate),
     }));
   };
 
@@ -75,7 +74,6 @@ const ClientPenetrationTable = ({
       { wch: 18 }, // Eligible Employees
       { wch: 15 }, // Eligible Rate
       { wch: 18 }, // Approved Requests
-      { wch: 18 }, // Penetration Rate
     ];
     ws['!cols'] = colWidths;
 
@@ -128,19 +126,18 @@ const ClientPenetrationTable = ({
               <TableCell sx={{ fontWeight: 'bold' }} align="right">Eligible Employees</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }} align="right">Eligible Rate</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }} align="right">Approved Requests</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }} align="right">Penetration Rate</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={7} align="center">
                   <CircularProgress size={20} />
                 </TableCell>
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={7} align="center">
                   <Typography variant="body2" color="error">
                     {error}
                   </Typography>
@@ -148,7 +145,7 @@ const ClientPenetrationTable = ({
               </TableRow>
             ) : sortedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={7} align="center">
                   <Typography variant="body2" color="textSecondary">
                     No data found
                   </Typography>
@@ -175,15 +172,6 @@ const ClientPenetrationTable = ({
                       {formatPercentage(row.eligible_rate)}
                     </TableCell>
                     <TableCell align="right">{row.approved_requests.toLocaleString()}</TableCell>
-                    <TableCell 
-                      align="right" 
-                      sx={{ 
-                        fontWeight: row.penetration_rate < 0.7 ? 'bold' : 'normal',
-                        color: row.penetration_rate < 0.7 ? 'error.main' : 'primary.main'
-                      }}
-                    >
-                      {formatPercentage(row.penetration_rate)}
-                    </TableCell>
                   </TableRow>
                 ))
             )}

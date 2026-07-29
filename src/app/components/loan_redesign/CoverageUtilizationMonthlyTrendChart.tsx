@@ -5,11 +5,6 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -129,22 +124,25 @@ const CoverageUtilizationMonthlyTrendChart = ({
   onLoadingChange,
 }: CoverageUtilizationMonthlyTrendChartProps) => {
   const theme = useTheme();
-  const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState(filters.year || String(currentYear));
   const [hiddenSeries, setHiddenSeries] = useState<Set<SeriesKey>>(() => new Set());
   const [chartData, setChartData] = useState<CoverageUtilizationMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const yearOptions = useMemo(
-    () => Array.from({ length: 6 }, (_, i) => String(currentYear - i)),
-    [currentYear],
-  );
+  const year = useMemo(() => {
+    if (filters.dateMode === 'month') return filters.year || '';
+    if (filters.endDate) return filters.endDate.split('-')[0] || '';
+    if (filters.startDate) return filters.startDate.split('-')[0] || '';
+    return '';
+  }, [filters.dateMode, filters.year, filters.startDate, filters.endDate]);
 
   useEffect(() => {
-    if (filters.dateMode === 'month' && filters.year) {
-      setYear(filters.year);
-    }
-  }, [filters.dateMode, filters.year]);
+    setHiddenSeries(new Set());
+  }, [year]);
+
+  const yearLabel = useMemo(
+    () => (year ? `Requests, approvals, rejections, and new borrowers across ${year}` : 'Requests, approvals, rejections, and new borrowers across the selected year'),
+    [year],
+  );
 
   const fetchChartData = useCallback(async () => {
     if (!year || !filters.loanType) return;
@@ -273,11 +271,6 @@ const CoverageUtilizationMonthlyTrendChart = ({
     [theme, year, colors, chartSeriesData.categories],
   );
 
-  const handleYearChange = (event: SelectChangeEvent<string>) => {
-    setYear(event.target.value);
-    setHiddenSeries(new Set());
-  };
-
   return (
     <Card
       sx={(t) => ({
@@ -311,24 +304,9 @@ const CoverageUtilizationMonthlyTrendChart = ({
               Coverage Utilization Monthly Trend
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
-              Requests, approvals, rejections, and new borrowers across the full year
+              {yearLabel}
             </Typography>
           </Box>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel id="coverage-trend-year-label">Year</InputLabel>
-            <Select
-              labelId="coverage-trend-year-label"
-              label="Year"
-              value={year}
-              onChange={handleYearChange}
-            >
-              {yearOptions.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
         </Box>
 
         {loading ? (

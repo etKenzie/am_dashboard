@@ -4,7 +4,8 @@ import { Box, Card, CardContent, Typography } from '@mui/material';
 
 export interface PerformanceCardData {
   adminFeeProfit: number;
-  delinquenciesRate: number;
+  delinquencyByExpectedRepayment: number;
+  delinquencyByAdminFee: number;
 }
 
 interface PerformanceCardProps {
@@ -13,7 +14,8 @@ interface PerformanceCardProps {
 
 const EMPTY: PerformanceCardData = {
   adminFeeProfit: 0,
-  delinquenciesRate: 0,
+  delinquencyByExpectedRepayment: 0,
+  delinquencyByAdminFee: 0,
 };
 
 const POSITIVE_COLOR = '#16A34A';
@@ -105,21 +107,48 @@ const PerformanceCard = ({ data = EMPTY }: PerformanceCardProps) => {
             borderColor: 'divider',
             pt: 0.9,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
+            flexDirection: 'column',
+            gap: 0.75,
           }}
         >
-          <Typography variant="body1" color="text.secondary" fontWeight={500}>
-            Delinquencies Rate
-          </Typography>
-          <Typography
-            variant="body1"
-            fontWeight={700}
-            sx={{ fontVariantNumeric: 'tabular-nums' }}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
           >
-            {formatPercent(data.delinquenciesRate)}
-          </Typography>
+            <Typography variant="body1" color="text.secondary" fontWeight={500}>
+              Delinquency by Expected Repayment
+            </Typography>
+            <Typography
+              variant="body1"
+              fontWeight={700}
+              sx={{ fontVariantNumeric: 'tabular-nums' }}
+            >
+              {formatPercent(data.delinquencyByExpectedRepayment)}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Typography variant="body1" color="text.secondary" fontWeight={500}>
+              Delinquency by Admin Fee
+            </Typography>
+            <Typography
+              variant="body1"
+              fontWeight={700}
+              sx={{ fontVariantNumeric: 'tabular-nums' }}
+            >
+              {formatPercent(data.delinquencyByAdminFee)}
+            </Typography>
+          </Box>
         </Box>
       </CardContent>
     </Card>

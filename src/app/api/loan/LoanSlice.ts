@@ -196,6 +196,8 @@ export interface RepaymentRisk {
   total_unrecovered_admin_fee: number;
   repayment_recovery_rate: number;
   delinquencies_rate: number;
+  delinquency_by_expected_repayment?: number;
+  delinquency_by_admin_fee?: number;
   admin_fee_profit: number;
   message: string | null;
 }
@@ -216,6 +218,8 @@ export interface RepaymentRiskResponse {
   total_unrecovered_admin_fee: number;
   admin_fee_collection_rate?: number;
   delinquencies_rate: number;
+  delinquency_by_expected_repayment?: number;
+  delinquency_by_admin_fee?: number;
   admin_fee_profit: number;
   message: string | null;
 }

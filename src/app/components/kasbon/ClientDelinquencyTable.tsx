@@ -58,7 +58,7 @@ const ClientDelinquencyTable = ({
       'Sourced To': item.sourced_to,
       'Project': item.project,
       'Delinquent Requests': item.delinquent_requests,
-      'Delinquency Rate': formatPercentage(item.delinquency_rate),
+      'Delinquency Percentage': formatPercentage(item.delinquency_rate),
       'Total Unrecovered Payment': formatCurrency(item.total_unrecovered_payment),
     }));
   };
@@ -81,7 +81,7 @@ const ClientDelinquencyTable = ({
       { wch: 35 }, // Sourced To
       { wch: 25 }, // Project
       { wch: 20 }, // Delinquent Requests
-      { wch: 18 }, // Delinquency Rate
+      { wch: 18 }, // Delinquency Percentage
       { wch: 25 }, // Total Unrecovered Payment
     ];
     ws['!cols'] = colWidths;
@@ -132,7 +132,7 @@ const ClientDelinquencyTable = ({
               <TableCell sx={{ fontWeight: 'bold' }}>Sourced To</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>Project</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }} align="right">Delinquent Requests</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }} align="right">Delinquency Rate</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }} align="right">Delinquency Percentage</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }} align="right">Unrecovered Payment</TableCell>
             </TableRow>
           </TableHead>
