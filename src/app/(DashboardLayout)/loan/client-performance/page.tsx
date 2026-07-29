@@ -2,16 +2,10 @@
 
 import { getPageRoles } from '@/config/roles';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
-import LoanDashboard from '../../../components/shared/LoanDashboard';
+import LoanRedesignOverview from '../../../components/loan_redesign/LoanRedesignOverview';
 
 const LoanClientPerformancePage = () => {
-  return (
-    <LoanDashboard
-      title="Loan Client Performance"
-      description="Manage loan data for employees"
-      requiredRoles={getPageRoles('LOAN_DASHBOARD')}
-    />
-  );
+  return <LoanRedesignOverview />;
 };
 
 export default function ProtectedLoanClientPerformance() {
@@ -21,4 +15,3 @@ export default function ProtectedLoanClientPerformance() {
     </ProtectedRoute>
   );
 }
-

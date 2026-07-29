@@ -70,6 +70,27 @@ export function kasbonDateParams(filters: LoanDateFilterInputs): {
   };
 }
 
+/** Month/year params for loan endpoints that only accept month + year (not date ranges). */
+export function kasbonMonthYearParams(filters: LoanDateFilterInputs): {
+  month?: string;
+  year?: string;
+} {
+  if (filters.dateMode === 'month') {
+    return {
+      month: filters.month || undefined,
+      year: filters.year || undefined,
+    };
+  }
+
+  const endDate = filters.endDate || filters.startDate;
+  if (!endDate) return {};
+
+  const [year, month] = endDate.split('-');
+  if (!year || !month) return {};
+
+  return { month, year };
+}
+
 export function isKasbonDateFilterReady(filters: LoanDateFilterInputs): boolean {
   if (filters.dateMode === 'range') {
     return Boolean(filters.startDate && filters.endDate);

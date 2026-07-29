@@ -127,12 +127,14 @@ export interface CoverageUtilizationResponse {
   status: string;
   total_eligible_employees: number;
   total_active_employees: number;
+  total_coverage_project?: number;
   total_loan_requests: number;
   penetration_rate: number;
   eligible_rate: number;
   total_approved_requests: number;
   total_rejected_requests: number;
   approval_rate: number;
+  rejected_rate?: number;
   total_new_borrowers: number;
   average_approval_time: number;
   total_disbursed_amount: number;
@@ -158,7 +160,11 @@ export interface CoverageUtilizationMonthlyData {
   total_loan_requests: number;
   total_approved_requests: number;
   total_rejected_requests: number;
+  total_eligible_employees?: number;
+  total_coverage_project?: number;
   penetration_rate: number;
+  approval_rate?: number;
+  rejected_rate?: number;
   total_disbursed_amount: number;
 }
 
@@ -197,12 +203,18 @@ export interface RepaymentRisk {
 export interface RepaymentRiskResponse {
   status: string;
   total_expected_repayment: number;
-  total_loan_principal_collected: number;
-  total_admin_fee_collected: number;
-  total_unrecovered_repayment: number;
-  total_unrecovered_loan_principal: number;
-  total_unrecovered_admin_fee: number;
+  total_collected_repayment?: number;
   repayment_recovery_rate: number;
+  total_unrecovered_repayment: number;
+  unrecovered_rate?: number;
+  total_outstanding_repayment?: number;
+  outstanding_rate?: number;
+  total_loan_principal_collected: number;
+  total_unrecovered_loan_principal: number;
+  principal_collection_rate?: number;
+  total_admin_fee_collected: number;
+  total_unrecovered_admin_fee: number;
+  admin_fee_collection_rate?: number;
   delinquencies_rate: number;
   admin_fee_profit: number;
   message: string | null;
@@ -224,8 +236,11 @@ export interface RepaymentRiskParams {
 export interface RepaymentRiskMonthlyData {
   repayment_recovery_rate: number;
   total_expected_repayment: number;
+  total_collected_repayment?: number;
   total_loan_principal_collected: number;
   total_unrecovered_repayment: number;
+  total_outstanding_repayment?: number;
+  outstanding_rate?: number;
   admin_fee_profit: number;
 }
 
@@ -744,5 +759,131 @@ export const fetchClientSummary = async (params: ClientSummaryParams): Promise<C
     throw new Error(`Failed to fetch client summary: ${response.status} ${response.statusText}`);
   }
   
+  return response.json();
+};
+
+// Types for Bad Debt Recovery API
+export interface BadDebtRecoveryResponse {
+  status: string;
+  total_recovery: number;
+  total_principal_recovered: number;
+  total_admin_fee_recovered: number;
+  principal_rate: number;
+  admin_fee_rate: number;
+  loan_request_count: number;
+  message?: string | null;
+}
+
+export interface BadDebtRecoveryParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  branch?: string;
+  month?: string;
+  year?: string;
+  loan_type?: string;
+  client_segment?: string;
+  product_type?: string;
+}
+
+// Types for Applicant Insights API
+export interface TopRejectReasonItem {
+  reject_reason_id: number | null;
+  reject_reason_name: string;
+  total_count: number;
+}
+
+export interface ApplicantGenderItem {
+  gender_code: string | null;
+  gender_name: string;
+  total_count: number;
+}
+
+export interface ApplicantAgeRangeItem {
+  age_range: string;
+  total_count: number;
+}
+
+export interface ApplicantInsightsResponse {
+  status: string;
+  top_reject_reasons: TopRejectReasonItem[];
+  applicants_by_gender: ApplicantGenderItem[];
+  applicants_by_age_range: ApplicantAgeRangeItem[];
+  message: string | null;
+}
+
+export interface ApplicantInsightsParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  branch?: string;
+  month?: string;
+  year?: string;
+  loan_type?: string;
+  client_segment?: string;
+  product_type?: string;
+}
+
+function appendLoanMonthYearFilters(
+  queryParams: URLSearchParams,
+  params: { month?: string; year?: string },
+): void {
+  if (params.month) queryParams.append('month', params.month);
+  if (params.year) queryParams.append('year', params.year);
+}
+
+// Fetch Bad Debt Recovery
+export const fetchBadDebtRecovery = async (
+  params: BadDebtRecoveryParams,
+): Promise<BadDebtRecoveryResponse> => {
+  const baseUrl = AM_API_URL;
+  const queryParams = new URLSearchParams();
+
+  appendLoanScopedFilters(queryParams, params);
+  appendLoanMonthYearFilters(queryParams, params);
+
+  const url = `${baseUrl}/loan/bad-debt-recovery?${queryParams.toString()}`;
+
+  console.log('Fetching bad debt recovery from:', url);
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch bad debt recovery: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Fetch Applicant Insights
+export const fetchApplicantInsights = async (
+  params: ApplicantInsightsParams,
+): Promise<ApplicantInsightsResponse> => {
+  const baseUrl = AM_API_URL;
+  const queryParams = new URLSearchParams();
+
+  appendLoanScopedFilters(queryParams, params);
+  appendLoanMonthYearFilters(queryParams, params);
+
+  const url = `${baseUrl}/loan/applicant-insights?${queryParams.toString()}`;
+
+  console.log('Fetching applicant insights from:', url);
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch applicant insights: ${response.status} ${response.statusText}`);
+  }
+
   return response.json();
 };
