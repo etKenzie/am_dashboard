@@ -783,8 +783,8 @@ export interface BadDebtRecoveryParams {
   sourced_to?: string;
   project?: string;
   branch?: string;
-  month?: string;
-  year?: string;
+  start_date?: string;
+  end_date?: string;
   loan_type?: string;
   client_segment?: string;
   product_type?: string;
@@ -821,19 +821,11 @@ export interface ApplicantInsightsParams {
   sourced_to?: string;
   project?: string;
   branch?: string;
-  month?: string;
-  year?: string;
+  start_date?: string;
+  end_date?: string;
   loan_type?: string;
   client_segment?: string;
   product_type?: string;
-}
-
-function appendLoanMonthYearFilters(
-  queryParams: URLSearchParams,
-  params: { month?: string; year?: string },
-): void {
-  if (params.month) queryParams.append('month', params.month);
-  if (params.year) queryParams.append('year', params.year);
 }
 
 // Fetch Bad Debt Recovery
@@ -844,7 +836,7 @@ export const fetchBadDebtRecovery = async (
   const queryParams = new URLSearchParams();
 
   appendLoanScopedFilters(queryParams, params);
-  appendLoanMonthYearFilters(queryParams, params);
+  appendLoanDateFilters(queryParams, params);
 
   const url = `${baseUrl}/loan/bad-debt-recovery?${queryParams.toString()}`;
 
@@ -872,7 +864,7 @@ export const fetchApplicantInsights = async (
   const queryParams = new URLSearchParams();
 
   appendLoanScopedFilters(queryParams, params);
-  appendLoanMonthYearFilters(queryParams, params);
+  appendLoanDateFilters(queryParams, params);
 
   const url = `${baseUrl}/loan/applicant-insights?${queryParams.toString()}`;
 

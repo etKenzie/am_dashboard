@@ -18,7 +18,6 @@ import {
   getDefaultKasbonFilterDates,
   isKasbonDateFilterReady,
   kasbonDateParams,
-  kasbonMonthYearParams,
 } from '../kasbon/kasbonDateHelpers';
 import { areKasbonFiltersEqual } from '../kasbon/kasbonFilterHelpers';
 import KasbonFilters, {
@@ -194,11 +193,10 @@ const LoanRedesignOverview = () => {
     async (currentFilters: KasbonFilterValues, currentLoanType: LoanTypeValue) => {
       setApplicantInsightsLoading(true);
       try {
-        const monthYear = kasbonMonthYearParams(currentFilters);
-        if (isKasbonDateFilterReady(currentFilters) && currentLoanType && monthYear.month && monthYear.year) {
+        if (isKasbonDateFilterReady(currentFilters) && currentLoanType) {
           const response = await fetchApplicantInsights({
             ...kasbonScopedLoanParams(currentFilters),
-            ...monthYear,
+            ...kasbonDateParams(currentFilters),
             loan_type: currentLoanType,
           });
           setApplicantInsightsData(response);
@@ -219,11 +217,10 @@ const LoanRedesignOverview = () => {
     async (currentFilters: KasbonFilterValues, currentLoanType: LoanTypeValue) => {
       setBadDebtLoading(true);
       try {
-        const monthYear = kasbonMonthYearParams(currentFilters);
-        if (isKasbonDateFilterReady(currentFilters) && currentLoanType && monthYear.month && monthYear.year) {
+        if (isKasbonDateFilterReady(currentFilters) && currentLoanType) {
           const response = await fetchBadDebtRecovery({
             ...kasbonScopedLoanParams(currentFilters),
-            ...monthYear,
+            ...kasbonDateParams(currentFilters),
             loan_type: currentLoanType,
           });
           setBadDebtData(response);
