@@ -120,7 +120,7 @@ const PerformanceCard = ({ data = EMPTY }: PerformanceCardProps) => {
             }}
           >
             <Typography variant="body1" color="text.secondary" fontWeight={500}>
-              Delinquency by Expected Repayment
+              Delinquency by Total Disbursed
             </Typography>
             <Typography
               variant="body1"
@@ -139,7 +139,7 @@ const PerformanceCard = ({ data = EMPTY }: PerformanceCardProps) => {
             }}
           >
             <Typography variant="body1" color="text.secondary" fontWeight={500}>
-              Delinquency by Admin Fee
+              Delinquency by Total Expected Repayment
             </Typography>
             <Typography
               variant="body1"
