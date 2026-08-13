@@ -7,6 +7,8 @@ export interface LoanRequestCardData {
   totalRequests: number;
   approvedRequests: number;
   rejectedRequests: number;
+  approvedPercent: number;
+  rejectedPercent: number;
 }
 
 interface LoanRequestCardProps {
@@ -18,6 +20,8 @@ const EMPTY: LoanRequestCardData = {
   totalRequests: 0,
   approvedRequests: 0,
   rejectedRequests: 0,
+  approvedPercent: 0,
+  rejectedPercent: 0,
 };
 
 const APPROVED_COLOR = '#16A34A';
@@ -37,12 +41,8 @@ function formatPercent(value: number): string {
 }
 
 const LoanRequestCard = ({ data = EMPTY }: LoanRequestCardProps) => {
-  const decided = data.approvedRequests + data.rejectedRequests;
-  const approvedShare = decided > 0 ? (data.approvedRequests / decided) * 100 : 0;
-  const approvedPctOfTotal =
-    data.totalRequests > 0 ? (data.approvedRequests / data.totalRequests) * 100 : 0;
-  const rejectedPctOfTotal =
-    data.totalRequests > 0 ? (data.rejectedRequests / data.totalRequests) * 100 : 0;
+  const barTotal = data.approvedPercent + data.rejectedPercent;
+  const approvedShare = barTotal > 0 ? (data.approvedPercent / barTotal) * 100 : 0;
 
   return (
     <Card
@@ -138,7 +138,7 @@ const LoanRequestCard = ({ data = EMPTY }: LoanRequestCardProps) => {
               backgroundColor: (theme) =>
                 theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
               backgroundImage:
-                decided > 0
+                barTotal > 0
                   ? `linear-gradient(to right, ${APPROVED_COLOR} 0%, ${APPROVED_COLOR} ${approvedShare}%, ${REJECTED_COLOR} ${approvedShare}%, ${REJECTED_COLOR} 100%)`
                   : 'none',
             }}
@@ -182,7 +182,7 @@ const LoanRequestCard = ({ data = EMPTY }: LoanRequestCardProps) => {
               fontWeight={700}
               sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}
             >
-              {formatNumber(data.approvedRequests)} ({formatPercent(approvedPctOfTotal)})
+              {formatNumber(data.approvedRequests)} ({formatPercent(data.approvedPercent)})
             </Typography>
           </Box>
           <Box
@@ -212,7 +212,7 @@ const LoanRequestCard = ({ data = EMPTY }: LoanRequestCardProps) => {
               fontWeight={700}
               sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}
             >
-              {formatNumber(data.rejectedRequests)} ({formatPercent(rejectedPctOfTotal)})
+              {formatNumber(data.rejectedRequests)} ({formatPercent(data.rejectedPercent)})
             </Typography>
           </Box>
         </Box>

@@ -67,6 +67,8 @@ const EMPTY_REQUEST: LoanRequestCardData = {
   totalRequests: 0,
   approvedRequests: 0,
   rejectedRequests: 0,
+  approvedPercent: 0,
+  rejectedPercent: 0,
 };
 
 const EMPTY_DISBURSEMENT: LoanDisbursementCardData = {
@@ -296,6 +298,8 @@ const LoanRedesignOverview = () => {
       totalRequests: coverageData.total_loan_requests ?? 0,
       approvedRequests: coverageData.total_approved_requests ?? 0,
       rejectedRequests: coverageData.total_rejected_requests ?? 0,
+      approvedPercent: toPercent(coverageData.approval_rate),
+      rejectedPercent: toPercent(coverageData.rejected_rate),
     };
   }, [coverageData]);
 
