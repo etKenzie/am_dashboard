@@ -6,6 +6,7 @@ export interface LoanDisbursementCardData {
   newBorrowers: number;
   totalDisbursed: number;
   averageDisbursed: number;
+  disbursementExpectedReturn: number;
   processingTimeDays: number;
 }
 
@@ -17,6 +18,7 @@ const EMPTY: LoanDisbursementCardData = {
   newBorrowers: 0,
   totalDisbursed: 0,
   averageDisbursed: 0,
+  disbursementExpectedReturn: 0,
   processingTimeDays: 0,
 };
 
@@ -147,6 +149,25 @@ const LoanDisbursementCard = ({ data = EMPTY }: LoanDisbursementCardProps) => {
               sx={{ fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}
             >
               {formatIdr(data.averageDisbursed)}
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Typography variant="body1" color="text.secondary" fontWeight={500}>
+              Total Expected Return
+            </Typography>
+            <Typography
+              variant="body1"
+              fontWeight={700}
+              sx={{ fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}
+            >
+              {formatIdr(data.disbursementExpectedReturn)}
             </Typography>
           </Box>
           <Box

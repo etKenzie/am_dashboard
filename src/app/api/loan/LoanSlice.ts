@@ -338,6 +338,29 @@ export interface LoanDisbursementMonthlyParams {
   end_date?: string;
 }
 
+// Types for Disbursement Expected Return API
+export interface DisbursementExpectedReturnResponse {
+  status: string;
+  disbursed_loans_count?: number;
+  total_disbursed_amount?: number;
+  total_expected_admin_fee?: number;
+  total_expected_return?: number;
+  expected_return_rate?: number;
+  message?: string | null;
+}
+
+export interface DisbursementExpectedReturnParams {
+  employer?: string;
+  sourced_to?: string;
+  project?: string;
+  branch?: string;
+  start_date?: string;
+  end_date?: string;
+  loan_type?: string;
+  client_segment?: string;
+  product_type?: string;
+}
+
 // Types for Loan Purpose API
 export interface LoanPurpose {
   purpose_id: number;
@@ -706,6 +729,36 @@ export const fetchLoanDisbursementMonthly = async (params: LoanDisbursementMonth
     throw new Error(`Failed to fetch loan disbursement monthly: ${response.status} ${response.statusText}`);
   }
   
+  return response.json();
+};
+
+// Fetch Disbursement Expected Return
+export const fetchDisbursementExpectedReturn = async (
+  params: DisbursementExpectedReturnParams,
+): Promise<DisbursementExpectedReturnResponse> => {
+  const baseUrl = AM_API_URL;
+  const queryParams = new URLSearchParams();
+
+  appendLoanScopedFilters(queryParams, params);
+  appendLoanDateFilters(queryParams, params);
+
+  const url = `${baseUrl}/loan/disbursement-expected-return?${queryParams.toString()}`;
+
+  console.log('Fetching disbursement expected return from:', url);
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch disbursement expected return: ${response.status} ${response.statusText}`,
+    );
+  }
+
   return response.json();
 };
 

@@ -9,6 +9,7 @@ import {
   fetchApplicantInsights,
   fetchBadDebtRecovery,
   fetchCoverageUtilization,
+  fetchDisbursementExpectedReturn,
   fetchRepaymentRisk,
   RepaymentRiskResponse,
 } from '../../api/loan/LoanSlice';
@@ -75,6 +76,7 @@ const EMPTY_DISBURSEMENT: LoanDisbursementCardData = {
   newBorrowers: 0,
   totalDisbursed: 0,
   averageDisbursed: 0,
+  disbursementExpectedReturn: 0,
   processingTimeDays: 0,
 };
 
@@ -123,6 +125,7 @@ const LoanRedesignOverview = () => {
   });
 
   const [coverageData, setCoverageData] = useState<CoverageUtilizationResponse | null>(null);
+  const [disbursementExpectedReturn, setDisbursementExpectedReturn] = useState(0);
   const [repaymentData, setRepaymentData] = useState<RepaymentRiskResponse | null>(null);
   const [applicantInsightsData, setApplicantInsightsData] =
     useState<ApplicantInsightsResponse | null>(null);
@@ -148,18 +151,25 @@ const LoanRedesignOverview = () => {
       setCoverageLoading(true);
       try {
         if (isKasbonDateFilterReady(currentFilters) && currentLoanType) {
-          const response = await fetchCoverageUtilization({
+          const scopedParams = {
             ...kasbonScopedLoanParams(currentFilters),
             ...kasbonDateParams(currentFilters),
             loan_type: currentLoanType,
-          });
-          setCoverageData(response);
+          };
+          const [coverageResponse, expectedReturnResponse] = await Promise.all([
+            fetchCoverageUtilization(scopedParams),
+            fetchDisbursementExpectedReturn(scopedParams),
+          ]);
+          setCoverageData(coverageResponse);
+          setDisbursementExpectedReturn(expectedReturnResponse.total_expected_return ?? 0);
         } else {
           setCoverageData(null);
+          setDisbursementExpectedReturn(0);
         }
       } catch (err) {
         console.error('Failed to fetch coverage utilization data:', err);
         setCoverageData(null);
+        setDisbursementExpectedReturn(0);
       } finally {
         setCoverageLoading(false);
       }
@@ -309,9 +319,10 @@ const LoanRedesignOverview = () => {
       newBorrowers: coverageData.total_new_borrowers ?? 0,
       totalDisbursed: coverageData.total_disbursed_amount ?? 0,
       averageDisbursed: coverageData.average_disbursed_amount ?? 0,
+      disbursementExpectedReturn,
       processingTimeDays: Math.round(coverageData.average_approval_time ?? 0),
     };
-  }, [coverageData]);
+  }, [coverageData, disbursementExpectedReturn]);
 
   const expectedRepaymentCardData = useMemo((): TotalExpectedRepaymentCardData => {
     if (!repaymentData) return EMPTY_EXPECTED;
