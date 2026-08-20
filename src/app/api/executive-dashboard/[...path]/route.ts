@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { AM_MAIN_API_TOKEN_2, AM_MAIN_API_URL } from '@/utils/config';
 
-const BASE =
-  process.env.AM_MAIN_API_URL ??
-  process.env.NEXT_PUBLIC_AM_MAIN_API_URL ??
-  '';
-const TOKEN =
-  process.env.AM_MAIN_API_URL_TOKEN_2 ??
-  process.env.NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN_2 ??
-  '';
-const baseUrl = BASE.replace(/\/$/, '');
+const TOKEN = AM_MAIN_API_TOKEN_2;
+const baseUrl = AM_MAIN_API_URL;
 
 /**
  * Proxy for executive-dashboard APIs (AOP). Avoids browser CORS to akumaju.com.
+ * Base URL: NEXT_PUBLIC_AM_MAIN_API_URL (e.g. https://akumaju.com/ak-mj)
  * GET /api/executive-dashboard/payroll-associates/summary?...
  * GET /api/executive-dashboard/payroll-associates/filter-options?...
  * Additional segments (trend, by-branch, …) are proxied the same way when added.

@@ -7,8 +7,7 @@
  * GET /api/executive-dashboard/payroll-associates/trend
  * GET /api/executive-dashboard/payroll-associates/top-breakdown
  *
- * Server env (proxy): AM_MAIN_API_URL, AM_MAIN_API_URL_TOKEN_2
- * Or NEXT_PUBLIC_AM_MAIN_API_URL / NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN_2
+ * Server env (proxy): NEXT_PUBLIC_AM_MAIN_API_URL, NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN_2
  */
 
 export interface AopFilterOption {
