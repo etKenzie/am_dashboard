@@ -41,7 +41,9 @@ export async function GET(
   }
 
   const segment = path.join('/');
-  const search = request.nextUrl.searchParams.toString();
+  const forwardParams = new URLSearchParams(request.nextUrl.searchParams);
+  forwardParams.delete('path');
+  const search = forwardParams.toString();
   const upstreamUrl = `${AOP_UPSTREAM_BASE}/api/v1/executive-dashboard/${segment}${search ? `?${search}` : ''}`;
 
   console.log('[AOP proxy] upstream request', {
