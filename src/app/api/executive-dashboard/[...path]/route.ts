@@ -1,25 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getMainApiToken2, getMainApiUrl } from '@/utils/config';
+
+const AOP_UPSTREAM_BASE = 'https://akumaju.com/ak-mj';
+
+function getAopApiToken(): string {
+  const raw =
+    process.env.AM_MAIN_API_URL_TOKEN_2 ??
+    process.env.NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN_2 ??
+    '';
+  return raw.trim().replace(/^["']|["']$/g, '');
+}
 
 /**
  * Proxy for executive-dashboard APIs (AOP). Avoids browser CORS to akumaju.com.
  *
- * Browser calls: /api/executive-dashboard/... (same host as the deployed app)
- * Server forwards to: {NEXT_PUBLIC_AM_MAIN_API_URL}/api/v1/executive-dashboard/...
+ * Browser: GET /api/executive-dashboard/payroll-associates/...
+ * Server:   GET https://akumaju.com/ak-mj/api/v1/executive-dashboard/...
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
-  const baseUrl = getMainApiUrl();
-  const token = getMainApiToken2();
+  const token = getAopApiToken();
 
-  if (!baseUrl) {
-    return NextResponse.json(
-      { error: 'AM Main API URL not configured (set AM_MAIN_API_URL or NEXT_PUBLIC_AM_MAIN_API_URL)' },
-      { status: 503 },
-    );
-  }
   if (!token) {
     return NextResponse.json(
       { error: 'AM Main API token not configured (set AM_MAIN_API_URL_TOKEN_2 or NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN_2)' },
@@ -34,7 +36,7 @@ export async function GET(
 
   const segment = path.join('/');
   const search = request.nextUrl.searchParams.toString();
-  const upstreamUrl = `${baseUrl}/api/v1/executive-dashboard/${segment}${search ? `?${search}` : ''}`;
+  const upstreamUrl = `${AOP_UPSTREAM_BASE}/api/v1/executive-dashboard/${segment}${search ? `?${search}` : ''}`;
 
   const headers: HeadersInit = {
     Accept: 'application/json',

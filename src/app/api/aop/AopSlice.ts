@@ -1,13 +1,9 @@
 /**
- * Associates On Payroll — proxied via Next.js (avoids CORS)
- * GET /api/executive-dashboard/payroll-associates/summary
- * GET /api/executive-dashboard/payroll-associates/filter-options
- * GET /api/executive-dashboard/payroll-associates/branch-breakdown
- * GET /api/executive-dashboard/payroll-associates/role-grouping-breakdown
- * GET /api/executive-dashboard/payroll-associates/trend
- * GET /api/executive-dashboard/payroll-associates/top-breakdown
+ * Associates On Payroll — proxied via Next.js (avoids CORS).
+ * Browser: GET /api/executive-dashboard/payroll-associates/...
+ * Server:  GET https://akumaju.com/ak-mj/api/v1/executive-dashboard/...
  *
- * Server env (proxy): NEXT_PUBLIC_AM_MAIN_API_URL, NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN_2
+ * Token env: AM_MAIN_API_URL_TOKEN_2 or NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN_2
  */
 
 export interface AopFilterOption {
