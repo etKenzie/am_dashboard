@@ -31,6 +31,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 export const supabaseForPasswordReset = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     ...sharedAuthOptions,
+    storageKey: 'am-dashboard-auth-reset',
     detectSessionInUrl: true,
   },
   global: {

@@ -284,12 +284,49 @@ function buildAopQueryParams(filters: AopFilters): URLSearchParams {
 
 async function fetchAopApi<T>(pathSegment: string, params: URLSearchParams): Promise<T> {
   const query = params.toString();
-  const url = `/api/executive-dashboard/${pathSegment}${query ? `?${query}` : ''}`;
+  const proxyUrl = `/api/executive-dashboard/${pathSegment}${query ? `?${query}` : ''}`;
+  const expectedUpstreamUrl = `https://akumaju.com/ak-mj/api/v1/executive-dashboard/${pathSegment}${query ? `?${query}` : ''}`;
 
-  const res = await fetch(url, { method: 'GET', cache: 'no-store' });
+  console.log('[AOP] request', {
+    proxyUrl,
+    expectedUpstreamUrl,
+    pathSegment,
+    query: Object.fromEntries(params.entries()),
+  });
+
+  const res = await fetch(proxyUrl, { method: 'GET', cache: 'no-store' });
+
+  console.log('[AOP] proxy response', {
+    proxyUrl,
+    expectedUpstreamUrl,
+    status: res.status,
+    ok: res.ok,
+    contentType: res.headers.get('content-type'),
+  });
 
   if (!res.ok) {
-    throw new Error(`payroll-associates: ${res.status} ${res.statusText}`);
+    let detail = `${res.status} ${res.statusText}`;
+    try {
+      const errBody = (await res.json()) as {
+        error?: string;
+        upstream_url?: string;
+        upstream_status?: number;
+        hint?: string;
+      };
+      console.error('[AOP] proxy error body', { proxyUrl, expectedUpstreamUrl, errBody });
+      if (errBody.upstream_url) {
+        detail = `${detail} | upstream_url=${errBody.upstream_url}`;
+      }
+      if (errBody.upstream_status != null) {
+        detail = `${detail} | upstream_status=${errBody.upstream_status}`;
+      }
+      if (errBody.error) {
+        detail = `${detail} | ${errBody.error}`;
+      }
+    } catch {
+      // response was not JSON
+    }
+    throw new Error(`payroll-associates: ${detail}`);
   }
 
   const json = (await res.json()) as T & { success?: boolean; message?: string };

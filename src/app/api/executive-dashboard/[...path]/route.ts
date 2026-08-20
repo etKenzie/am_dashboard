@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const AOP_UPSTREAM_BASE = 'https://akumaju.com/ak-mj';
 
+export const runtime = 'edge';
+export const preferredRegion = ['sin1', 'hnd1', 'icn1', 'syd1'];
+
 function getAopApiToken(): string {
   const raw =
     process.env.AM_MAIN_API_URL_TOKEN_2 ??
@@ -24,7 +27,10 @@ export async function GET(
 
   if (!token) {
     return NextResponse.json(
-      { error: 'AM Main API token not configured (set AM_MAIN_API_URL_TOKEN_2 or NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN_2)' },
+      {
+        error: 'AOP API token not configured',
+        hint: 'Set AM_MAIN_API_URL_TOKEN_2 (server) or NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN_2 on Vercel, then redeploy',
+      },
       { status: 503 },
     );
   }
@@ -38,9 +44,18 @@ export async function GET(
   const search = request.nextUrl.searchParams.toString();
   const upstreamUrl = `${AOP_UPSTREAM_BASE}/api/v1/executive-dashboard/${segment}${search ? `?${search}` : ''}`;
 
+  console.log('[AOP proxy] upstream request', {
+    method: 'GET',
+    upstreamUrl,
+    proxyPath: `/api/executive-dashboard/${segment}${search ? `?${search}` : ''}`,
+    hasApiKey: Boolean(token),
+    tokenLength: token.length,
+  });
+
   const headers: HeadersInit = {
     Accept: 'application/json',
-    'X-API-Key': token,
+    'x-api-key': token,
+    'User-Agent': 'Mozilla/5.0 (compatible; AMDashboard/1.0)',
   };
 
   try {
@@ -60,12 +75,17 @@ export async function GET(
           error: 'Upstream returned non-JSON response',
           upstream_status: res.status,
           upstream_url: upstreamUrl,
+          hint:
+            res.status === 403
+              ? 'akumaju.com is blocking Vercel server requests (403). Ask backend to whitelist Vercel IPs or enable CORS for executive-dashboard.akumaju.com on /api/v1/executive-dashboard/*'
+              : undefined,
         },
         { status: 502 },
       );
     }
 
     const data = JSON.parse(bodyText) as unknown;
+    console.log('[AOP proxy] upstream response', { upstreamUrl, status: res.status, ok: res.ok });
     return NextResponse.json(data, { status: res.status });
   } catch (err) {
     console.error('Executive dashboard proxy GET error:', { upstreamUrl, err });
