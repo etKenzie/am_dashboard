@@ -6,6 +6,7 @@ import {
   IconFileInvoice,
   IconGraph,
   IconUsers,
+  IconUserSearch,
   IconHome,
   IconMask,
   // IconPaywall,
@@ -179,6 +180,14 @@ const Menuitems: MenuitemsType[] = [
     icon: IconBuilding,
     href: "/aop",
     requiredRoles: [ROLES.ADMIN, ROLES.AOP],
+  },
+
+  {
+    id: uniqueId(),
+    title: "Sourcing",
+    icon: IconUserSearch,
+    href: "/sourcing",
+    requiredRoles: [ROLES.ADMIN, ROLES.SOURCING],
   },
 
   // {

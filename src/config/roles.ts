@@ -18,6 +18,7 @@ export const ROLES = {
   INVOICE: 'INVOICE',
   RECRUITMENT: 'RECRUITMENT',
   AOP: 'AOP',
+  SOURCING: 'SOURCING',
 } as const;
 
 // Role definitions for different pages/features
@@ -41,6 +42,9 @@ export const PAGE_ROLES = {
 
   // Associates On Payroll
   AOP_DASHBOARD: [ROLES.ADMIN, ROLES.AOP],
+
+  // Sourcing
+  SOURCING_DASHBOARD: [ROLES.ADMIN, ROLES.SOURCING],
 
   // Legacy / unused keys kept for compatibility
   KASBON_DASHBOARD: [ROLES.ADMIN, ROLES.LOAN],
