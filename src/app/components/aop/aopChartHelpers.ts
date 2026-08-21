@@ -1,4 +1,44 @@
 import type { LoanDateMode } from '../kasbon/KasbonFilters';
+import { getDefaultKasbonFilterDates } from '../kasbon/kasbonDateHelpers';
+
+export type AopUiFilterState = {
+  dateMode: LoanDateMode;
+  month: string;
+  year: string;
+  startDate: string;
+  endDate: string;
+  employer: string;
+  sourcedTo: string;
+  project: string;
+  branch: string;
+  clientSegments: string[];
+};
+
+export function createDefaultAopUiFilters(): AopUiFilterState {
+  return {
+    ...getDefaultKasbonFilterDates(),
+    employer: '0',
+    sourcedTo: '0',
+    project: '0',
+    branch: '0',
+    clientSegments: [],
+  };
+}
+
+export function areAopFiltersEqual(a: AopUiFilterState, b: AopUiFilterState): boolean {
+  return (
+    a.dateMode === b.dateMode
+    && a.month === b.month
+    && a.year === b.year
+    && a.startDate === b.startDate
+    && a.endDate === b.endDate
+    && a.employer === b.employer
+    && a.sourcedTo === b.sourcedTo
+    && a.project === b.project
+    && a.branch === b.branch
+    && JSON.stringify(a.clientSegments) === JSON.stringify(b.clientSegments)
+  );
+}
 
 /** Max bars on a headcount breakdown chart, including the aggregated "Other" bar. */
 export const AOP_HEADCOUNT_TOP_N = 12;

@@ -1,47 +1,47 @@
 'use client';
 
 import {
-    Box,
-    FormControl,
-    Grid,
-    InputLabel,
-    MenuItem,
-    Select,
-    SelectChangeEvent,
-    Typography,
+  Box,
+  Button,
+  FormControl,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Typography,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import {
-    IconCash,
-    IconCashOff,
-    IconUserCheck,
-    IconUsers,
+  IconCash,
+  IconCashOff,
+  IconUserCheck,
+  IconUsers,
 } from '@tabler/icons-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    AopAssociatesByBranch,
-    AopDashboardData,
-    AopFilterOptions,
-    AopFilters,
-    EMPTY_AOP_DASHBOARD,
-    fetchAopBranchBreakdown,
-    fetchAopFilterOptions,
-    fetchAopRoleGroupingBreakdown,
-    fetchAopSummary,
-    fetchAopTopBreakdown,
+  AopAssociatesByBranch,
+  AopDashboardData,
+  AopFilterOptions,
+  AopFilters,
+  EMPTY_AOP_DASHBOARD,
+  fetchAopBranchBreakdown,
+  fetchAopFilterOptions,
+  fetchAopRoleGroupingBreakdown,
+  fetchAopSummary,
+  fetchAopTopBreakdown,
 } from '../../api/aop/AopSlice';
 import PageContainer from '../container/PageContainer';
 import { LoanDateModeToggle } from '../kasbon/KasbonFilters';
 import {
-    applyLoanDateModeChange,
-    formatLoanDate,
-    getDefaultKasbonFilterDates,
-    isKasbonDateFilterReady,
-    kasbonDateParams,
-    parseLoanDateString,
-    type LoanDateMode,
+  applyLoanDateModeChange,
+  formatLoanDate,
+  isKasbonDateFilterReady,
+  kasbonDateParams,
+  parseLoanDateString,
+  type LoanDateMode,
 } from '../kasbon/kasbonDateHelpers';
 import ClientScopeFilters from '../shared/ClientScopeFilters';
 import AopMetricCard from './AopMetricCard';
@@ -51,7 +51,12 @@ import AssociatesByTermsOfPaymentChart from './AssociatesByTermsOfPaymentChart';
 import AssociatesEmploymentTypeSection from './AssociatesEmploymentTypeSection';
 import AssociatesTrendChart from './AssociatesTrendChart';
 import PayrollCompositionSection from './PayrollCompositionSection';
-import { isAopCurrentYearMonthMode } from './aopChartHelpers';
+import {
+  areAopFiltersEqual,
+  createDefaultAopUiFilters,
+  isAopCurrentYearMonthMode,
+  type AopUiFilterState,
+} from './aopChartHelpers';
 
 const ALL_OPTION = { value: '0', label: 'All' };
 
@@ -75,17 +80,37 @@ function toMultiSelectOptions(items: Array<{ id: string; name: string }>) {
   return items.map((x) => ({ value: x.id, label: x.name }));
 }
 
+function toSummaryFilters(filters: AopUiFilterState): AopFilters {
+  const dateParams = kasbonDateParams(filters);
+  return {
+    employer: filters.employer,
+    sourced_to: filters.sourcedTo,
+    project: filters.project,
+    branch: filters.branch,
+    client_segments: filters.clientSegments,
+    start_date: dateParams.start_date ?? '',
+    end_date: dateParams.end_date ?? '',
+  };
+}
+
+function toTrendChartFilters(filters: AopUiFilterState) {
+  return {
+    employer: filters.employer,
+    sourced_to: filters.sourcedTo,
+    project: filters.project,
+    branch: filters.branch,
+    client_segments: filters.clientSegments,
+    dateMode: filters.dateMode,
+    month: filters.month,
+    year: filters.year,
+    startDate: filters.startDate,
+    endDate: filters.endDate,
+  };
+}
+
 export default function AopOverview() {
-  const [employer, setEmployer] = useState('0');
-  const [sourcedTo, setSourcedTo] = useState('0');
-  const [project, setProject] = useState('0');
-  const [branch, setBranch] = useState('0');
-  const [clientSegments, setClientSegments] = useState<string[]>([]);
-  const [dateMode, setDateMode] = useState<LoanDateMode>('month');
-  const [month, setMonth] = useState('');
-  const [year, setYear] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [pendingFilters, setPendingFilters] = useState<AopUiFilterState>(createDefaultAopUiFilters);
+  const [appliedFilters, setAppliedFilters] = useState<AopUiFilterState>(createDefaultAopUiFilters);
   const [filterOptions, setFilterOptions] = useState<AopFilterOptions>(EMPTY_FILTER_OPTIONS);
   const [dashboard, setDashboard] = useState<AopDashboardData>(EMPTY_AOP_DASHBOARD);
   const [loading, setLoading] = useState(true);
@@ -107,55 +132,25 @@ export default function AopOverview() {
   }, []);
 
   useEffect(() => {
-    const defaults = getDefaultKasbonFilterDates();
-    setDateMode(defaults.dateMode);
-    setMonth(defaults.month);
-    setYear(defaults.year);
-    setStartDate(defaults.startDate);
-    setEndDate(defaults.endDate);
+    const defaults = createDefaultAopUiFilters();
+    setPendingFilters(defaults);
+    setAppliedFilters(defaults);
   }, []);
 
-  const dateFilterInputs = useMemo(
-    () => ({ dateMode, month, year, startDate, endDate }),
-    [dateMode, month, year, startDate, endDate],
+  const appliedSummaryFilters = useMemo(
+    () => toSummaryFilters(appliedFilters),
+    [appliedFilters],
   );
 
-  const summaryDateParams = useMemo(
-    () => kasbonDateParams(dateFilterInputs),
-    [dateFilterInputs],
+  const appliedTrendChartFilters = useMemo(
+    () => toTrendChartFilters(appliedFilters),
+    [appliedFilters],
   );
 
-  const summaryFilters: AopFilters = useMemo(
-    () => ({
-      employer,
-      sourced_to: sourcedTo,
-      project,
-      branch,
-      client_segments: clientSegments,
-      start_date: summaryDateParams.start_date ?? '',
-      end_date: summaryDateParams.end_date ?? '',
-    }),
-    [employer, sourcedTo, project, branch, clientSegments, summaryDateParams],
-  );
+  const loadFilterOptions = useCallback(async (filters: AopUiFilterState) => {
+    if (!isKasbonDateFilterReady(filters)) return;
 
-  const trendChartFilters = useMemo(
-    () => ({
-      employer,
-      sourced_to: sourcedTo,
-      project,
-      branch,
-      client_segments: clientSegments,
-      dateMode,
-      month,
-      year,
-      startDate,
-      endDate,
-    }),
-    [employer, sourcedTo, project, branch, clientSegments, dateMode, month, year, startDate, endDate],
-  );
-
-  const loadFilterOptions = useCallback(async () => {
-    if (!isKasbonDateFilterReady(dateFilterInputs)) return;
+    const summaryFilters = toSummaryFilters(filters);
     if (!summaryFilters.start_date || !summaryFilters.end_date) return;
 
     setFilterOptionsLoading(true);
@@ -168,10 +163,12 @@ export default function AopOverview() {
     } finally {
       setFilterOptionsLoading(false);
     }
-  }, [dateFilterInputs, summaryFilters]);
+  }, []);
 
-  const loadDashboard = useCallback(async () => {
-    if (!isKasbonDateFilterReady(dateFilterInputs)) return;
+  const loadDashboard = useCallback(async (filters: AopUiFilterState) => {
+    if (!isKasbonDateFilterReady(filters)) return;
+
+    const summaryFilters = toSummaryFilters(filters);
     if (!summaryFilters.start_date || !summaryFilters.end_date) return;
 
     setLoading(true);
@@ -183,7 +180,7 @@ export default function AopOverview() {
         associates_by_terms_of_payment,
       ] = await Promise.all([
         fetchAopSummary(summaryFilters),
-        branch === '0'
+        filters.branch === '0'
           ? fetchAopBranchBreakdown(summaryFilters)
           : Promise.resolve([] as AopAssociatesByBranch[]),
         fetchAopRoleGroupingBreakdown(summaryFilters),
@@ -202,39 +199,44 @@ export default function AopOverview() {
     } finally {
       setLoading(false);
     }
-  }, [summaryFilters, dateFilterInputs, branch]);
+  }, []);
 
   useEffect(() => {
-    loadFilterOptions();
-  }, [loadFilterOptions]);
+    if (!isKasbonDateFilterReady(appliedFilters)) return;
+    loadFilterOptions(appliedFilters);
+    loadDashboard(appliedFilters);
+  }, [appliedFilters, loadFilterOptions, loadDashboard]);
 
-  useEffect(() => {
-    loadDashboard();
-  }, [loadDashboard]);
+  const handleApplyFilters = () => {
+    setAppliedFilters(pendingFilters);
+  };
 
   const handleDateModeChange = (nextMode: LoanDateMode) => {
-    const next = applyLoanDateModeChange(
-      {
-        dateMode,
-        month,
-        year,
-        startDate,
-        endDate,
-        employer: '',
-        placement: '',
-        project: '',
-        branch: '',
-        clientSegments: [],
-        productType: '',
-      },
-      nextMode,
-    );
-    setDateMode(next.dateMode);
-    setMonth(next.month);
-    setYear(next.year);
-    setStartDate(next.startDate);
-    setEndDate(next.endDate);
+    setPendingFilters((prev) => {
+      const next = applyLoanDateModeChange(
+        {
+          dateMode: prev.dateMode,
+          month: prev.month,
+          year: prev.year,
+          startDate: prev.startDate,
+          endDate: prev.endDate,
+          employer: '',
+          placement: '',
+          project: '',
+          branch: '',
+          clientSegments: [],
+          productType: '',
+        },
+        nextMode,
+      );
+      return { ...prev, ...next };
+    });
   };
+
+  const hasPendingChanges = useMemo(
+    () => !areAopFiltersEqual(pendingFilters, appliedFilters),
+    [pendingFilters, appliedFilters],
+  );
 
   const employerOptions = useMemo(
     () => toSelectOptions(filterOptions.employers),
@@ -259,18 +261,29 @@ export default function AopOverview() {
   );
 
   useEffect(() => {
-    if (clientSegments.length === 0) return;
+    if (pendingFilters.clientSegments.length === 0) return;
     const validIds = new Set(segmentOptions.map((option) => option.value));
-    const next = clientSegments.filter((id) => validIds.has(id));
-    if (next.length !== clientSegments.length) {
-      setClientSegments(next);
+    const next = pendingFilters.clientSegments.filter((id) => validIds.has(id));
+    if (next.length !== pendingFilters.clientSegments.length) {
+      setPendingFilters((prev) => ({ ...prev, clientSegments: next }));
     }
-  }, [clientSegments, segmentOptions]);
+  }, [pendingFilters.clientSegments, segmentOptions]);
 
   const filtersBusy = loading || filterOptionsLoading;
-  const hideZeroChartValues = isAopCurrentYearMonthMode(dateMode, year);
+  const hideZeroChartValues = isAopCurrentYearMonthMode(appliedFilters.dateMode, appliedFilters.year);
   const sectionTitleSx = { mb: 2, mt: 0, fontWeight: 600 } as const;
   const { summary } = dashboard;
+
+  const applyButton = (
+    <Button
+      variant="contained"
+      onClick={handleApplyFilters}
+      disabled={!isKasbonDateFilterReady(pendingFilters) || !hasPendingChanges || filtersBusy}
+      sx={{ width: { xs: '100%', md: 'auto' }, whiteSpace: 'nowrap' }}
+    >
+      Apply Filters
+    </Button>
+  );
 
   return (
     <PageContainer title="Associates On Payroll" description="Associates on Payroll metrics and trends">
@@ -288,19 +301,21 @@ export default function AopOverview() {
           <Typography variant="h3" fontWeight="bold">
             Associates On Payroll
           </Typography>
-          <LoanDateModeToggle value={dateMode} onChange={handleDateModeChange} />
+          <LoanDateModeToggle value={pendingFilters.dateMode} onChange={handleDateModeChange} />
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
-          {dateMode === 'month' ? (
-            <Grid container spacing={2} width="100%">
-              <Grid size={{ xs: 12, sm: 6 }}>
+          {pendingFilters.dateMode === 'month' ? (
+            <Grid container spacing={2} width="100%" alignItems="center">
+              <Grid size={{ xs: 12, sm: 6, md: 'grow' }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Month</InputLabel>
                   <Select
-                    value={month}
+                    value={pendingFilters.month}
                     label="Month"
-                    onChange={(e: SelectChangeEvent) => setMonth(e.target.value)}
+                    onChange={(e: SelectChangeEvent) =>
+                      setPendingFilters((prev) => ({ ...prev, month: e.target.value }))
+                    }
                     disabled={filtersBusy}
                   >
                     {months.map((m) => (
@@ -311,13 +326,15 @@ export default function AopOverview() {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid size={{ xs: 12, sm: 6, md: 'grow' }}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Year</InputLabel>
                   <Select
-                    value={year}
+                    value={pendingFilters.year}
                     label="Year"
-                    onChange={(e: SelectChangeEvent) => setYear(e.target.value)}
+                    onChange={(e: SelectChangeEvent) =>
+                      setPendingFilters((prev) => ({ ...prev, year: e.target.value }))
+                    }
                     disabled={filtersBusy}
                   >
                     {years.map((y) => (
@@ -328,34 +345,54 @@ export default function AopOverview() {
                   </Select>
                 </FormControl>
               </Grid>
+              <Grid
+                size={{ md: 'auto' }}
+                sx={{
+                  display: { xs: 'none', md: 'flex' },
+                  justifyContent: 'flex-end',
+                  alignItems: 'center',
+                }}
+              >
+                {applyButton}
+              </Grid>
             </Grid>
           ) : (
             <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <Grid container spacing={2} width="100%">
-                <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid container spacing={2} width="100%" alignItems="center">
+                <Grid size={{ xs: 12, sm: 6, md: 'grow' }}>
                   <DatePicker
                     label="Start Date"
-                    value={parseLoanDateString(startDate)}
+                    value={parseLoanDateString(pendingFilters.startDate)}
                     onChange={(date) => {
                       if (!date) return;
-                      setStartDate(formatLoanDate(date));
+                      setPendingFilters((prev) => ({ ...prev, startDate: formatLoanDate(date) }));
                     }}
                     disabled={filtersBusy}
                     slotProps={{ textField: { size: 'small', fullWidth: true } }}
                   />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 'grow' }}>
                   <DatePicker
                     label="End Date"
-                    value={parseLoanDateString(endDate)}
+                    value={parseLoanDateString(pendingFilters.endDate)}
                     onChange={(date) => {
                       if (!date) return;
-                      setEndDate(formatLoanDate(date));
+                      setPendingFilters((prev) => ({ ...prev, endDate: formatLoanDate(date) }));
                     }}
                     disabled={filtersBusy}
-                    minDate={parseLoanDateString(startDate) ?? undefined}
+                    minDate={parseLoanDateString(pendingFilters.startDate) ?? undefined}
                     slotProps={{ textField: { size: 'small', fullWidth: true } }}
                   />
+                </Grid>
+                <Grid
+                  size={{ md: 'auto' }}
+                  sx={{
+                    display: { xs: 'none', md: 'flex' },
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                  }}
+                >
+                  {applyButton}
                 </Grid>
               </Grid>
             </LocalizationProvider>
@@ -364,11 +401,11 @@ export default function AopOverview() {
           <ClientScopeFilters
             disabled={filtersBusy}
             values={{
-              employer,
-              sourcedTo,
-              project,
-              branch,
-              segments: clientSegments,
+              employer: pendingFilters.employer,
+              sourcedTo: pendingFilters.sourcedTo,
+              project: pendingFilters.project,
+              branch: pendingFilters.branch,
+              segments: pendingFilters.clientSegments,
             }}
             options={{
               employers: employerOptions,
@@ -378,13 +415,20 @@ export default function AopOverview() {
               segments: segmentOptions,
             }}
             onChange={(next) => {
-              setEmployer(next.employer);
-              setSourcedTo(next.sourcedTo);
-              setProject(next.project);
-              setBranch(next.branch);
-              setClientSegments(next.segments);
+              setPendingFilters((prev) => ({
+                ...prev,
+                employer: next.employer,
+                sourcedTo: next.sourcedTo,
+                project: next.project,
+                branch: next.branch,
+                clientSegments: next.segments,
+              }));
             }}
           />
+
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, justifyContent: 'flex-end' }}>
+            {applyButton}
+          </Box>
         </Box>
 
         <Typography variant="h5" sx={sectionTitleSx}>
@@ -430,7 +474,7 @@ export default function AopOverview() {
         </Box>
 
         <Box mt={4}>
-          <AssociatesTrendChart filters={trendChartFilters} />
+          <AssociatesTrendChart filters={appliedTrendChartFilters} />
         </Box>
 
         <Box
@@ -469,12 +513,12 @@ export default function AopOverview() {
             gap: 2,
             gridTemplateColumns: {
               xs: '1fr',
-              lg: branch === '0' ? '1fr 1fr' : '1fr',
+              lg: appliedFilters.branch === '0' ? '1fr 1fr' : '1fr',
             },
             alignItems: 'stretch',
           }}
         >
-          {branch === '0' && (
+          {appliedFilters.branch === '0' && (
             <AssociatesByBranchChart
               data={dashboard.associates_by_branch}
               loading={loading}

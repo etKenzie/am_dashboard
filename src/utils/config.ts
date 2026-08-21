@@ -92,14 +92,21 @@ export function getCollectionApiToken(): string {
 export const COLLECTION_API_URL = getCollectionApiUrl();
 export const COLLECTION_API_TOKEN = getCollectionApiToken();
 
-/** Main AM API (recruitment dashboard). Optional — empty when unset. */
+/** Main AM API (recruitment dashboard, AOP proxy). Optional — empty when unset. */
 export function getMainApiUrl(): string {
-  const url = process.env.NEXT_PUBLIC_AM_MAIN_API_URL ?? '';
+  const url =
+    process.env.AM_MAIN_API_URL ??
+    process.env.NEXT_PUBLIC_AM_MAIN_API_URL ??
+    '';
   return url.replace(/\/$/, '');
 }
 
 export function getMainApiToken(): string {
-  return process.env.NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN ?? '';
+  return (
+    process.env.AM_MAIN_API_URL_TOKEN ??
+    process.env.NEXT_PUBLIC_AM_MAIN_API_URL_TOKEN ??
+    ''
+  );
 }
 
 /** Executive dashboard / AOP API key. Optional — empty when unset. */
