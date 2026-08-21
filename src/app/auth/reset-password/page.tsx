@@ -29,16 +29,15 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(true);
   const [mounted, setMounted] = useState(false);
-  
+  const [isInvite, setIsInvite] = useState(false);
+
   const { resetPasswordWithToken } = useAuth();
   const router = useRouter();
 
-  // Set mounted state to prevent hydration issues
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Validate the reset token on mount (only on client)
   useEffect(() => {
     if (!mounted) return;
 
@@ -51,19 +50,25 @@ export default function ResetPasswordPage() {
         const code = searchParams.get('code');
         const tokenHash = searchParams.get('token_hash');
         const type = searchParams.get('type');
+        const inviteFlow = type === 'invite' || type === 'signup';
+        setIsInvite(inviteFlow);
 
-        // Preferred: token_hash from email template (works across browsers/devices)
-        if (tokenHash && (type === 'recovery' || type === 'email')) {
+        const invalidMessage = inviteFlow
+          ? 'Invalid or expired invite link. Please ask an admin to send a new invite.'
+          : 'Invalid or expired reset link. Please request a new password reset.';
+
+        // token_hash from email (works across devices)
+        if (
+          tokenHash &&
+          (type === 'recovery' || type === 'email' || type === 'invite' || type === 'signup')
+        ) {
           const { data, error: otpError } = await supabaseForPasswordReset.auth.verifyOtp({
-            type: 'recovery',
+            type: inviteFlow ? 'invite' : 'recovery',
             token_hash: tokenHash,
           });
 
           if (otpError || !data.session) {
-            setError(
-              otpError?.message ||
-                'Invalid or expired reset link. Please request a new password reset.',
-            );
+            setError(otpError?.message || invalidMessage);
             setValidating(false);
             return;
           }
@@ -73,29 +78,27 @@ export default function ResetPasswordPage() {
           return;
         }
 
-        // PKCE: ?code=... (must open in the SAME browser that requested the reset)
+        // PKCE ?code= after /auth/v1/verify redirect
         if (code) {
           const { data, error: exchangeError } =
             await supabaseForPasswordReset.auth.exchangeCodeForSession(code);
 
           if (exchangeError) {
-            console.error('Failed to exchange reset code:', exchangeError);
-            const msg = exchangeError.message || '';
-            if (msg.toLowerCase().includes('code verifier')) {
+            console.error('Failed to exchange auth code:', exchangeError);
+            const msg = (exchangeError.message || '').toLowerCase();
+            if (msg.includes('code verifier')) {
               setError(
-                'This reset link must be opened in the same browser where you requested the password reset. Request a new reset email, then open the link in that same browser (don’t open it on another device).',
+                'Open this link in the same browser session if possible, or ask for a new invite/reset email and open it directly on this device.',
               );
             } else {
-              setError(
-                msg || 'Invalid or expired reset link. Please request a new password reset.',
-              );
+              setError(exchangeError.message || invalidMessage);
             }
             setValidating(false);
             return;
           }
 
           if (!data.session) {
-            setError('Invalid or expired reset link. Please request a new password reset.');
+            setError(invalidMessage);
             setValidating(false);
             return;
           }
@@ -105,35 +108,36 @@ export default function ResetPasswordPage() {
           return;
         }
 
-        // Legacy hash tokens: #access_token=...&type=recovery
+        // Hash tokens #access_token=...&type=recovery|invite
         if (hash) {
           const hashParams = new URLSearchParams(hash.substring(1));
           const accessToken = hashParams.get('access_token');
           const refreshToken = hashParams.get('refresh_token');
           const hashType = hashParams.get('type');
+          const hashInvite = hashType === 'invite' || hashType === 'signup';
+          if (hashInvite) setIsInvite(true);
 
-          if (accessToken && hashType === 'recovery') {
+          if (
+            accessToken &&
+            (hashType === 'recovery' || hashType === 'invite' || hashType === 'signup')
+          ) {
             if (refreshToken) {
               const { error: setSessionError } = await supabaseForPasswordReset.auth.setSession({
                 access_token: accessToken,
                 refresh_token: refreshToken,
               });
               if (setSessionError) {
-                setError(
-                  setSessionError.message ||
-                    'Invalid or expired reset link. Please request a new password reset.',
-                );
+                setError(setSessionError.message || invalidMessage);
                 setValidating(false);
                 return;
               }
             } else {
-              const { data: { session }, error: sessionError } =
-                await supabaseForPasswordReset.auth.getSession();
+              const {
+                data: { session },
+                error: sessionError,
+              } = await supabaseForPasswordReset.auth.getSession();
               if (sessionError || !session) {
-                setError(
-                  sessionError?.message ||
-                    'Invalid or expired reset link. Please request a new password reset.',
-                );
+                setError(sessionError?.message || invalidMessage);
                 setValidating(false);
                 return;
               }
@@ -145,11 +149,11 @@ export default function ResetPasswordPage() {
           }
         }
 
-        setError('Invalid or expired reset link. Please request a new password reset.');
+        setError(invalidMessage);
         setValidating(false);
       } catch (err: any) {
         console.error('Error validating token:', err);
-        setError(err.message || 'Invalid or expired reset link. Please request a new password reset.');
+        setError(err.message || 'Invalid or expired link. Please try again.');
         setValidating(false);
       }
     };
@@ -162,7 +166,6 @@ export default function ResetPasswordPage() {
     setError('');
     setSuccess(false);
 
-    // Validate passwords
     if (password.length < 6) {
       setError('Password must be at least 6 characters long');
       return;
@@ -178,37 +181,39 @@ export default function ResetPasswordPage() {
     try {
       await resetPasswordWithToken(password);
       setSuccess(true);
-      
-      // Redirect to login after 2 seconds
       setTimeout(() => {
         router.push('/auth/login');
       }, 2000);
-    } catch (error: any) {
-      setError(error.message || 'Failed to reset password. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to set password. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Show loading state until component is mounted (prevents hydration mismatch)
+  const pageTitle = isInvite ? 'Set Password' : 'Reset Password';
+  const pageSubtitle = isInvite
+    ? 'Create a password to activate your account.'
+    : 'Enter your new password below.';
+  const successMessage = isInvite
+    ? 'Password set successfully! Redirecting to login...'
+    : 'Password reset successfully! Redirecting to login...';
+  const submitLabel = isInvite ? 'Set Password' : 'Reset Password';
+
   if (!mounted || validating) {
     return (
-      <PageContainer title="Reset Password" description="Reset your password">
+      <PageContainer title={pageTitle} description={pageSubtitle}>
         <Grid container spacing={0} justifyContent="center" sx={{ height: '100vh' }}>
           <Grid
             display="flex"
             justifyContent="center"
             alignItems="center"
-            size={{
-              xs: 12,
-              sm: 12,
-              lg: 5,
-              xl: 4
-            }}>
+            size={{ xs: 12, sm: 12, lg: 5, xl: 4 }}
+          >
             <Box p={4} textAlign="center">
               <CircularProgress size={60} />
               <Typography variant="h6" sx={{ mt: 2 }}>
-                {!mounted ? 'Loading...' : 'Validating reset link...'}
+                {!mounted ? 'Loading...' : 'Validating link...'}
               </Typography>
             </Box>
           </Grid>
@@ -218,7 +223,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <PageContainer title="Reset Password" description="Reset your password">
+    <PageContainer title={pageTitle} description={pageSubtitle}>
       <Grid container spacing={0} justifyContent="center" sx={{ height: '100vh' }}>
         <Grid
           sx={{
@@ -234,12 +239,8 @@ export default function ResetPasswordPage() {
               opacity: '0.3',
             },
           }}
-          size={{
-            xs: 12,
-            sm: 12,
-            lg: 7,
-            xl: 8
-          }}>
+          size={{ xs: 12, sm: 12, lg: 7, xl: 8 }}
+        >
           <Box position="relative">
             <Box px={3}>
               <Logo />
@@ -247,22 +248,15 @@ export default function ResetPasswordPage() {
             <Box
               alignItems="center"
               justifyContent="center"
-              height={'calc(100vh - 75px)'}
-              sx={{
-                display: {
-                  xs: 'none',
-                  lg: 'flex',
-                },
-              }}
+              height="calc(100vh - 75px)"
+              sx={{ display: { xs: 'none', lg: 'flex' } }}
             >
               <Image
                 src="/images/backgrounds/login-bg.svg"
-                alt="bg" width={500} height={500}
-                style={{
-                  width: '100%',
-                  maxWidth: '500px',
-                  maxHeight: '500px',
-                }}
+                alt="bg"
+                width={500}
+                height={500}
+                style={{ width: '100%', maxWidth: '500px', maxHeight: '500px' }}
               />
             </Box>
           </Box>
@@ -271,18 +265,14 @@ export default function ResetPasswordPage() {
           display="flex"
           justifyContent="center"
           alignItems="center"
-          size={{
-            xs: 12,
-            sm: 12,
-            lg: 5,
-            xl: 4
-          }}>
+          size={{ xs: 12, sm: 12, lg: 5, xl: 4 }}
+        >
           <Box p={4}>
             <Typography variant="h3" fontWeight="700" mb={1}>
-              Reset Password
+              {pageTitle}
             </Typography>
             <Typography variant="subtitle1" color="textSecondary" mb={3}>
-              Enter your new password below.
+              {pageSubtitle}
             </Typography>
 
             {error && (
@@ -293,7 +283,7 @@ export default function ResetPasswordPage() {
 
             {success && (
               <Alert severity="success" sx={{ mb: 3 }}>
-                Password reset successfully! Redirecting to login...
+                {successMessage}
               </Alert>
             )}
 
@@ -315,10 +305,7 @@ export default function ResetPasswordPage() {
                     ),
                     endAdornment: (
                       <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword(!showPassword)}
-                          edge="end"
-                        >
+                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
                           {showPassword ? <VisibilityOff /> : <Visibility />}
                         </IconButton>
                       </InputAdornment>
@@ -361,7 +348,7 @@ export default function ResetPasswordPage() {
                   disabled={loading}
                   sx={{ py: 1.5, mb: 2 }}
                 >
-                  {loading ? <CircularProgress size={24} color="inherit" /> : 'Reset Password'}
+                  {loading ? <CircularProgress size={24} color="inherit" /> : submitLabel}
                 </Button>
 
                 <Button
@@ -393,4 +380,3 @@ export default function ResetPasswordPage() {
     </PageContainer>
   );
 }
-
