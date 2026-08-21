@@ -10,7 +10,7 @@ const AopPage = () => {
 
 export default function ProtectedAopPage() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('PAYROLL_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('AOP_DASHBOARD')}>
       <AopPage />
     </ProtectedRoute>
   );

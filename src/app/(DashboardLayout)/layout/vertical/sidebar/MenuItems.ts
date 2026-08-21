@@ -162,6 +162,7 @@ const Menuitems: MenuitemsType[] = [
     title: "Invoice",
     icon: IconFileInvoice,
     href: "/invoice",
+    requiredRoles: [ROLES.ADMIN, ROLES.INVOICE],
   },
 
   {
@@ -169,6 +170,7 @@ const Menuitems: MenuitemsType[] = [
     title: "Recruitment",
     icon: IconUsers,
     href: "/recruitment",
+    requiredRoles: [ROLES.ADMIN, ROLES.RECRUITMENT],
   },
 
   {
@@ -176,7 +178,7 @@ const Menuitems: MenuitemsType[] = [
     title: "Associates On Payroll",
     icon: IconBuilding,
     href: "/aop",
-    requiredRoles: [ROLES.ADMIN, ROLES.PAYROLL],
+    requiredRoles: [ROLES.ADMIN, ROLES.AOP],
   },
 
   // {

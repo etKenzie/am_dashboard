@@ -10,7 +10,7 @@ const InvoicePage = () => {
 
 export default function ProtectedInvoicePage() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('INVOICE_DASHBOARD')}>
       <InvoicePage />
     </ProtectedRoute>
   );

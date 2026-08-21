@@ -10,7 +10,7 @@ const RecruitmentPage = () => {
 
 export default function ProtectedRecruitmentPage() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('RECRUITMENT_DASHBOARD')}>
       <RecruitmentPage />
     </ProtectedRoute>
   );

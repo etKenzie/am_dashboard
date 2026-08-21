@@ -6,7 +6,7 @@ import TempInternalPayrollOverview from '../../../components/temp_internal_payro
 
 export default function InvoiceClientPage() {
   return (
-    <ProtectedRoute requiredRoles={getPageRoles('KASBON_DASHBOARD')}>
+    <ProtectedRoute requiredRoles={getPageRoles('INVOICE_DASHBOARD')}>
       <TempInternalPayrollOverview />
     </ProtectedRoute>
   );

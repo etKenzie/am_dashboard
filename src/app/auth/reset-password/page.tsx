@@ -50,88 +50,62 @@ export default function ResetPasswordPage() {
           return;
         }
         
-        // Log full URL for debugging
-        const fullUrl = window.location.href;
         const hash = window.location.hash;
-        const search = window.location.search;
-        const pathname = window.location.pathname;
-        
-        console.log('=== Password Reset Token Validation ===');
-        console.log('Full URL:', fullUrl);
-        console.log('Pathname:', pathname);
-        console.log('Hash:', hash || '(empty)');
-        console.log('Search params:', search || '(empty)');
-        
-        // With detectSessionInUrl: true, Supabase will automatically process the token from URL hash
-        // when we call getSession(). Let's check for the token manually first for better logging
-        let hasTokenInUrl = false;
+        const searchParams = new URLSearchParams(window.location.search);
+        const code = searchParams.get('code');
+
+        // PKCE flow: email redirect lands with ?code=... and must be exchanged for a session.
+        if (code) {
+          const { data, error: exchangeError } =
+            await supabaseForPasswordReset.auth.exchangeCodeForSession(code);
+
+          if (exchangeError) {
+            console.error('Failed to exchange reset code:', exchangeError);
+            setError(
+              exchangeError.message ||
+                'Invalid or expired reset link. Please request a new password reset.',
+            );
+            setValidating(false);
+            return;
+          }
+
+          if (!data.session) {
+            setError('Invalid or expired reset link. Please request a new password reset.');
+            setValidating(false);
+            return;
+          }
+
+          // Clean the one-time code from the URL after a successful exchange.
+          window.history.replaceState({}, document.title, window.location.pathname);
+          setValidating(false);
+          return;
+        }
+
+        // Legacy recovery flow: #access_token=...&type=recovery
         if (hash) {
           const hashParams = new URLSearchParams(hash.substring(1));
           const accessToken = hashParams.get('access_token');
           const type = hashParams.get('type');
           if (accessToken && type === 'recovery') {
-            hasTokenInUrl = true;
-            console.log('✅ Found recovery token in URL hash');
+            const { data: { session }, error: sessionError } =
+              await supabaseForPasswordReset.auth.getSession();
+
+            if (sessionError || !session) {
+              setError(
+                sessionError?.message ||
+                  'Invalid or expired reset link. Please request a new password reset.',
+              );
+              setValidating(false);
+              return;
+            }
+
+            setValidating(false);
+            return;
           }
-        }
-        // 
-        
-        if (!hasTokenInUrl && search) {
-          const searchParams = new URLSearchParams(search);
-          const token = searchParams.get('token');
-          if (token) {
-            console.log('Found token parameter in query string (not hash)');
-            console.log('⚠️ This might indicate Supabase redirect format issue');
-          }
-        }
-        
-        if (!hasTokenInUrl) {
-          console.log('⚠️ No token found in URL hash');
-          console.log('⚠️ Supabase should redirect with token in hash like: #access_token=...&type=recovery');
-          console.log('⚠️ If hash is empty, check Supabase redirect URL configuration');
-        }
-        
-        // Check if we have a valid session
-        // With detectSessionInUrl: true, this will automatically process token from URL hash
-        const { data: { session }, error: sessionError } = await supabaseForPasswordReset.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Error getting session:', sessionError);
-          console.error('Session error details:', JSON.stringify(sessionError, null, 2));
-          setError(sessionError.message || 'Invalid or expired reset link. Please request a new password reset.');
-          setValidating(false);
-          return;
-        }
-        
-        if (!session) {
-          console.error('No session found after validation');
-          console.log('');
-          console.log('🔍 DIAGNOSIS:');
-          console.log('The reset link was clicked, but no session was created.');
-          console.log('');
-          console.log('Most likely causes:');
-          console.log('1. ❌ Redirect URL mismatch - Check Supabase Dashboard → Authentication → URL Configuration');
-          console.log('   Required: "http://localhost:3000/auth/reset-password" (must match exactly)');
-          console.log('2. ❌ Token expired - Request a new password reset');
-          console.log('3. ❌ Token already used - Each reset link can only be used once');
-          console.log('4. ❌ Supabase configuration issue - Check Site URL matches your domain');
-          console.log('');
-          console.log('📋 ACTION REQUIRED:');
-          console.log('1. Go to Supabase Dashboard → Authentication → URL Configuration');
-          console.log('2. Add to Redirect URLs: http://localhost:3000/auth/reset-password');
-          console.log('3. Make sure Site URL is: http://localhost:3000');
-          console.log('4. Save and request a NEW password reset');
-          setError('Invalid or expired reset link. Please check Supabase configuration and request a new password reset.');
-          setValidating(false);
-          return;
         }
 
-        // Verify this is actually a recovery session (user should be able to update password)
-        console.log('✅ Token validated successfully! User can reset password');
-        console.log('Session user:', session.user?.email);
-        console.log('Session expires at:', new Date(session.expires_at! * 1000).toLocaleString());
-        
-        // Token is valid, user can reset password
+        // No usable reset token/code in the URL.
+        setError('Invalid or expired reset link. Please request a new password reset.');
         setValidating(false);
       } catch (err: any) {
         console.error('Error validating token:', err);
