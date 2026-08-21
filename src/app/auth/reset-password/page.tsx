@@ -44,27 +44,52 @@ export default function ResetPasswordPage() {
 
     const validateToken = async () => {
       try {
-        // Only access window after component is mounted (client-side only)
-        if (typeof window === 'undefined') {
-          console.log('Window not available, skipping validation');
-          return;
-        }
-        
+        if (typeof window === 'undefined') return;
+
         const hash = window.location.hash;
         const searchParams = new URLSearchParams(window.location.search);
         const code = searchParams.get('code');
+        const tokenHash = searchParams.get('token_hash');
+        const type = searchParams.get('type');
 
-        // PKCE flow: email redirect lands with ?code=... and must be exchanged for a session.
+        // Preferred: token_hash from email template (works across browsers/devices)
+        if (tokenHash && (type === 'recovery' || type === 'email')) {
+          const { data, error: otpError } = await supabaseForPasswordReset.auth.verifyOtp({
+            type: 'recovery',
+            token_hash: tokenHash,
+          });
+
+          if (otpError || !data.session) {
+            setError(
+              otpError?.message ||
+                'Invalid or expired reset link. Please request a new password reset.',
+            );
+            setValidating(false);
+            return;
+          }
+
+          window.history.replaceState({}, document.title, window.location.pathname);
+          setValidating(false);
+          return;
+        }
+
+        // PKCE: ?code=... (must open in the SAME browser that requested the reset)
         if (code) {
           const { data, error: exchangeError } =
             await supabaseForPasswordReset.auth.exchangeCodeForSession(code);
 
           if (exchangeError) {
             console.error('Failed to exchange reset code:', exchangeError);
-            setError(
-              exchangeError.message ||
-                'Invalid or expired reset link. Please request a new password reset.',
-            );
+            const msg = exchangeError.message || '';
+            if (msg.toLowerCase().includes('code verifier')) {
+              setError(
+                'This reset link must be opened in the same browser where you requested the password reset. Request a new reset email, then open the link in that same browser (don’t open it on another device).',
+              );
+            } else {
+              setError(
+                msg || 'Invalid or expired reset link. Please request a new password reset.',
+              );
+            }
             setValidating(false);
             return;
           }
@@ -75,41 +100,55 @@ export default function ResetPasswordPage() {
             return;
           }
 
-          // Clean the one-time code from the URL after a successful exchange.
           window.history.replaceState({}, document.title, window.location.pathname);
           setValidating(false);
           return;
         }
 
-        // Legacy recovery flow: #access_token=...&type=recovery
+        // Legacy hash tokens: #access_token=...&type=recovery
         if (hash) {
           const hashParams = new URLSearchParams(hash.substring(1));
           const accessToken = hashParams.get('access_token');
-          const type = hashParams.get('type');
-          if (accessToken && type === 'recovery') {
-            const { data: { session }, error: sessionError } =
-              await supabaseForPasswordReset.auth.getSession();
+          const refreshToken = hashParams.get('refresh_token');
+          const hashType = hashParams.get('type');
 
-            if (sessionError || !session) {
-              setError(
-                sessionError?.message ||
-                  'Invalid or expired reset link. Please request a new password reset.',
-              );
-              setValidating(false);
-              return;
+          if (accessToken && hashType === 'recovery') {
+            if (refreshToken) {
+              const { error: setSessionError } = await supabaseForPasswordReset.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
+              if (setSessionError) {
+                setError(
+                  setSessionError.message ||
+                    'Invalid or expired reset link. Please request a new password reset.',
+                );
+                setValidating(false);
+                return;
+              }
+            } else {
+              const { data: { session }, error: sessionError } =
+                await supabaseForPasswordReset.auth.getSession();
+              if (sessionError || !session) {
+                setError(
+                  sessionError?.message ||
+                    'Invalid or expired reset link. Please request a new password reset.',
+                );
+                setValidating(false);
+                return;
+              }
             }
 
+            window.history.replaceState({}, document.title, window.location.pathname);
             setValidating(false);
             return;
           }
         }
 
-        // No usable reset token/code in the URL.
         setError('Invalid or expired reset link. Please request a new password reset.');
         setValidating(false);
       } catch (err: any) {
         console.error('Error validating token:', err);
-        console.error('Error stack:', err.stack);
         setError(err.message || 'Invalid or expired reset link. Please request a new password reset.');
         setValidating(false);
       }

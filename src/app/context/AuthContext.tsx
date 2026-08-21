@@ -320,10 +320,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       console.log('Redirect URL:', redirectUrl);
       
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error } = await supabaseForPasswordReset.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
-        // Optional: Add email template customization
-        // emailRedirectTo: redirectUrl,
       });
       
       if (error) {
