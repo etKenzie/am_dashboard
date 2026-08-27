@@ -72,9 +72,11 @@ export interface LoanFeesMonthlyParams {
 }
 
 // Types for Karyawan Overdue API
+export type OverdueStatus = 'OD-1' | 'OD-2' | 'Write-off';
+
 export interface KaryawanOverdue {
   id_karyawan: number;
-  ktp: string;
+  ktp?: string;
   name: string;
   company: string;
   sourced_to: string;
@@ -84,6 +86,8 @@ export interface KaryawanOverdue {
   total_payment: number;
   repayment_date: string;
   days_overdue: number;
+  /** When provided by API; otherwise derived from days_overdue */
+  overdue_status?: OverdueStatus | string;
 }
 
 export interface KaryawanOverdueResponse {
@@ -91,6 +95,9 @@ export interface KaryawanOverdueResponse {
   count: number;
   results: KaryawanOverdue[];
   message: string | null;
+  total_od1?: number;
+  total_od2?: number;
+  total_write_off?: number;
 }
 
 // Types for Karyawan Overdue Query Parameters
@@ -212,11 +219,17 @@ export interface RepaymentRiskResponse {
   total_outstanding_repayment?: number;
   outstanding_rate?: number;
   total_loan_principal_collected: number;
+  total_loan_principal_collected_od1?: number;
+  total_loan_principal_collected_od2?: number;
   total_unrecovered_loan_principal: number;
   principal_collection_rate?: number;
   total_admin_fee_collected: number;
+  total_admin_fee_collected_od1?: number;
+  total_admin_fee_collected_od2?: number;
   total_unrecovered_admin_fee: number;
   admin_fee_collection_rate?: number;
+  total_disbursed_amount?: number;
+  total_admin_fee_disbursed?: number;
   delinquencies_rate: number;
   delinquency_by_expected_repayment?: number;
   delinquency_by_admin_fee?: number;
@@ -246,6 +259,7 @@ export interface RepaymentRiskMonthlyData {
   total_outstanding_repayment?: number;
   outstanding_rate?: number;
   admin_fee_profit: number;
+  delinquency_by_expected_repayment?: number;
 }
 
 export interface RepaymentRiskMonthlyResponse {
@@ -405,6 +419,12 @@ export interface ClientSummary {
   admin_fee_profit: number;
   delinquent_requests: number;
   delinquency_rate: number;
+  /** Overdue bucket 1 count/amount when provided by API */
+  od_1?: number;
+  /** Overdue bucket 2 count/amount when provided by API */
+  od_2?: number;
+  /** Write-off amount when provided by API */
+  write_off?: number;
 }
 
 export interface ClientSummaryResponse {

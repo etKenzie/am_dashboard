@@ -5,6 +5,8 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -50,17 +52,23 @@ const MONTH_NAMES = [
   'December',
 ];
 
-type SeriesKey = 'Expected Repayment' | 'Repayment Collected' | 'Unrecovered';
+type ChartMode = 'repayment' | 'delinquency';
+
+type SeriesKey = 'Expected Repayment' | 'Repayment Collected' | 'Unrecovered' | 'Admin Fee Profit';
 
 const SERIES_META: Array<{ name: SeriesKey; color: string }> = [
   { name: 'Expected Repayment', color: '#8B5CF6' },
   { name: 'Repayment Collected', color: '#16A34A' },
   { name: 'Unrecovered', color: '#DC2626' },
+  { name: 'Admin Fee Profit', color: '#0EA5E9' },
 ];
+
+const DELINQUENCY_COLOR = '#DC2626';
 
 type ChartSeriesData = {
   categories: string[];
   series: Record<SeriesKey, number[]>;
+  delinquency: number[];
 };
 
 const EMPTY_CHART: ChartSeriesData = {
@@ -69,7 +77,9 @@ const EMPTY_CHART: ChartSeriesData = {
     'Expected Repayment': [],
     'Repayment Collected': [],
     Unrecovered: [],
+    'Admin Fee Profit': [],
   },
+  delinquency: [],
 };
 
 function getCollectedAmount(row: RepaymentRiskMonthlyData): number {
@@ -78,6 +88,11 @@ function getCollectedAmount(row: RepaymentRiskMonthlyData): number {
   const unrecovered = row.total_unrecovered_repayment ?? 0;
   const outstanding = row.total_outstanding_repayment ?? 0;
   return Math.max(0, expected - unrecovered - outstanding);
+}
+
+function toPercent(rate: number | undefined | null): number {
+  if (rate == null || Number.isNaN(rate)) return 0;
+  return rate * 100;
 }
 
 function buildSeriesFromMonthly(
@@ -99,23 +114,32 @@ function buildSeriesFromMonthly(
     'Expected Repayment': [],
     'Repayment Collected': [],
     Unrecovered: [],
+    'Admin Fee Profit': [],
   };
+  const delinquency: number[] = [];
 
   months.forEach((key) => {
     const row = monthlyData[key];
     const expected = row.total_expected_repayment ?? 0;
     const collected = getCollectedAmount(row);
     const unrecovered = row.total_unrecovered_repayment ?? 0;
-    if (expected === 0 && collected === 0 && unrecovered === 0) return;
+    const adminFeeProfit = row.admin_fee_profit ?? 0;
+    const delinquencyRate = toPercent(row.delinquency_by_expected_repayment);
+    const hasRepayment =
+      expected !== 0 || collected !== 0 || unrecovered !== 0 || adminFeeProfit !== 0;
+    const hasDelinquency = row.delinquency_by_expected_repayment != null;
+    if (!hasRepayment && !hasDelinquency) return;
 
     const monthIndex = MONTH_NAMES.indexOf(key.split(' ')[0]);
     categories.push(MONTH_LABELS[monthIndex] ?? key.split(' ')[0]);
     series['Expected Repayment'].push(expected);
     series['Repayment Collected'].push(collected);
     series.Unrecovered.push(unrecovered);
+    series['Admin Fee Profit'].push(adminFeeProfit);
+    delinquency.push(delinquencyRate);
   });
 
-  return { categories, series };
+  return { categories, series, delinquency };
 }
 
 function formatCompactIdr(value: number): string {
@@ -128,6 +152,13 @@ function formatCompactIdr(value: number): string {
   return value.toLocaleString('en-US');
 }
 
+function formatPercent(value: number): string {
+  return `${value.toLocaleString('en-US', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2,
+  })}%`;
+}
+
 interface RepaymentRiskMonthlyTrendChartProps {
   filters: LoanTrendChartFilters;
   onLoadingChange?: (loading: boolean) => void;
@@ -138,6 +169,7 @@ const RepaymentRiskMonthlyTrendChart = ({
   onLoadingChange,
 }: RepaymentRiskMonthlyTrendChartProps) => {
   const theme = useTheme();
+  const [chartMode, setChartMode] = useState<ChartMode>('repayment');
   const [hiddenSeries, setHiddenSeries] = useState<Set<SeriesKey>>(() => new Set());
   const [chartData, setChartData] = useState<RepaymentRiskMonthlyResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -153,10 +185,16 @@ const RepaymentRiskMonthlyTrendChart = ({
     setHiddenSeries(new Set());
   }, [year]);
 
-  const yearLabel = useMemo(
-    () => (year ? `Expected repayment, collected, and unrecovered across ${year}` : 'Expected repayment, collected, and unrecovered across the selected year'),
-    [year],
-  );
+  const yearLabel = useMemo(() => {
+    if (chartMode === 'delinquency') {
+      return year
+        ? `Delinquency rate month to month across ${year}`
+        : 'Delinquency rate month to month across the selected year';
+    }
+    return year
+      ? `Expected repayment, collected, unrecovered, and admin fee profit across ${year}`
+      : 'Expected repayment, collected, unrecovered, and admin fee profit across the selected year';
+  }, [chartMode, year]);
 
   const fetchChartData = useCallback(async () => {
     if (!year || !filters.loanType) return;
@@ -208,16 +246,25 @@ const RepaymentRiskMonthlyTrendChart = ({
     [hiddenSeries],
   );
 
-  const series = useMemo(
-    () =>
-      visibleMeta.map(({ name }) => ({
-        name,
-        data: chartSeriesData.series[name],
-      })),
-    [visibleMeta, chartSeriesData],
-  );
+  const series = useMemo(() => {
+    if (chartMode === 'delinquency') {
+      return [
+        {
+          name: 'Delinquency Rate',
+          data: chartSeriesData.delinquency,
+        },
+      ];
+    }
+    return visibleMeta.map(({ name }) => ({
+      name,
+      data: chartSeriesData.series[name],
+    }));
+  }, [chartMode, visibleMeta, chartSeriesData]);
 
-  const colors = useMemo(() => visibleMeta.map((item) => item.color), [visibleMeta]);
+  const colors = useMemo(() => {
+    if (chartMode === 'delinquency') return [DELINQUENCY_COLOR];
+    return visibleMeta.map((item) => item.color);
+  }, [chartMode, visibleMeta]);
 
   const toggleSeries = useCallback((name: SeriesKey) => {
     setHiddenSeries((prev) => {
@@ -265,9 +312,11 @@ const RepaymentRiskMonthlyTrendChart = ({
       },
       yaxis: {
         labels: {
-          formatter: (val: number) => formatCompactIdr(val),
+          formatter: (val: number) =>
+            chartMode === 'delinquency' ? formatPercent(val) : formatCompactIdr(val),
           style: { fontSize: '12px' },
         },
+        min: chartMode === 'delinquency' ? 0 : undefined,
       },
       tooltip: {
         shared: true,
@@ -277,14 +326,16 @@ const RepaymentRiskMonthlyTrendChart = ({
           formatter: (val: number) =>
             val == null
               ? '—'
-              : `IDR ${Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
+              : chartMode === 'delinquency'
+                ? formatPercent(Number(val))
+                : `IDR ${Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 })}`,
         },
       },
       noData: {
         text: 'No data for this year',
       },
     }),
-    [theme, year, colors, chartSeriesData.categories],
+    [theme, year, colors, chartSeriesData.categories, chartMode],
   );
 
   return (
@@ -320,6 +371,17 @@ const RepaymentRiskMonthlyTrendChart = ({
               {yearLabel}
             </Typography>
           </Box>
+          <ToggleButtonGroup
+            value={chartMode}
+            exclusive
+            size="small"
+            onChange={(_event, value: ChartMode | null) => {
+              if (value) setChartMode(value);
+            }}
+          >
+            <ToggleButton value="repayment">Repayment</ToggleButton>
+            <ToggleButton value="delinquency">Delinquency Rate</ToggleButton>
+          </ToggleButtonGroup>
         </Box>
 
         {loading ? (
@@ -328,7 +390,7 @@ const RepaymentRiskMonthlyTrendChart = ({
           </Box>
         ) : (
           <ReactApexChart
-            key={`repayment-trend-${year}`}
+            key={`repayment-trend-${year}-${chartMode}`}
             options={chartOptions}
             series={series}
             type="line"
@@ -336,56 +398,90 @@ const RepaymentRiskMonthlyTrendChart = ({
           />
         )}
 
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-            gap: 2,
-            mt: 1,
-          }}
-        >
-          {SERIES_META.map((item) => {
-            const isHidden = hiddenSeries.has(item.name);
-            return (
-              <Box
-                key={item.name}
-                component="button"
-                type="button"
-                onClick={() => toggleSeries(item.name)}
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 0.75,
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  opacity: isHidden ? 0.4 : 1,
-                  p: 0.25,
-                  color: 'text.secondary',
-                  fontFamily: 'inherit',
-                }}
-              >
+        {chartMode === 'repayment' ? (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: 2,
+              mt: 1,
+            }}
+          >
+            {SERIES_META.map((item) => {
+              const isHidden = hiddenSeries.has(item.name);
+              return (
                 <Box
+                  key={item.name}
+                  component="button"
+                  type="button"
+                  onClick={() => toggleSeries(item.name)}
                   sx={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: '50%',
-                    bgcolor: item.color,
-                    flexShrink: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    opacity: isHidden ? 0.4 : 1,
+                    p: 0.25,
+                    color: 'text.secondary',
+                    fontFamily: 'inherit',
                   }}
-                />
-                <Typography
-                  variant="body2"
-                  fontWeight={600}
-                  sx={{ textDecoration: isHidden ? 'line-through' : 'none' }}
                 >
-                  {item.name}
-                </Typography>
-              </Box>
-            );
-          })}
-        </Box>
+                  <Box
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      bgcolor: item.color,
+                      flexShrink: 0,
+                    }}
+                  />
+                  <Typography
+                    variant="body2"
+                    fontWeight={600}
+                    sx={{ textDecoration: isHidden ? 'line-through' : 'none' }}
+                  >
+                    {item.name}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: 2,
+              mt: 1,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.75,
+                color: 'text.secondary',
+              }}
+            >
+              <Box
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  bgcolor: DELINQUENCY_COLOR,
+                  flexShrink: 0,
+                }}
+              />
+              <Typography variant="body2" fontWeight={600}>
+                Delinquency Rate
+              </Typography>
+            </Box>
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

@@ -4,8 +4,9 @@ import { Box, Card, CardContent, Typography } from '@mui/material';
 
 export interface PerformanceCardData {
   adminFeeProfit: number;
-  delinquencyByExpectedRepayment: number;
-  delinquencyByAdminFee: number;
+  delinquencyRate: number;
+  /** Fixed target index percentage (e.g. 0.2) */
+  targetIndex: number;
 }
 
 interface PerformanceCardProps {
@@ -14,8 +15,8 @@ interface PerformanceCardProps {
 
 const EMPTY: PerformanceCardData = {
   adminFeeProfit: 0,
-  delinquencyByExpectedRepayment: 0,
-  delinquencyByAdminFee: 0,
+  delinquencyRate: 0,
+  targetIndex: 0.2,
 };
 
 const POSITIVE_COLOR = '#16A34A';
@@ -27,7 +28,10 @@ const mutedLabelSx = {
 };
 
 function formatPercent(value: number): string {
-  return `${value.toLocaleString('en-US', { maximumFractionDigits: 1 })}%`;
+  return `${value.toLocaleString('en-US', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}%`;
 }
 
 function formatIdr(value: number): string {
@@ -70,7 +74,7 @@ const PerformanceCard = ({ data = EMPTY }: PerformanceCardProps) => {
               ...mutedLabelSx,
             }}
           >
-            Performance
+            Net Contribution
           </Typography>
         </Box>
 
@@ -120,14 +124,14 @@ const PerformanceCard = ({ data = EMPTY }: PerformanceCardProps) => {
             }}
           >
             <Typography variant="body1" color="text.secondary" fontWeight={500}>
-              Delinquency by Total Disbursed
+              Target Index
             </Typography>
             <Typography
               variant="body1"
               fontWeight={700}
               sx={{ fontVariantNumeric: 'tabular-nums' }}
             >
-              {formatPercent(data.delinquencyByExpectedRepayment)}
+              {formatPercent(data.targetIndex)}
             </Typography>
           </Box>
           <Box
@@ -139,14 +143,14 @@ const PerformanceCard = ({ data = EMPTY }: PerformanceCardProps) => {
             }}
           >
             <Typography variant="body1" color="text.secondary" fontWeight={500}>
-              Delinquency by Total Expected Repayment
+              Delinquency Rate
             </Typography>
             <Typography
               variant="body1"
               fontWeight={700}
               sx={{ fontVariantNumeric: 'tabular-nums' }}
             >
-              {formatPercent(data.delinquencyByAdminFee)}
+              {formatPercent(data.delinquencyRate)}
             </Typography>
           </Box>
         </Box>

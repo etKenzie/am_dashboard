@@ -9,7 +9,6 @@ import {
   fetchApplicantInsights,
   fetchBadDebtRecovery,
   fetchCoverageUtilization,
-  fetchDisbursementExpectedReturn,
   fetchRepaymentRisk,
   RepaymentRiskResponse,
 } from '../../api/loan/LoanSlice';
@@ -76,7 +75,6 @@ const EMPTY_DISBURSEMENT: LoanDisbursementCardData = {
   newBorrowers: 0,
   totalDisbursed: 0,
   averageDisbursed: 0,
-  disbursementExpectedReturn: 0,
   processingTimeDays: 0,
 };
 
@@ -90,19 +88,25 @@ const EMPTY_EXPECTED: TotalExpectedRepaymentCardData = {
 const EMPTY_PRINCIPAL: PrincipalRepaymentCardData = {
   collectionRate: 0,
   principalCollected: 0,
+  principalCollectedOnTime: 0,
+  principalCollectedOd1: 0,
+  principalCollectedOd2: 0,
   unrecoveredPrincipal: 0,
 };
 
 const EMPTY_ADMIN_FEE: AdminFeeRepaymentCardData = {
   collectionRate: 0,
   adminFeeCollected: 0,
+  adminFeeCollectedOnTime: 0,
+  adminFeeCollectedOd1: 0,
+  adminFeeCollectedOd2: 0,
   unrecoveredAdminFee: 0,
 };
 
 const EMPTY_PERFORMANCE: PerformanceCardData = {
   adminFeeProfit: 0,
-  delinquencyByExpectedRepayment: 0,
-  delinquencyByAdminFee: 0,
+  delinquencyRate: 0,
+  targetIndex: 0.2,
 };
 
 const EMPTY_BAD_DEBT: BadDebtRecoveryCardData = {
@@ -112,7 +116,15 @@ const EMPTY_BAD_DEBT: BadDebtRecoveryCardData = {
   loanRequests: 0,
 };
 
-const LoanRedesignOverview = () => {
+interface LoanRedesignOverviewProps {
+  title?: string;
+  description?: string;
+}
+
+const LoanRedesignOverview = ({
+  title = 'Loan Overview',
+  description = 'Loan coverage, utilization, and repayment risk',
+}: LoanRedesignOverviewProps) => {
   const [pendingLoanType, setPendingLoanType] = useState<LoanTypeValue>('all');
   const [appliedLoanType, setAppliedLoanType] = useState<LoanTypeValue>('all');
   const [pendingFilters, setPendingFilters] = useState<KasbonFilterValues>({
@@ -125,7 +137,6 @@ const LoanRedesignOverview = () => {
   });
 
   const [coverageData, setCoverageData] = useState<CoverageUtilizationResponse | null>(null);
-  const [disbursementExpectedReturn, setDisbursementExpectedReturn] = useState(0);
   const [repaymentData, setRepaymentData] = useState<RepaymentRiskResponse | null>(null);
   const [applicantInsightsData, setApplicantInsightsData] =
     useState<ApplicantInsightsResponse | null>(null);
@@ -156,20 +167,14 @@ const LoanRedesignOverview = () => {
             ...kasbonDateParams(currentFilters),
             loan_type: currentLoanType,
           };
-          const [coverageResponse, expectedReturnResponse] = await Promise.all([
-            fetchCoverageUtilization(scopedParams),
-            fetchDisbursementExpectedReturn(scopedParams),
-          ]);
+          const coverageResponse = await fetchCoverageUtilization(scopedParams);
           setCoverageData(coverageResponse);
-          setDisbursementExpectedReturn(expectedReturnResponse.total_expected_return ?? 0);
         } else {
           setCoverageData(null);
-          setDisbursementExpectedReturn(0);
         }
       } catch (err) {
         console.error('Failed to fetch coverage utilization data:', err);
         setCoverageData(null);
-        setDisbursementExpectedReturn(0);
       } finally {
         setCoverageLoading(false);
       }
@@ -319,10 +324,9 @@ const LoanRedesignOverview = () => {
       newBorrowers: coverageData.total_new_borrowers ?? 0,
       totalDisbursed: coverageData.total_disbursed_amount ?? 0,
       averageDisbursed: coverageData.average_disbursed_amount ?? 0,
-      disbursementExpectedReturn,
       processingTimeDays: Math.round(coverageData.average_approval_time ?? 0),
     };
-  }, [coverageData, disbursementExpectedReturn]);
+  }, [coverageData]);
 
   const expectedRepaymentCardData = useMemo((): TotalExpectedRepaymentCardData => {
     if (!repaymentData) return EMPTY_EXPECTED;
@@ -343,7 +347,10 @@ const LoanRedesignOverview = () => {
   const principalCardData = useMemo((): PrincipalRepaymentCardData => {
     if (!repaymentData) return EMPTY_PRINCIPAL;
     const collected = repaymentData.total_loan_principal_collected ?? 0;
+    const od1 = repaymentData.total_loan_principal_collected_od1 ?? 0;
+    const od2 = repaymentData.total_loan_principal_collected_od2 ?? 0;
     const unrecovered = repaymentData.total_unrecovered_loan_principal ?? 0;
+    const onTime = Math.max(0, collected - od1 - od2);
     const collectionRate =
       repaymentData.principal_collection_rate != null
         ? toPercent(repaymentData.principal_collection_rate)
@@ -353,6 +360,9 @@ const LoanRedesignOverview = () => {
     return {
       collectionRate,
       principalCollected: collected,
+      principalCollectedOnTime: onTime,
+      principalCollectedOd1: od1,
+      principalCollectedOd2: od2,
       unrecoveredPrincipal: unrecovered,
     };
   }, [repaymentData]);
@@ -360,7 +370,10 @@ const LoanRedesignOverview = () => {
   const adminFeeCardData = useMemo((): AdminFeeRepaymentCardData => {
     if (!repaymentData) return EMPTY_ADMIN_FEE;
     const collected = repaymentData.total_admin_fee_collected ?? 0;
+    const od1 = repaymentData.total_admin_fee_collected_od1 ?? 0;
+    const od2 = repaymentData.total_admin_fee_collected_od2 ?? 0;
     const unrecovered = repaymentData.total_unrecovered_admin_fee ?? 0;
+    const onTime = Math.max(0, collected - od1 - od2);
     const collectionRate =
       repaymentData.admin_fee_collection_rate != null
         ? toPercent(repaymentData.admin_fee_collection_rate)
@@ -370,6 +383,9 @@ const LoanRedesignOverview = () => {
     return {
       collectionRate,
       adminFeeCollected: collected,
+      adminFeeCollectedOnTime: onTime,
+      adminFeeCollectedOd1: od1,
+      adminFeeCollectedOd2: od2,
       unrecoveredAdminFee: unrecovered,
     };
   }, [repaymentData]);
@@ -378,10 +394,8 @@ const LoanRedesignOverview = () => {
     if (!repaymentData) return EMPTY_PERFORMANCE;
     return {
       adminFeeProfit: repaymentData.admin_fee_profit ?? 0,
-      delinquencyByExpectedRepayment: toPercent(
-        repaymentData.delinquency_by_expected_repayment,
-      ),
-      delinquencyByAdminFee: toPercent(repaymentData.delinquency_by_admin_fee),
+      delinquencyRate: toPercent(repaymentData.delinquency_by_expected_repayment),
+      targetIndex: 0.2,
     };
   }, [repaymentData]);
 
@@ -426,10 +440,7 @@ const LoanRedesignOverview = () => {
   };
 
   return (
-    <PageContainer
-      title="Client Performance"
-      description="Loan coverage, utilization, and repayment risk"
-    >
+    <PageContainer title={title} description={description}>
       <Box>
         <Box
           sx={{
@@ -442,7 +453,7 @@ const LoanRedesignOverview = () => {
           }}
         >
           <Typography variant="h3" fontWeight="bold">
-            Client Performance
+            {title}
           </Typography>
           <LoanDateModeToggle
             value={pendingFilters.dateMode}
@@ -498,37 +509,6 @@ const LoanRedesignOverview = () => {
           />
         </Box>
 
-        <Box
-          mt={3}
-          sx={{
-            display: 'grid',
-            gap: 2,
-            gridTemplateColumns: {
-              xs: '1fr',
-              md: '2fr 1fr 1fr',
-            },
-            alignItems: 'stretch',
-          }}
-        >
-          {applicantInsightsLoading ? (
-            <Box
-              sx={{ gridColumn: '1 / -1' }}
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              minHeight={280}
-            >
-              <CircularProgress />
-            </Box>
-          ) : (
-            <>
-              <TopRejectReasonChart data={rejectReasonData} />
-              <GenderPieChart data={genderData} />
-              <DemographyAgeRangeList data={ageRangeData} />
-            </>
-          )}
-        </Box>
-
         <Typography variant="h5" fontWeight={700} sx={{ mt: 4, mb: 2 }}>
           Repayment Risk
         </Typography>
@@ -578,6 +558,37 @@ const LoanRedesignOverview = () => {
         ) : (
           <BadDebtRecoveryCard data={badDebtCardData} />
         )}
+
+        <Box
+          mt={3}
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: {
+              xs: '1fr',
+              md: '2fr 1fr 1fr',
+            },
+            alignItems: 'stretch',
+          }}
+        >
+          {applicantInsightsLoading ? (
+            <Box
+              sx={{ gridColumn: '1 / -1' }}
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              minHeight={280}
+            >
+              <CircularProgress />
+            </Box>
+          ) : (
+            <>
+              <TopRejectReasonChart data={rejectReasonData} />
+              <GenderPieChart data={genderData} />
+              <DemographyAgeRangeList data={ageRangeData} />
+            </>
+          )}
+        </Box>
       </Box>
     </PageContainer>
   );

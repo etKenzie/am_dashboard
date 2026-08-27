@@ -2,34 +2,47 @@
 
 import { Download as DownloadIcon, Refresh as RefreshIcon, Search as SearchIcon } from '@mui/icons-material';
 import {
-    Box,
-    Button,
-    Card,
-    CardContent,
-    Chip,
-    CircularProgress,
-    Grid,
-    InputAdornment,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TablePagination,
-    TableRow,
-    TableSortLabel,
-    TextField,
-    Typography
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  CircularProgress,
+  FormControl,
+  Grid,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  TextField,
+  Typography,
 } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { fetchKaryawanOverdue, KaryawanOverdue } from '../../api/loan/LoanSlice';
-import { formatKasbonDateLabel, isKasbonDateFilterReady, kasbonDateParams, type LoanDateMode } from './kasbonDateHelpers';
+import {
+  fetchKaryawanOverdue,
+  KaryawanOverdue,
+  OverdueStatus,
+} from '../../api/loan/LoanSlice';
+import {
+  formatKasbonDateLabel,
+  isKasbonDateFilterReady,
+  kasbonDateParams,
+  type LoanDateMode,
+} from './kasbonDateHelpers';
 import { formatClientSegmentParam } from './KasbonFilters';
 
 type Order = 'asc' | 'desc';
-type SortableField = keyof KaryawanOverdue;
+type SortableField = keyof KaryawanOverdue | 'overdue_status';
 
 interface HeadCell {
   id: SortableField;
@@ -37,9 +50,10 @@ interface HeadCell {
   numeric: boolean;
 }
 
+const OVERDUE_STATUS_OPTIONS: OverdueStatus[] = ['OD-1', 'OD-2', 'Write-off'];
+
 const headCells: HeadCell[] = [
   { id: 'id_karyawan', label: 'Employee ID', numeric: true },
-  { id: 'ktp', label: 'KTP', numeric: false },
   { id: 'name', label: 'Name', numeric: false },
   { id: 'company', label: 'Company', numeric: false },
   { id: 'sourced_to', label: 'Sourced To', numeric: false },
@@ -49,6 +63,15 @@ const headCells: HeadCell[] = [
   { id: 'total_payment', label: 'Total Payment', numeric: true },
   { id: 'repayment_date', label: 'Repayment Date', numeric: false },
   { id: 'days_overdue', label: 'Days Overdue', numeric: true },
+  { id: 'overdue_status', label: 'Overdue Status', numeric: false },
+];
+
+const NUMERIC_SORT_FIELDS: SortableField[] = [
+  'id_karyawan',
+  'total_amount_owed',
+  'admin_fee',
+  'total_payment',
+  'days_overdue',
 ];
 
 interface KaryawanOverdueTableProps {
@@ -70,7 +93,45 @@ interface KaryawanOverdueTableProps {
   onLoadingChange?: (loading: boolean) => void;
 }
 
-const KaryawanOverdueTable = ({ 
+function normalizeOverdueStatus(value: string | undefined | null): OverdueStatus | null {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase().replace(/[_\s]+/g, '-');
+  if (normalized === 'od-1' || normalized === 'od1') return 'OD-1';
+  if (normalized === 'od-2' || normalized === 'od2') return 'OD-2';
+  if (
+    normalized === 'write-off' ||
+    normalized === 'writeoff' ||
+    normalized === 'write-offs'
+  ) {
+    return 'Write-off';
+  }
+  return null;
+}
+
+/** Prefer API overdue_status; otherwise derive from days overdue (1 mo / 2 mo / write-off). */
+function getOverdueStatus(row: KaryawanOverdue): OverdueStatus {
+  const fromApi = normalizeOverdueStatus(row.overdue_status);
+  if (fromApi) return fromApi;
+
+  const days = Number(row.days_overdue) || 0;
+  if (days <= 30) return 'OD-1';
+  if (days <= 60) return 'OD-2';
+  return 'Write-off';
+}
+
+function overdueStatusRank(status: OverdueStatus): number {
+  if (status === 'OD-1') return 1;
+  if (status === 'OD-2') return 2;
+  return 3;
+}
+
+function getOverdueStatusChipColor(status: OverdueStatus): 'warning' | 'error' | 'default' {
+  if (status === 'OD-1') return 'warning';
+  if (status === 'OD-2') return 'error';
+  return 'default';
+}
+
+const KaryawanOverdueTable = ({
   filters,
   title = 'Overdue Karyawan',
   onLoadingChange,
@@ -78,18 +139,16 @@ const KaryawanOverdueTable = ({
   const [karyawan, setKaryawan] = useState<KaryawanOverdue[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [orderBy, setOrderBy] = useState<SortableField>('id_karyawan');
+  const [orderBy, setOrderBy] = useState<SortableField>('days_overdue');
   const [order, setOrder] = useState<Order>('desc');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [companyFilter, setCompanyFilter] = useState<string>('');
-  const [sourcedToFilter, setSourcedToFilter] = useState<string>('');
-  const [projectFilter, setProjectFilter] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [overdueStatusFilter, setOverdueStatusFilter] = useState<'' | OverdueStatus>('');
 
   const fetchOverdueData = async () => {
     if (!isKasbonDateFilterReady(filters)) return;
-    
+
     setLoading(true);
     setError(null);
     try {
@@ -104,8 +163,8 @@ const KaryawanOverdueTable = ({
         ...kasbonDateParams(filters),
         loan_type: filters.loanType,
       });
-      
-      setKaryawan(response.results);
+
+      setKaryawan(response.results || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Failed to fetch overdue data:', err);
@@ -143,7 +202,7 @@ const KaryawanOverdueTable = ({
     setOrderBy(property);
   };
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -158,116 +217,109 @@ const KaryawanOverdueTable = ({
     return 'error';
   };
 
-  const searchFields = (karyawan: KaryawanOverdue, query: string): boolean => {
+  const searchFields = (row: KaryawanOverdue, query: string): boolean => {
     if (!query) return true;
-
+    const status = getOverdueStatus(row);
     const searchableFields = [
-      karyawan.id_karyawan.toString(),
-      karyawan.ktp.toLowerCase(),
-      karyawan.name.toLowerCase(),
-      karyawan.company.toLowerCase(),
-      karyawan.sourced_to.toLowerCase(),
-      karyawan.project.toLowerCase(),
-      karyawan.repayment_date.toLowerCase(),
-      karyawan.days_overdue.toString(),
-      karyawan.admin_fee.toString(),
-      karyawan.total_payment.toString(),
+      row.id_karyawan.toString(),
+      row.name.toLowerCase(),
+      row.company.toLowerCase(),
+      row.sourced_to.toLowerCase(),
+      row.project.toLowerCase(),
+      row.repayment_date.toLowerCase(),
+      row.days_overdue.toString(),
+      row.admin_fee.toString(),
+      row.total_payment.toString(),
+      status.toLowerCase(),
     ];
-
-    return searchableFields.some((field) =>
-      field.includes(query.toLowerCase())
-    );
+    return searchableFields.some((field) => field.includes(query.toLowerCase()));
   };
 
-  const filteredKaryawan = karyawan.filter((k) => {
-    // Apply filters
-    if (companyFilter && k.company !== companyFilter) return false;
-    if (sourcedToFilter && k.sourced_to !== sourcedToFilter) return false;
-    if (projectFilter && k.project !== projectFilter) return false;
+  const filteredKaryawan = useMemo(() => {
+    return karyawan.filter((k) => {
+      if (overdueStatusFilter && getOverdueStatus(k) !== overdueStatusFilter) return false;
+      if (searchQuery) return searchFields(k, searchQuery);
+      return true;
+    });
+  }, [karyawan, overdueStatusFilter, searchQuery]);
 
-    // Search functionality
-    if (searchQuery) {
-      return searchFields(k, searchQuery);
-    }
+  const sortedKaryawan = useMemo(() => {
+    return [...filteredKaryawan].sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
 
-    return true;
-  });
+      if (orderBy === 'overdue_status') {
+        aValue = overdueStatusRank(getOverdueStatus(a));
+        bValue = overdueStatusRank(getOverdueStatus(b));
+      } else if (NUMERIC_SORT_FIELDS.includes(orderBy)) {
+        aValue = Number(a[orderBy as keyof KaryawanOverdue] ?? 0);
+        bValue = Number(b[orderBy as keyof KaryawanOverdue] ?? 0);
+      } else {
+        aValue = String(a[orderBy as keyof KaryawanOverdue] ?? '').toLowerCase();
+        bValue = String(b[orderBy as keyof KaryawanOverdue] ?? '').toLowerCase();
+      }
 
-  const uniqueCompanies = Array.from(new Set(karyawan.map((k) => k.company)));
-  const uniqueSourcedTo = Array.from(new Set(karyawan.map((k) => k.sourced_to)));
-  const uniqueProjects = Array.from(new Set(karyawan.map((k) => k.project)));
-
-  const sortedKaryawan = [...filteredKaryawan].sort((a, b) => {
-    let aValue: any = a[orderBy];
-    let bValue: any = b[orderBy];
-
-    if (orderBy === 'id_karyawan' || orderBy === 'total_amount_owed' || orderBy === 'admin_fee' || orderBy === 'total_payment' || orderBy === 'days_overdue') {
-      aValue = Number(aValue);
-      bValue = Number(bValue);
-    }
-
-    if (order === 'asc') {
-      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-    } else {
+      if (order === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      }
       return bValue < aValue ? -1 : bValue > aValue ? 1 : 0;
-    }
-  });
+    });
+  }, [filteredKaryawan, orderBy, order]);
 
-  const totalPayment = filteredKaryawan.reduce((sum, k) => sum + k.total_payment, 0);
-  const totalDaysOverdue = filteredKaryawan.reduce((sum, k) => sum + k.days_overdue, 0);
+  const totalPayment = filteredKaryawan.reduce((sum, k) => sum + (k.total_payment || 0), 0);
+  const totalOd1 = filteredKaryawan
+    .filter((k) => getOverdueStatus(k) === 'OD-1')
+    .reduce((sum, k) => sum + (k.total_payment || 0), 0);
+  const totalOd2 = filteredKaryawan
+    .filter((k) => getOverdueStatus(k) === 'OD-2')
+    .reduce((sum, k) => sum + (k.total_payment || 0), 0);
+  const totalWriteOff = filteredKaryawan
+    .filter((k) => getOverdueStatus(k) === 'Write-off')
+    .reduce((sum, k) => sum + (k.total_payment || 0), 0);
 
-  const prepareDataForExport = (karyawan: KaryawanOverdue[]) => {
-    return karyawan.map((k) => ({
+  const prepareDataForExport = (rows: KaryawanOverdue[]) =>
+    rows.map((k) => ({
       'Employee ID': k.id_karyawan,
-      'KTP': k.ktp,
-      'Name': k.name,
-      'Company': k.company,
+      Name: k.name,
+      Company: k.company,
       'Sourced To': k.sourced_to,
-      'Project': k.project,
+      Project: k.project,
       'Amount Owed': k.total_amount_owed,
       'Admin Fee': k.admin_fee,
       'Total Payment': k.total_payment,
       'Repayment Date': k.repayment_date,
       'Days Overdue': k.days_overdue,
+      'Overdue Status': getOverdueStatus(k),
     }));
-  };
 
   const handleExcelExport = () => {
-    if (!karyawan.length) return;
+    if (!filteredKaryawan.length) return;
+    if (typeof window === 'undefined' || typeof document === 'undefined' || typeof Blob === 'undefined') {
+      return;
+    }
 
-    // Only run on client side
-    if (typeof window === 'undefined' || typeof document === 'undefined' || typeof Blob === 'undefined') return;
-
-    const data = prepareDataForExport(filteredKaryawan);
-    
-    // Create workbook and worksheet
+    const data = prepareDataForExport(sortedKaryawan);
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(data);
-
-    // Set column widths
-    const colWidths = [
-      { wch: 12 }, // Employee ID
-      { wch: 20 }, // KTP
-      { wch: 25 }, // Name
-      { wch: 25 }, // Company
-      { wch: 25 }, // Sourced To
-      { wch: 20 }, // Project
-      { wch: 15 }, // Amount Owed
-      { wch: 15 }, // Admin Fee
-      { wch: 15 }, // Total Payment
-      { wch: 15 }, // Repayment Date
-      { wch: 15 }  // Days Overdue
+    ws['!cols'] = [
+      { wch: 12 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 14 },
+      { wch: 14 },
     ];
-    ws['!cols'] = colWidths;
-
-    // Add worksheet to workbook
     XLSX.utils.book_append_sheet(wb, ws, 'Overdue Karyawan Data');
 
-    // Generate Excel file
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
-    // Download file
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -276,21 +328,20 @@ const KaryawanOverdueTable = ({
     window.URL.revokeObjectURL(url);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
-  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
@@ -327,9 +378,8 @@ const KaryawanOverdueTable = ({
           </Box>
         </Box>
 
-        {/* Summary Stats */}
-        <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+        <Box mb={3} sx={{ display: 'flex', justifyContent: 'center', gap: 4, flexWrap: 'wrap' }}>
+          <Box sx={{ textAlign: 'center', minWidth: '160px' }}>
             <Typography variant="h3" color="error" fontWeight="bold" mb={1}>
               {formatCurrency(totalPayment)}
             </Typography>
@@ -337,7 +387,7 @@ const KaryawanOverdueTable = ({
               Total Payment
             </Typography>
           </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+          <Box sx={{ textAlign: 'center', minWidth: '160px' }}>
             <Typography variant="h3" color="primary" fontWeight="bold" mb={1}>
               {filteredKaryawan.length}
             </Typography>
@@ -345,26 +395,44 @@ const KaryawanOverdueTable = ({
               Total Overdue Employees
             </Typography>
           </Box>
-          <Box sx={{ textAlign: 'center', minWidth: '200px' }}>
+          <Box sx={{ textAlign: 'center', minWidth: '160px' }}>
             <Typography variant="h3" color="warning.main" fontWeight="bold" mb={1}>
-              {Math.round(totalDaysOverdue / filteredKaryawan.length || 0)}
+              {formatCurrency(totalOd1)}
             </Typography>
             <Typography variant="h6" color="textSecondary" fontWeight="500">
-              Avg Days Overdue
+              Total OD-1
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '160px' }}>
+            <Typography variant="h3" color="error.main" fontWeight="bold" mb={1}>
+              {formatCurrency(totalOd2)}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total OD-2
+            </Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center', minWidth: '160px' }}>
+            <Typography variant="h3" color="text.primary" fontWeight="bold" mb={1}>
+              {formatCurrency(totalWriteOff)}
+            </Typography>
+            <Typography variant="h6" color="textSecondary" fontWeight="500">
+              Total Write-off
             </Typography>
           </Box>
         </Box>
 
-        {/* Search and Filters */}
         <Box mb={3}>
           <Grid container spacing={2}>
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12, md: 8 }}>
               <TextField
                 fullWidth
                 variant="outlined"
                 placeholder="Search employees..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(0);
+                }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -374,61 +442,29 @@ const KaryawanOverdueTable = ({
                 }}
               />
             </Grid>
-            {/* <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid size={{ xs: 12, md: 4 }}>
               <FormControl fullWidth>
-                <InputLabel>Company</InputLabel>
+                <InputLabel>Overdue Status</InputLabel>
                 <Select
-                  value={companyFilter}
-                  label="Company"
-                  onChange={(e) => setCompanyFilter(e.target.value)}
+                  value={overdueStatusFilter}
+                  label="Overdue Status"
+                  onChange={(e) => {
+                    setOverdueStatusFilter(e.target.value as '' | OverdueStatus);
+                    setPage(0);
+                  }}
                 >
                   <MenuItem value="">All</MenuItem>
-                  {uniqueCompanies.map((company) => (
-                    <MenuItem key={company} value={company}>
-                      {company}
+                  {OVERDUE_STATUS_OPTIONS.map((status) => (
+                    <MenuItem key={status} value={status}>
+                      {status}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Sourced To</InputLabel>
-                <Select
-                  value={sourcedToFilter}
-                  label="Sourced To"
-                  onChange={(e) => setSourcedToFilter(e.target.value)}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  {uniqueSourcedTo.map((sourcedTo) => (
-                    <MenuItem key={sourcedTo} value={sourcedTo}>
-                      {sourcedTo}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Project</InputLabel>
-                <Select
-                  value={projectFilter}
-                  label="Project"
-                  onChange={(e) => setProjectFilter(e.target.value)}
-                >
-                  <MenuItem value="">All</MenuItem>
-                  {uniqueProjects.map((project) => (
-                    <MenuItem key={project} value={project}>
-                      {project}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid> */}
           </Grid>
         </Box>
 
-        {/* Table */}
         <TableContainer component={Paper} variant="outlined">
           <Table>
             <TableHead>
@@ -476,33 +512,43 @@ const KaryawanOverdueTable = ({
               ) : (
                 sortedKaryawan
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((row) => (
-                    <TableRow key={row.id_karyawan} hover>
-                      <TableCell align="right">{row.id_karyawan}</TableCell>
-                      <TableCell>{row.ktp}</TableCell>
-                      <TableCell>{row.name}</TableCell>
-                      <TableCell>{row.company}</TableCell>
-                      <TableCell>{row.sourced_to}</TableCell>
-                      <TableCell>{row.project}</TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                        {formatCurrency(row.total_amount_owed)}
-                      </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
-                        {formatCurrency(row.admin_fee)}
-                      </TableCell>
-                      <TableCell align="right" sx={{ fontWeight: 'bold', color: 'info.main' }}>
-                        {formatCurrency(row.total_payment)}
-                      </TableCell>
-                      <TableCell>{formatDate(row.repayment_date)}</TableCell>
-                      <TableCell align="right">
-                        <Chip
-                          label={`${row.days_overdue} days`}
-                          color={getDaysOverdueColor(row.days_overdue) as any}
-                          size="small"
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  .map((row) => {
+                    const status = getOverdueStatus(row);
+                    return (
+                      <TableRow key={row.id_karyawan} hover>
+                        <TableCell align="right">{row.id_karyawan}</TableCell>
+                        <TableCell>{row.name}</TableCell>
+                        <TableCell>{row.company}</TableCell>
+                        <TableCell>{row.sourced_to}</TableCell>
+                        <TableCell>{row.project}</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                          {formatCurrency(row.total_amount_owed)}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
+                          {formatCurrency(row.admin_fee)}
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'info.main' }}>
+                          {formatCurrency(row.total_payment)}
+                        </TableCell>
+                        <TableCell>{formatDate(row.repayment_date)}</TableCell>
+                        <TableCell align="right">
+                          <Chip
+                            label={`${row.days_overdue} days`}
+                            color={getDaysOverdueColor(row.days_overdue) as 'success' | 'warning' | 'error'}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={status}
+                            color={getOverdueStatusChipColor(status)}
+                            size="small"
+                            variant={status === 'Write-off' ? 'outlined' : 'filled'}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
               )}
             </TableBody>
           </Table>
@@ -516,8 +562,6 @@ const KaryawanOverdueTable = ({
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
         </TableContainer>
-
-    
       </CardContent>
     </Card>
   );

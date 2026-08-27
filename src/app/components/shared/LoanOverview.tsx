@@ -5,9 +5,7 @@ import { Box, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Typo
 import { useEffect, useState } from 'react';
 import { ClientSummary, fetchClientSummary } from '../../api/loan/LoanSlice';
 import PageContainer from '../container/PageContainer';
-import ClientDelinquencyTable from '../kasbon/ClientDelinquencyTable';
-import ClientPenetrationTable from '../kasbon/ClientPenetrationTable';
-import ClientSummaryTable from '../kasbon/ClientSummaryTable';
+import ClientPerformanceTable from '../kasbon/ClientPerformanceTable';
 import { formatClientSegmentParam } from '../kasbon/KasbonFilters';
 import KasbonOverviewFilters, { KasbonOverviewFilterValues } from '../kasbon/KasbonOverviewFilters';
 import { getMonthDateRange } from '../kasbon/kasbonDateHelpers';
@@ -42,6 +40,7 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
   const [clientSummaryData, setClientSummaryData] = useState<ClientSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const currentDate = new Date();
@@ -97,6 +96,7 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
     filters.clientSegments,
     filters.productType,
     loanType,
+    refreshKey,
   ]);
 
   const handleFiltersChange = (newFilters: KasbonOverviewFilterValues) => {
@@ -146,68 +146,12 @@ const LoanOverview: React.FC<LoanOverviewProps> = ({
               />
             </Box>
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, alignItems: 'stretch' }}>
-                <ClientSummaryTable
-                  data={clientSummaryData}
-                  loading={loading}
-                  error={error}
-                  title="Clients by Total Disbursement"
-                  sortBy="total_disbursement"
-                  displayField="total_disbursement"
-                  displayFieldLabel="Total Disbursement"
-                  formatValue={(value: number) =>
-                    new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: 'IDR',
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    }).format(value)
-                  }
-                />
-                <ClientSummaryTable
-                  data={clientSummaryData}
-                  loading={loading}
-                  error={error}
-                  title="Clients by Total Requests"
-                  sortBy="total_requests"
-                  displayField="total_requests"
-                  displayFieldLabel="Total Requests"
-                  formatValue={(value: number) => value.toLocaleString()}
-                />
-              </Box>
-
-              <ClientPenetrationTable
-                data={clientSummaryData}
-                loading={loading}
-                error={error}
-              />
-
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, alignItems: 'stretch' }}>
-                <ClientSummaryTable
-                  data={clientSummaryData}
-                  loading={loading}
-                  error={error}
-                  title="Clients by Highest Net Admin Fee"
-                  sortBy="admin_fee_profit"
-                  displayField="admin_fee_profit"
-                  displayFieldLabel="Net Admin Fee"
-                  formatValue={(value: number) =>
-                    new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: 'IDR',
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    }).format(value)
-                  }
-                />
-                <ClientDelinquencyTable
-                  data={clientSummaryData}
-                  loading={loading}
-                  error={error}
-                />
-              </Box>
-            </Box>
+            <ClientPerformanceTable
+              data={clientSummaryData}
+              loading={loading}
+              error={error}
+              onRefresh={() => setRefreshKey((key) => key + 1)}
+            />
           </>
         ) : (
           <Box

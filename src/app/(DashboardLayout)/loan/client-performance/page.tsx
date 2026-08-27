@@ -2,10 +2,16 @@
 
 import { getPageRoles } from '@/config/roles';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
-import LoanRedesignOverview from '../../../components/loan_redesign/LoanRedesignOverview';
+import LoanOverview from '../../../components/shared/LoanOverview';
 
 const LoanClientPerformancePage = () => {
-  return <LoanRedesignOverview />;
+  return (
+    <LoanOverview
+      title="Client Performance"
+      description="Analyze client performance metrics and trends"
+      requiredRoles={getPageRoles('LOAN_DASHBOARD')}
+    />
+  );
 };
 
 export default function ProtectedLoanClientPerformance() {

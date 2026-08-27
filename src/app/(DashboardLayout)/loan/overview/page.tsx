@@ -2,14 +2,13 @@
 
 import { getPageRoles } from '@/config/roles';
 import ProtectedRoute from '../../../components/auth/ProtectedRoute';
-import LoanOverview from '../../../components/shared/LoanOverview';
+import LoanRedesignOverview from '../../../components/loan_redesign/LoanRedesignOverview';
 
 const LoanOverviewPage = () => {
   return (
-    <LoanOverview
+    <LoanRedesignOverview
       title="Loan Overview"
-      description="Overview of loan data and analytics"
-      requiredRoles={getPageRoles('LOAN_DASHBOARD')}
+      description="Overview of loan coverage, utilization, and repayment risk"
     />
   );
 };

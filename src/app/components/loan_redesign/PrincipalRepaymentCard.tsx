@@ -1,10 +1,14 @@
 'use client';
 
-import { Box, Card, CardContent, LinearProgress, Typography } from '@mui/material';
+import { Box, Card, CardContent, Typography } from '@mui/material';
 
 export interface PrincipalRepaymentCardData {
   collectionRate: number;
   principalCollected: number;
+  /** On-time portion of collected principal (total − OD1 − OD2) */
+  principalCollectedOnTime: number;
+  principalCollectedOd1: number;
+  principalCollectedOd2: number;
   unrecoveredPrincipal: number;
 }
 
@@ -15,10 +19,15 @@ interface PrincipalRepaymentCardProps {
 const EMPTY: PrincipalRepaymentCardData = {
   collectionRate: 0,
   principalCollected: 0,
+  principalCollectedOnTime: 0,
+  principalCollectedOd1: 0,
+  principalCollectedOd2: 0,
   unrecoveredPrincipal: 0,
 };
 
-const COLLECTED_COLOR = '#16A34A';
+const ON_TIME_COLOR = '#16A34A';
+const OD1_COLOR = '#D97706';
+const OD2_COLOR = '#EA580C';
 const UNRECOVERED_COLOR = '#DC2626';
 const STICKER_COLOR = '#16A34A';
 
@@ -35,9 +44,57 @@ function formatIdr(value: number): string {
   return `IDR ${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 }
 
+function CompositionRow({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 2,
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        <Box
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            bgcolor: color,
+            flexShrink: 0,
+          }}
+        />
+        <Typography variant="body1" color="text.secondary" fontWeight={500} noWrap>
+          {label}
+        </Typography>
+      </Box>
+      <Typography
+        variant="body1"
+        fontWeight={700}
+        sx={{ fontVariantNumeric: 'tabular-nums', textAlign: 'right', color }}
+      >
+        {formatIdr(value)}
+      </Typography>
+    </Box>
+  );
+}
+
 const PrincipalRepaymentCard = ({ data = EMPTY }: PrincipalRepaymentCardProps) => {
-  const total = data.principalCollected + data.unrecoveredPrincipal;
-  const progress = total > 0 ? Math.min(100, (data.principalCollected / total) * 100) : 0;
+  const total =
+    data.principalCollectedOnTime +
+    data.principalCollectedOd1 +
+    data.principalCollectedOd2 +
+    data.unrecoveredPrincipal;
+
+  const share = (value: number) => (total > 0 ? Math.max(0, (value / total) * 100) : 0);
 
   return (
     <Card
@@ -108,7 +165,7 @@ const PrincipalRepaymentCard = ({ data = EMPTY }: PrincipalRepaymentCardProps) =
               lineHeight: 1.1,
               fontVariantNumeric: 'tabular-nums',
               fontSize: { xs: '1.35rem', sm: '1.6rem' },
-              color: COLLECTED_COLOR,
+              color: ON_TIME_COLOR,
               wordBreak: 'break-word',
             }}
           >
@@ -127,21 +184,21 @@ const PrincipalRepaymentCard = ({ data = EMPTY }: PrincipalRepaymentCardProps) =
           </Typography>
         </Box>
 
-        <Box sx={{ mb: 1.15 }}>
-          <LinearProgress
-            variant="determinate"
-            value={progress}
-            sx={{
-              height: 6,
-              borderRadius: 1,
-              backgroundColor: (theme) =>
-                theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-              '& .MuiLinearProgress-bar': {
-                borderRadius: 1,
-                backgroundColor: COLLECTED_COLOR,
-              },
-            }}
-          />
+        <Box
+          sx={{
+            display: 'flex',
+            height: 6,
+            borderRadius: 1,
+            overflow: 'hidden',
+            mb: 1.15,
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+          }}
+        >
+          <Box sx={{ width: `${share(data.principalCollectedOnTime)}%`, bgcolor: ON_TIME_COLOR }} />
+          <Box sx={{ width: `${share(data.principalCollectedOd1)}%`, bgcolor: OD1_COLOR }} />
+          <Box sx={{ width: `${share(data.principalCollectedOd2)}%`, bgcolor: OD2_COLOR }} />
+          <Box sx={{ width: `${share(data.unrecoveredPrincipal)}%`, bgcolor: UNRECOVERED_COLOR }} />
         </Box>
 
         <Box
@@ -150,25 +207,30 @@ const PrincipalRepaymentCard = ({ data = EMPTY }: PrincipalRepaymentCardProps) =
             borderColor: 'divider',
             pt: 0.9,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 2,
+            flexDirection: 'column',
+            gap: 0.65,
           }}
         >
-          <Typography variant="body1" color="text.secondary" fontWeight={500}>
-            Unrecovered Principal
-          </Typography>
-          <Typography
-            variant="body1"
-            fontWeight={700}
-            sx={{
-              fontVariantNumeric: 'tabular-nums',
-              textAlign: 'right',
-              color: UNRECOVERED_COLOR,
-            }}
-          >
-            {formatIdr(data.unrecoveredPrincipal)}
-          </Typography>
+          <CompositionRow
+            label="On Time"
+            value={data.principalCollectedOnTime}
+            color={ON_TIME_COLOR}
+          />
+          <CompositionRow
+            label="Overdue 1 Month"
+            value={data.principalCollectedOd1}
+            color={OD1_COLOR}
+          />
+          <CompositionRow
+            label="Overdue 2 Month"
+            value={data.principalCollectedOd2}
+            color={OD2_COLOR}
+          />
+          <CompositionRow
+            label="Unrecovered Principal"
+            value={data.unrecoveredPrincipal}
+            color={UNRECOVERED_COLOR}
+          />
         </Box>
       </CardContent>
     </Card>

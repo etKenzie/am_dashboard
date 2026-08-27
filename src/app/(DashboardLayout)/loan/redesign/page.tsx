@@ -9,7 +9,7 @@ const LoanRedesignRedirectPage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/loan/client-performance');
+    router.replace('/loan/overview');
   }, [router]);
 
   return null;
