@@ -42,7 +42,7 @@ import {
 import { formatClientSegmentParam } from './KasbonFilters';
 
 type Order = 'asc' | 'desc';
-type SortableField = keyof KaryawanOverdue | 'overdue_status';
+type SortableField = keyof KaryawanOverdue | 'aging_status';
 
 interface HeadCell {
   id: SortableField;
@@ -50,7 +50,7 @@ interface HeadCell {
   numeric: boolean;
 }
 
-const OVERDUE_STATUS_OPTIONS: OverdueStatus[] = ['OD-1', 'OD-2', 'Write-off'];
+const OVERDUE_STATUS_OPTIONS: OverdueStatus[] = ['Outstanding', 'OD-1', 'OD-2', 'Write-off'];
 
 const headCells: HeadCell[] = [
   { id: 'id_karyawan', label: 'Employee ID', numeric: true },
@@ -63,7 +63,7 @@ const headCells: HeadCell[] = [
   { id: 'total_payment', label: 'Total Payment', numeric: true },
   { id: 'repayment_date', label: 'Repayment Date', numeric: false },
   { id: 'days_overdue', label: 'Days Overdue', numeric: true },
-  { id: 'overdue_status', label: 'Overdue Status', numeric: false },
+  { id: 'aging_status', label: 'Overdue Status', numeric: false },
 ];
 
 const NUMERIC_SORT_FIELDS: SortableField[] = [
@@ -93,9 +93,12 @@ interface KaryawanOverdueTableProps {
   onLoadingChange?: (loading: boolean) => void;
 }
 
-function normalizeOverdueStatus(value: string | undefined | null): OverdueStatus | null {
-  if (!value) return null;
-  const normalized = value.trim().toLowerCase().replace(/[_\s]+/g, '-');
+/** Map backend aging_status → display status. null/empty = Outstanding. */
+function getOverdueStatus(row: KaryawanOverdue): OverdueStatus {
+  const raw = row.aging_status;
+  if (raw == null || String(raw).trim() === '') return 'Outstanding';
+
+  const normalized = String(raw).trim().toLowerCase().replace(/[_\s]+/g, '-');
   if (normalized === 'od-1' || normalized === 'od1') return 'OD-1';
   if (normalized === 'od-2' || normalized === 'od2') return 'OD-2';
   if (
@@ -105,27 +108,26 @@ function normalizeOverdueStatus(value: string | undefined | null): OverdueStatus
   ) {
     return 'Write-off';
   }
-  return null;
-}
+  if (normalized === 'outstanding') return 'Outstanding';
 
-/** Prefer API overdue_status; otherwise derive from days overdue (1 mo / 2 mo / write-off). */
-function getOverdueStatus(row: KaryawanOverdue): OverdueStatus {
-  const fromApi = normalizeOverdueStatus(row.overdue_status);
-  if (fromApi) return fromApi;
-
-  const days = Number(row.days_overdue) || 0;
-  if (days <= 30) return 'OD-1';
-  if (days <= 60) return 'OD-2';
-  return 'Write-off';
+  // Pass through known-looking API labels as closely as possible
+  const trimmed = String(raw).trim();
+  if (/^od[-\s]?1$/i.test(trimmed)) return 'OD-1';
+  if (/^od[-\s]?2$/i.test(trimmed)) return 'OD-2';
+  return 'Outstanding';
 }
 
 function overdueStatusRank(status: OverdueStatus): number {
+  if (status === 'Outstanding') return 0;
   if (status === 'OD-1') return 1;
   if (status === 'OD-2') return 2;
   return 3;
 }
 
-function getOverdueStatusChipColor(status: OverdueStatus): 'warning' | 'error' | 'default' {
+function getOverdueStatusChipColor(
+  status: OverdueStatus,
+): 'success' | 'warning' | 'error' | 'default' {
+  if (status === 'Outstanding') return 'success';
   if (status === 'OD-1') return 'warning';
   if (status === 'OD-2') return 'error';
   return 'default';
@@ -248,7 +250,7 @@ const KaryawanOverdueTable = ({
       let aValue: string | number;
       let bValue: string | number;
 
-      if (orderBy === 'overdue_status') {
+      if (orderBy === 'aging_status') {
         aValue = overdueStatusRank(getOverdueStatus(a));
         bValue = overdueStatusRank(getOverdueStatus(b));
       } else if (NUMERIC_SORT_FIELDS.includes(orderBy)) {

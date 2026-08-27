@@ -72,7 +72,7 @@ export interface LoanFeesMonthlyParams {
 }
 
 // Types for Karyawan Overdue API
-export type OverdueStatus = 'OD-1' | 'OD-2' | 'Write-off';
+export type OverdueStatus = 'Outstanding' | 'OD-1' | 'OD-2' | 'Write-off';
 
 export interface KaryawanOverdue {
   id_karyawan: number;
@@ -86,8 +86,8 @@ export interface KaryawanOverdue {
   total_payment: number;
   repayment_date: string;
   days_overdue: number;
-  /** When provided by API; otherwise derived from days_overdue */
-  overdue_status?: OverdueStatus | string;
+  /** Backend aging bucket; null means Outstanding */
+  aging_status?: string | null;
 }
 
 export interface KaryawanOverdueResponse {
