@@ -34,10 +34,10 @@ type SortableField =
   | 'approved_requests'
   | 'penetration_rate'
   | 'total_disbursement'
-  | 'od_1'
-  | 'od_2'
+  | 'od1_amount'
+  | 'od2_amount'
   | 'delinquency_rate'
-  | 'write_off'
+  | 'write_off_amount'
   | 'admin_fee_profit';
 
 interface HeadCell {
@@ -53,10 +53,10 @@ const headCells: HeadCell[] = [
   { id: 'approved_requests', label: 'Approved', numeric: true },
   { id: 'penetration_rate', label: 'Penetration %', numeric: true },
   { id: 'total_disbursement', label: 'Disbursed', numeric: true },
-  { id: 'od_1', label: 'Overdue 1 Month', numeric: true },
-  { id: 'od_2', label: 'Overdue 2 Month', numeric: true },
+  { id: 'od1_amount', label: 'Overdue 1 Month', numeric: true },
+  { id: 'od2_amount', label: 'Overdue 2 Month', numeric: true },
   { id: 'delinquency_rate', label: 'Delinquency %', numeric: true },
-  { id: 'write_off', label: 'Write-off', numeric: true },
+  { id: 'write_off_amount', label: 'Write-off', numeric: true },
   { id: 'admin_fee_profit', label: 'Net Contribution', numeric: true },
 ];
 
@@ -93,12 +93,12 @@ const getSortValue = (row: ClientSummary, field: SortableField): string | number
       return clientName(row).toLowerCase();
     case 'eligible_active':
       return row.eligible_employees;
-    case 'od_1':
-      return row.od_1 ?? 0;
-    case 'od_2':
-      return row.od_2 ?? 0;
-    case 'write_off':
-      return row.write_off ?? 0;
+    case 'od1_amount':
+      return row.od1_amount ?? 0;
+    case 'od2_amount':
+      return row.od2_amount ?? 0;
+    case 'write_off_amount':
+      return row.write_off_amount ?? 0;
     default:
       return row[field] as number;
   }
@@ -177,10 +177,10 @@ const ClientPerformanceTable = ({
       Approved: item.approved_requests,
       'Penetration %': formatPercent(item.penetration_rate),
       Disbursed: item.total_disbursement,
-      'Overdue 1 Month': item.od_1 ?? 0,
-      'Overdue 2 Month': item.od_2 ?? 0,
+      'Overdue 1 Month': item.od1_amount ?? 0,
+      'Overdue 2 Month': item.od2_amount ?? 0,
       'Delinquency %': formatPercent(item.delinquency_rate),
-      'Write-off': item.write_off ?? 0,
+      'Write-off': item.write_off_amount ?? 0,
       'Net Contribution': item.admin_fee_profit,
     }));
 
@@ -375,8 +375,8 @@ const ClientPerformanceTable = ({
                         <TableCell align="right" sx={{ fontWeight: 'bold', color: 'info.main' }}>
                           {formatCurrency(row.total_disbursement)}
                         </TableCell>
-                        <TableCell align="right">{formatNumber(row.od_1 ?? 0)}</TableCell>
-                        <TableCell align="right">{formatNumber(row.od_2 ?? 0)}</TableCell>
+                        <TableCell align="right">{formatCurrency(row.od1_amount ?? 0)}</TableCell>
+                        <TableCell align="right">{formatCurrency(row.od2_amount ?? 0)}</TableCell>
                         <TableCell
                           align="right"
                           sx={{
@@ -386,7 +386,7 @@ const ClientPerformanceTable = ({
                         >
                           {formatPercent(row.delinquency_rate)}
                         </TableCell>
-                        <TableCell align="right">{formatCurrency(row.write_off ?? 0)}</TableCell>
+                        <TableCell align="right">{formatCurrency(row.write_off_amount ?? 0)}</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 'bold', color: 'success.main' }}>
                           {formatCurrency(row.admin_fee_profit)}
                         </TableCell>

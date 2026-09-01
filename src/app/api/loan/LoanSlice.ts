@@ -419,12 +419,9 @@ export interface ClientSummary {
   admin_fee_profit: number;
   delinquent_requests: number;
   delinquency_rate: number;
-  /** Overdue bucket 1 count/amount when provided by API */
-  od_1?: number;
-  /** Overdue bucket 2 count/amount when provided by API */
-  od_2?: number;
-  /** Write-off amount when provided by API */
-  write_off?: number;
+  od1_amount?: number;
+  od2_amount?: number;
+  write_off_amount?: number;
 }
 
 export interface ClientSummaryResponse {
