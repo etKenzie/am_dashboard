@@ -48,7 +48,7 @@ const SourcingDonutChart = ({
       legend: {
         position: 'bottom',
         fontSize: '12px',
-        markers: { size: 8 },
+        markers: { width: 8, height: 8, radius: 8 },
         itemMargin: { horizontal: 8, vertical: 2 },
       },
       dataLabels: {
