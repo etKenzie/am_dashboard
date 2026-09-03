@@ -458,6 +458,25 @@ export default function AopOverview() {
             value={formatNumber(summary.first_payroll_associates)}
             icon={IconUserCheck}
             loading={loading}
+            breakdownTitle="First Payroll Breakdown"
+            breakdown={[
+              {
+                label: 'TA New Hire',
+                value: formatNumber(summary.first_payroll_breakdown?.ta_new_hire ?? 0),
+              },
+              {
+                label: 'TA Replacement',
+                value: formatNumber(summary.first_payroll_breakdown?.ta_replacement ?? 0),
+              },
+              {
+                label: 'Bulk New Hire',
+                value: formatNumber(summary.first_payroll_breakdown?.bulk_new_hire ?? 0),
+              },
+              {
+                label: 'Bulk Replacement',
+                value: formatNumber(summary.first_payroll_breakdown?.bulk_replacement ?? 0),
+              },
+            ]}
           />
           <AopMetricCard
             title="Billable Associates"
@@ -470,6 +489,21 @@ export default function AopOverview() {
             value={formatNumber(summary.non_billable_associates)}
             icon={IconCashOff}
             loading={loading}
+            breakdownTitle="Non-Billable Breakdown"
+            breakdown={[
+              {
+                label: 'Compensation Only',
+                value: formatNumber(summary.non_billable_breakdown?.compensation_only ?? 0),
+              },
+              {
+                label: 'Overtime / Incentive Only',
+                value: formatNumber(summary.non_billable_breakdown?.overtime_incentive_only ?? 0),
+              },
+              {
+                label: 'Non-Staffing',
+                value: formatNumber(summary.non_billable_breakdown?.non_staffing ?? 0),
+              },
+            ]}
           />
         </Box>
 

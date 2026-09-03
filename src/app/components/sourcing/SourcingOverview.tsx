@@ -34,7 +34,6 @@ import {
   type AopUiFilterState,
 } from '../aop/aopChartHelpers';
 import PageContainer from '../container/PageContainer';
-import { LoanDateModeToggle } from '../kasbon/KasbonFilters';
 import {
   applyLoanDateModeChange,
   formatLoanDate,
@@ -42,7 +41,13 @@ import {
   parseLoanDateString,
   type LoanDateMode,
 } from '../kasbon/kasbonDateHelpers';
+import { LoanDateModeToggle } from '../kasbon/KasbonFilters';
 import ClientScopeFilters from '../shared/ClientScopeFilters';
+import AiScoreDistributionChart from './AiScoreDistributionChart';
+import CvBySkillChart from './CvBySkillChart';
+import SourcingDonutChart from './SourcingDonutChart';
+import SourcingHorizontalBarChart from './SourcingHorizontalBarChart';
+import TargetVsCvReceivedChart from './TargetVsCvReceivedChart';
 import {
   buildDummySourcingKpis,
   DUMMY_SOURCING_FILTER_OPTIONS,
@@ -56,12 +61,6 @@ import {
   type SourcingNamedCount,
   type SourcingTrendPoint,
 } from './sourcingDummyData';
-import AiScoreDistributionChart from './AiScoreDistributionChart';
-import CandidateDemographicsChart from './CandidateDemographicsChart';
-import CvBySkillChart from './CvBySkillChart';
-import HiringRequirementChart from './HiringRequirementChart';
-import SourcingHorizontalBarChart from './SourcingHorizontalBarChart';
-import TargetVsCvReceivedChart from './TargetVsCvReceivedChart';
 
 const ALL_OPTION = { value: '0', label: 'All' };
 
@@ -236,51 +235,61 @@ export default function SourcingOverview() {
       title: 'Sourcing Target',
       value: formatNumber(kpis.sourcing_target),
       icon: IconTargetArrow,
+      iconColor: '#0D9488',
     },
     {
       title: 'CV Received',
       value: formatNumber(kpis.cv_received),
       icon: IconFileDescription,
+      iconColor: '#2563EB',
     },
     {
       title: 'Sourcing Gap',
       value: formatNumber(kpis.sourcing_gap),
       icon: IconChartBar,
+      iconColor: '#D97706',
     },
     {
       title: 'AVG AI Score',
       value: formatDecimal(kpis.avg_ai_score, 1),
       icon: IconBrain,
+      iconColor: '#7C3AED',
     },
     {
       title: 'CV Stock Coverage',
       value: `${formatDecimal(kpis.cv_stock_coverage, 1)}x`,
       icon: IconClipboardList,
+      iconColor: '#0891B2',
     },
     {
       title: 'Client Target',
       value: formatNumber(kpis.client_target),
       icon: IconUsers,
+      iconColor: '#4F46E5',
     },
     {
-      title: 'Hired',
+      title: 'Hired by TA',
       value: formatNumber(kpis.hired),
       icon: IconUserCheck,
+      iconColor: '#16A34A',
     },
     {
       title: 'On Board',
       value: formatNumber(kpis.on_board),
       icon: IconUserPlus,
+      iconColor: '#059669',
     },
     {
       title: 'Hiring Gap',
       value: formatSignedNumber(kpis.hiring_gap),
       icon: IconUserX,
+      iconColor: '#DC2626',
     },
     {
       title: 'CV to Hire Conversion',
       value: formatPercent(kpis.cv_to_hire_conversion),
       icon: IconPercentage,
+      iconColor: '#DB2777',
     },
   ];
 
@@ -453,8 +462,9 @@ export default function SourcingOverview() {
               title={card.title}
               value={card.value}
               icon={card.icon}
+              iconColor={card.iconColor}
               loading={loading}
-              compact
+              variant="stacked"
             />
           ))}
         </Box>
@@ -475,7 +485,11 @@ export default function SourcingOverview() {
             alignItems: 'stretch',
           }}
         >
-          <AiScoreDistributionChart data={aiScoreDistribution} loading={loading} />
+          <AiScoreDistributionChart
+            data={aiScoreDistribution}
+            avgAiScore={kpis.avg_ai_score}
+            loading={loading}
+          />
           <CvBySkillChart data={cvBySkill} loading={loading} />
         </Box>
 
@@ -487,20 +501,35 @@ export default function SourcingOverview() {
           sx={{
             display: 'grid',
             gap: 2,
-            gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
             alignItems: 'stretch',
             mb: 2,
           }}
         >
-          <CandidateDemographicsChart
-            ageDistribution={candidateHiringProfile.age_distribution}
-            genderDistribution={candidateHiringProfile.gender_distribution}
+          <SourcingHorizontalBarChart
+            title="Age Distribution"
+            subtitle="Age profile of candidates."
+            data={candidateHiringProfile.age_distribution}
             loading={loading}
+            colors={['#0D9488', '#14B8A6', '#2DD4BF', '#5EEAD4', '#99F6E4', '#CCFBF1']}
+            distributed
+            unitLabel="candidates"
           />
-          <HiringRequirementChart
-            salaryRange={candidateHiringProfile.salary_range}
-            minimumEducation={candidateHiringProfile.minimum_education}
+          <SourcingDonutChart
+            title="Gender Distribution"
+            subtitle="Male / female mix of candidates."
+            data={candidateHiringProfile.gender_distribution}
             loading={loading}
+            colors={['#1E88E5', '#EC407A', '#8E24AA']}
+            unitLabel="candidates"
+          />
+          <SourcingDonutChart
+            title="Education Level"
+            subtitle="Minimum education mix."
+            data={candidateHiringProfile.minimum_education}
+            loading={loading}
+            colors={['#6D4C41', '#8E24AA', '#1E88E5', '#43A047']}
+            unitLabel="roles"
           />
         </Box>
 
@@ -508,10 +537,19 @@ export default function SourcingOverview() {
           sx={{
             display: 'grid',
             gap: 2,
-            gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' },
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
             alignItems: 'stretch',
           }}
         >
+          <SourcingHorizontalBarChart
+            title="Salary Range"
+            subtitle="Salary range demand for open roles."
+            data={candidateHiringProfile.salary_range}
+            loading={loading}
+            colors={['#1E88E5', '#42A5F5', '#0D9488', '#FB8C00', '#E53935']}
+            distributed
+            unitLabel="roles"
+          />
           <SourcingHorizontalBarChart
             title="Working Type"
             subtitle="Onsite, hybrid, and remote mix for open roles."

@@ -2,6 +2,7 @@
 
 import { Box, Card, CardContent, CircularProgress, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import type { Icon } from '@tabler/icons-react';
 import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 import { aopCardOuterSx } from '../aop/aopStyles';
@@ -19,6 +20,8 @@ interface SourcingHorizontalBarChartProps {
   unitLabel?: string;
   reverseOrder?: boolean;
   height?: number;
+  /** Icon shown to the left of the title. */
+  titleIcon?: Icon;
 }
 
 const DEFAULT_BAR_COLOR = '#0D9488';
@@ -33,6 +36,7 @@ const SourcingHorizontalBarChart = ({
   unitLabel = 'CVs',
   reverseOrder = false,
   height,
+  titleIcon: TitleIcon,
 }: SourcingHorizontalBarChartProps) => {
   const theme = useTheme();
 
@@ -97,23 +101,49 @@ const SourcingHorizontalBarChart = ({
   );
 
   return (
-    <Card sx={(t) => ({ height: '100%', ...aopCardOuterSx(t) })}>
-      <CardContent>
-        <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-          {title}
-        </Typography>
+    <Card
+      sx={(t) => ({
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        ...aopCardOuterSx(t),
+      })}
+    >
+      <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', '&:last-child': { pb: 2 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+          {TitleIcon && (
+            <Box
+              sx={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                bgcolor: 'rgba(13, 148, 136, 0.14)',
+                color: '#0D9488',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <TitleIcon size={20} stroke={1.75} />
+            </Box>
+          )}
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            {title}
+          </Typography>
+        </Box>
         {subtitle && (
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, ml: TitleIcon ? 5.5 : 0 }}>
             {subtitle}
           </Typography>
         )}
 
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, py: 8 }}>
             <CircularProgress />
           </Box>
         ) : values.length === 0 ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, py: 8 }}>
             <Typography color="text.secondary">No data for this period</Typography>
           </Box>
         ) : (

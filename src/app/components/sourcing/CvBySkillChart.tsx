@@ -26,7 +26,6 @@ const CvBySkillChart = ({ data, loading = false }: CvBySkillChartProps) => {
   const labels = sorted.map((row) => row.label);
   const values = sorted.map((row) => row.value);
   const total = values.reduce((sum, value) => sum + value, 0);
-  const chartHeight = Math.max(320, labels.length * 36);
 
   const chartOptions: ApexCharts.ApexOptions = useMemo(
     () => ({
@@ -35,6 +34,7 @@ const CvBySkillChart = ({ data, loading = false }: CvBySkillChartProps) => {
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         foreColor: theme.palette.mode === 'dark' ? '#adb0bb' : '#5e5873',
         toolbar: { show: false },
+        parentHeightOffset: 0,
       },
       plotOptions: {
         bar: {
@@ -78,34 +78,51 @@ const CvBySkillChart = ({ data, loading = false }: CvBySkillChartProps) => {
   );
 
   return (
-    <Card sx={(t) => ({ height: '100%', ...aopCardOuterSx(t) })}>
-      <CardContent>
+    <Card
+      sx={(t) => ({
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        ...aopCardOuterSx(t),
+      })}
+    >
+      <CardContent
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          '&:last-child': { pb: 2 },
+        }}
+      >
         <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
-          CV by Skill
+          CV by Role (Grouping)
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          CV count by primary skill for the selected period.
+          CV count by role grouping for the selected period.
         </Typography>
 
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, py: 8 }}>
             <CircularProgress />
           </Box>
         ) : values.length === 0 ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, py: 8 }}>
             <Typography color="text.secondary">No skill data for this period</Typography>
           </Box>
         ) : (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Total: {total.toLocaleString('en-US')} CVs across {labels.length} skills
+              Across {labels.length} skills
             </Typography>
-            <ReactApexChart
-              options={chartOptions}
-              series={[{ name: 'CVs', data: values }]}
-              type="bar"
-              height={chartHeight}
-            />
+            <Box sx={{ flex: 1, minHeight: 400, display: 'flex', flexDirection: 'column' }}>
+              <ReactApexChart
+                options={chartOptions}
+                series={[{ name: 'CVs', data: values }]}
+                type="bar"
+                height={400}
+              />
+            </Box>
           </>
         )}
       </CardContent>

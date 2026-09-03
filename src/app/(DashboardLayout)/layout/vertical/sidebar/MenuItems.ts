@@ -87,41 +87,37 @@ const Menuitems: MenuitemsType[] = [
       
     ],
   },
-  {
-    id: uniqueId(),
-    title: "Internal Payroll",
-    icon: IconBox,
-    href: "/internal-payroll",
-    chip: "New",
-    requiredRoles: [ROLES.ADMIN, ROLES.PAYROLL],
-    children: [
-      {
-        id: uniqueId(),
-        title: "Overview",
-        icon: IconDashboard,
-        href: "/internal-payroll",
-        
-        chipColor: "secondary",
-      },
-      {
-        id: uniqueId(),
-        title: "Department",
-        icon: IconBuilding,
-        href: "/internal-payroll/department",
-    
-        chipColor: "secondary",
-      },
-      {
-        id: uniqueId(),
-        title: "Cost Owner",
-        icon: IconMask,
-        href: "/internal-payroll/cost-owner",
-    
-        chipColor: "secondary",
-      },
-      
-    ],
-  },
+  // {
+  //   id: uniqueId(),
+  //   title: "Internal Payroll",
+  //   icon: IconBox,
+  //   href: "/internal-payroll",
+  //   chip: "New",
+  //   requiredRoles: [ROLES.ADMIN, ROLES.PAYROLL],
+  //   children: [
+  //     {
+  //       id: uniqueId(),
+  //       title: "Overview",
+  //       icon: IconDashboard,
+  //       href: "/internal-payroll",
+  //       chipColor: "secondary",
+  //     },
+  //     {
+  //       id: uniqueId(),
+  //       title: "Department",
+  //       icon: IconBuilding,
+  //       href: "/internal-payroll/department",
+  //       chipColor: "secondary",
+  //     },
+  //     {
+  //       id: uniqueId(),
+  //       title: "Cost Owner",
+  //       icon: IconMask,
+  //       href: "/internal-payroll/cost-owner",
+  //       chipColor: "secondary",
+  //     },
+  //   ],
+  // },
   // {
   //   id: uniqueId(),
   //   title: "External Payroll",

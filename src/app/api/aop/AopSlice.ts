@@ -30,11 +30,28 @@ export interface AopFilters {
   end_date: string;
 }
 
+export interface AopNonBillableBreakdown {
+  compensation_only: number;
+  overtime_incentive_only: number;
+  non_staffing: number;
+  total: number;
+}
+
+export interface AopFirstPayrollBreakdown {
+  ta_new_hire: number;
+  ta_replacement: number;
+  bulk_new_hire: number;
+  bulk_replacement: number;
+  total: number;
+}
+
 export interface AopSummary {
   total_associates_on_payroll: number;
   first_payroll_associates: number;
+  first_payroll_breakdown: AopFirstPayrollBreakdown;
   billable_associates: number;
   non_billable_associates: number;
+  non_billable_breakdown: AopNonBillableBreakdown;
 }
 
 export interface AopEmploymentType {
@@ -115,8 +132,23 @@ interface ApiPayrollAssociatesSummaryResponse {
   data?: {
     associates_summary?: {
       total_associates_on_payroll?: number;
-      first_payroll_associates?: number;
+      first_payroll_associates?:
+        | number
+        | {
+            ta_new_hire?: number;
+            ta_replacement?: number;
+            bulk_new_hire?: number;
+            bulk_replacement?: number;
+            total?: number;
+          };
       billable_associates?: number;
+      non_billable_associates?: number;
+    };
+    non_billable_breakdown?: {
+      compensation_only?: number;
+      overtime_incentive_only?: number;
+      non_staffing?: number;
+      total?: number;
     };
     associates_employment_type?: {
       pkwtt_associates?: number;
@@ -216,12 +248,29 @@ const DEFAULT_TREND_METRIC_OPTIONS: AopTrendMetricOption[] = [
   { key: 'non_billable_associates', label: 'Non-Billable Associates', enabled: true },
 ];
 
+const EMPTY_NON_BILLABLE_BREAKDOWN: AopNonBillableBreakdown = {
+  compensation_only: 0,
+  overtime_incentive_only: 0,
+  non_staffing: 0,
+  total: 0,
+};
+
+const EMPTY_FIRST_PAYROLL_BREAKDOWN: AopFirstPayrollBreakdown = {
+  ta_new_hire: 0,
+  ta_replacement: 0,
+  bulk_new_hire: 0,
+  bulk_replacement: 0,
+  total: 0,
+};
+
 export const EMPTY_AOP_DASHBOARD: AopDashboardData = {
   summary: {
     total_associates_on_payroll: 0,
     first_payroll_associates: 0,
+    first_payroll_breakdown: { ...EMPTY_FIRST_PAYROLL_BREAKDOWN },
     billable_associates: 0,
     non_billable_associates: 0,
+    non_billable_breakdown: { ...EMPTY_NON_BILLABLE_BREAKDOWN },
   },
   employment_type: { pkwt: 0, pkwtt: 0, mitra: 0, dw: 0, inactive_resigned: 0, unmapped: 0 },
   payroll_composition: {
@@ -357,18 +406,45 @@ function mapSummaryResponse(json: ApiPayrollAssociatesSummaryResponse): Pick<
 > {
   const data = json.data ?? {};
   const summary = data.associates_summary ?? {};
+  const breakdown = data.non_billable_breakdown ?? {};
   const employment = data.associates_employment_type ?? {};
   const composition = data.payroll_composition ?? {};
 
   const totalAssociates = num(summary.total_associates_on_payroll);
   const billableAssociates = num(summary.billable_associates);
+  const nonBillableAssociates =
+    summary.non_billable_associates != null
+      ? num(summary.non_billable_associates)
+      : Math.max(0, totalAssociates - billableAssociates);
+
+  const firstPayrollRaw = summary.first_payroll_associates;
+  const firstPayrollBreakdown: AopFirstPayrollBreakdown =
+    firstPayrollRaw != null && typeof firstPayrollRaw === 'object'
+      ? {
+          ta_new_hire: num(firstPayrollRaw.ta_new_hire),
+          ta_replacement: num(firstPayrollRaw.ta_replacement),
+          bulk_new_hire: num(firstPayrollRaw.bulk_new_hire),
+          bulk_replacement: num(firstPayrollRaw.bulk_replacement),
+          total: num(firstPayrollRaw.total),
+        }
+      : {
+          ...EMPTY_FIRST_PAYROLL_BREAKDOWN,
+          total: num(firstPayrollRaw),
+        };
 
   return {
     summary: {
       total_associates_on_payroll: totalAssociates,
-      first_payroll_associates: num(summary.first_payroll_associates),
+      first_payroll_associates: firstPayrollBreakdown.total,
+      first_payroll_breakdown: firstPayrollBreakdown,
       billable_associates: billableAssociates,
-      non_billable_associates: totalAssociates - billableAssociates,
+      non_billable_associates: nonBillableAssociates,
+      non_billable_breakdown: {
+        compensation_only: num(breakdown.compensation_only),
+        overtime_incentive_only: num(breakdown.overtime_incentive_only),
+        non_staffing: num(breakdown.non_staffing),
+        total: num(breakdown.total, nonBillableAssociates),
+      },
     },
     employment_type: {
       pkwt: num(employment.pkwt_associates),
