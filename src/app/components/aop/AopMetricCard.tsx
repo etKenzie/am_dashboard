@@ -52,8 +52,8 @@ const AopMetricCard = ({
   breakdownTitle = 'Breakdown',
 }: AopMetricCardProps) => {
   const isStacked = variant === 'stacked';
-  const iconBoxSize = isStacked ? 72 : compact ? 44 : 68;
-  const iconSize = isStacked ? 36 : compact ? 22 : 34;
+  const iconBoxSize = isStacked ? (compact ? 48 : 72) : compact ? 44 : 68;
+  const iconSize = isStacked ? (compact ? 24 : 36) : compact ? 22 : 34;
   const iconBg = withAlpha(iconColor, 0.14);
   const iconBorder = withAlpha(iconColor, 0.35);
   const popoverId = useId();
@@ -181,8 +181,8 @@ const AopMetricCard = ({
               justifyContent: 'center',
               textAlign: 'center',
               flex: 1,
-              minHeight: compact ? 140 : 160,
-              gap: 1.25,
+              minHeight: compact ? 120 : 160,
+              gap: compact ? 1 : 1.25,
               px: hasBreakdown ? 1.5 : 0,
             }}
           >

@@ -465,6 +465,7 @@ export default function SourcingOverview() {
               iconColor={card.iconColor}
               loading={loading}
               variant="stacked"
+              compact
             />
           ))}
         </Box>
