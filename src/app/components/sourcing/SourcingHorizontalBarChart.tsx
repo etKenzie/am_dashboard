@@ -78,7 +78,12 @@ const SourcingHorizontalBarChart = ({
       },
       xaxis: {
         categories: labels,
-        labels: { formatter: (val: string) => Number(val).toLocaleString('en-US') },
+        tickAmount: 4,
+        labels: {
+          formatter: (val: string) => Number(val).toLocaleString('en-US'),
+          style: { fontSize: '11px' },
+          maxHeight: 40,
+        },
       },
       yaxis: {
         labels: {

@@ -38,23 +38,25 @@ import {
   applyLoanDateModeChange,
   formatLoanDate,
   isKasbonDateFilterReady,
+  kasbonDateParams,
   parseLoanDateString,
   type LoanDateMode,
 } from '../kasbon/kasbonDateHelpers';
 import { LoanDateModeToggle } from '../kasbon/KasbonFilters';
 import ClientScopeFilters from '../shared/ClientScopeFilters';
+import {
+  EMPTY_SOURCING_DASHBOARD,
+  fetchSourcingAnalytics,
+  type SourcingFilters,
+} from '../../api/sourcing/SourcingSlice';
 import AiScoreDistributionChart from './AiScoreDistributionChart';
 import CvBySkillChart from './CvBySkillChart';
+import SourcingBreakdownList from './SourcingBreakdownList';
 import SourcingDonutChart from './SourcingDonutChart';
 import SourcingHorizontalBarChart from './SourcingHorizontalBarChart';
 import TargetVsCvReceivedChart from './TargetVsCvReceivedChart';
 import {
-  buildDummySourcingKpis,
-  DUMMY_SOURCING_FILTER_OPTIONS,
-  getDummyAiScoreDistribution,
-  getDummyCandidateHiringProfile,
-  getDummyCvBySkill,
-  getDummySourcingTrend,
+  EMPTY_SOURCING_FILTER_OPTIONS,
   type CandidateHiringProfileData,
   type SourcingExecutiveKpis,
   type SourcingFilterOptions,
@@ -63,6 +65,28 @@ import {
 } from './sourcingDummyData';
 
 const ALL_OPTION = { value: '0', label: 'All' };
+
+function toSourcingFilters(filters: AopUiFilterState): SourcingFilters {
+  const dateParams = kasbonDateParams(filters);
+  const monthNum = filters.month ? Number(filters.month) : undefined;
+  const yearNum = filters.year ? Number(filters.year) : undefined;
+
+  return {
+    employer: filters.employer,
+    sourced_to: filters.sourcedTo,
+    project: filters.project,
+    branch: filters.branch,
+    client_segments: filters.clientSegments,
+    start_date: dateParams.start_date,
+    end_date: dateParams.end_date,
+    ...(filters.dateMode === 'month'
+      ? {
+          year: yearNum,
+          month: monthNum,
+        }
+      : {}),
+  };
+}
 
 function formatNumber(value: number): string {
   return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
@@ -97,21 +121,18 @@ function toMultiSelectOptions(items: Array<{ id: string; name: string }>) {
 export default function SourcingOverview() {
   const [pendingFilters, setPendingFilters] = useState<AopUiFilterState>(createDefaultAopUiFilters);
   const [appliedFilters, setAppliedFilters] = useState<AopUiFilterState>(createDefaultAopUiFilters);
-  const [filterOptions, setFilterOptions] = useState<SourcingFilterOptions>(DUMMY_SOURCING_FILTER_OPTIONS);
-  const [kpis, setKpis] = useState<SourcingExecutiveKpis>(() => buildDummySourcingKpis(createDefaultAopUiFilters()));
-  const [trend, setTrend] = useState<SourcingTrendPoint[]>(() =>
-    getDummySourcingTrend(createDefaultAopUiFilters().year),
+  const [filterOptions, setFilterOptions] = useState<SourcingFilterOptions>(EMPTY_SOURCING_FILTER_OPTIONS);
+  const [kpis, setKpis] = useState<SourcingExecutiveKpis>(EMPTY_SOURCING_DASHBOARD.kpis);
+  const [trend, setTrend] = useState<SourcingTrendPoint[]>(EMPTY_SOURCING_DASHBOARD.trend);
+  const [aiScoreDistribution, setAiScoreDistribution] = useState<SourcingNamedCount[]>(
+    EMPTY_SOURCING_DASHBOARD.aiScoreDistribution,
   );
-  const [aiScoreDistribution, setAiScoreDistribution] = useState<SourcingNamedCount[]>(() =>
-    getDummyAiScoreDistribution(createDefaultAopUiFilters()),
-  );
-  const [cvBySkill, setCvBySkill] = useState<SourcingNamedCount[]>(() =>
-    getDummyCvBySkill(createDefaultAopUiFilters()),
-  );
-  const [candidateHiringProfile, setCandidateHiringProfile] = useState<CandidateHiringProfileData>(() =>
-    getDummyCandidateHiringProfile(createDefaultAopUiFilters()),
+  const [cvBySkill, setCvBySkill] = useState<SourcingNamedCount[]>(EMPTY_SOURCING_DASHBOARD.cvBySkill);
+  const [candidateHiringProfile, setCandidateHiringProfile] = useState<CandidateHiringProfileData>(
+    EMPTY_SOURCING_DASHBOARD.candidateHiringProfile,
   );
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const months = useMemo(
     () =>
@@ -129,31 +150,40 @@ export default function SourcingOverview() {
   }, []);
 
   useEffect(() => {
-    const defaults = createDefaultAopUiFilters();
-    setPendingFilters(defaults);
-    setAppliedFilters(defaults);
-    setFilterOptions(DUMMY_SOURCING_FILTER_OPTIONS);
-    setKpis(buildDummySourcingKpis(defaults));
-    setTrend(getDummySourcingTrend(defaults.year));
-    setAiScoreDistribution(getDummyAiScoreDistribution(defaults));
-    setCvBySkill(getDummyCvBySkill(defaults));
-    setCandidateHiringProfile(getDummyCandidateHiringProfile(defaults));
-  }, []);
-
-  useEffect(() => {
     if (!isKasbonDateFilterReady(appliedFilters)) return;
 
-    setLoading(true);
-    const timer = window.setTimeout(() => {
-      setKpis(buildDummySourcingKpis(appliedFilters));
-      setTrend(getDummySourcingTrend(appliedFilters.year || String(new Date().getFullYear())));
-      setAiScoreDistribution(getDummyAiScoreDistribution(appliedFilters));
-      setCvBySkill(getDummyCvBySkill(appliedFilters));
-      setCandidateHiringProfile(getDummyCandidateHiringProfile(appliedFilters));
-      setLoading(false);
-    }, 250);
+    let cancelled = false;
 
-    return () => window.clearTimeout(timer);
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await fetchSourcingAnalytics(toSourcingFilters(appliedFilters));
+        if (cancelled) return;
+        setKpis(result.dashboard.kpis);
+        setTrend(result.dashboard.trend);
+        setAiScoreDistribution(result.dashboard.aiScoreDistribution);
+        setCvBySkill(result.dashboard.cvBySkill);
+        setCandidateHiringProfile(result.dashboard.candidateHiringProfile);
+        setFilterOptions(result.filterOptions);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Failed to load sourcing analytics:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load sourcing data');
+        setKpis(EMPTY_SOURCING_DASHBOARD.kpis);
+        setTrend(EMPTY_SOURCING_DASHBOARD.trend);
+        setAiScoreDistribution(EMPTY_SOURCING_DASHBOARD.aiScoreDistribution);
+        setCvBySkill(EMPTY_SOURCING_DASHBOARD.cvBySkill);
+        setCandidateHiringProfile(EMPTY_SOURCING_DASHBOARD.candidateHiringProfile);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
   }, [appliedFilters]);
 
   const handleApplyFilters = () => {
@@ -311,6 +341,12 @@ export default function SourcingOverview() {
           </Typography>
           <LoanDateModeToggle value={pendingFilters.dateMode} onChange={handleDateModeChange} />
         </Box>
+
+        {error && (
+          <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
           {pendingFilters.dateMode === 'month' ? (
@@ -526,11 +562,11 @@ export default function SourcingOverview() {
           />
           <SourcingDonutChart
             title="Education Level"
-            subtitle="Minimum education mix."
+            subtitle="Candidate education mix."
             data={candidateHiringProfile.minimum_education}
             loading={loading}
             colors={['#6D4C41', '#8E24AA', '#1E88E5', '#43A047']}
-            unitLabel="roles"
+            unitLabel="candidates"
           />
         </Box>
 
@@ -542,32 +578,29 @@ export default function SourcingOverview() {
             alignItems: 'stretch',
           }}
         >
-          <SourcingHorizontalBarChart
+          <SourcingBreakdownList
             title="Salary Range"
             subtitle="Salary range demand for open roles."
             data={candidateHiringProfile.salary_range}
             loading={loading}
-            colors={['#1E88E5', '#42A5F5', '#0D9488', '#FB8C00', '#E53935']}
-            distributed
             unitLabel="roles"
+            barColor="#1E88E5"
           />
-          <SourcingHorizontalBarChart
+          <SourcingBreakdownList
             title="Working Type"
             subtitle="Onsite, hybrid, and remote mix for open roles."
             data={candidateHiringProfile.working_type}
             loading={loading}
-            colors={['#0D9488', '#1E88E5', '#FB8C00']}
-            distributed
             unitLabel="roles"
+            barColor="#0D9488"
           />
-          <SourcingHorizontalBarChart
+          <SourcingBreakdownList
             title="Recruitment Type"
             subtitle="New hire vs replacement demand."
             data={candidateHiringProfile.recruitment_type}
             loading={loading}
-            colors={['#43A047', '#8E24AA']}
-            distributed
             unitLabel="roles"
+            barColor="#8E24AA"
           />
         </Box>
       </Box>

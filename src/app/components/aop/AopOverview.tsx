@@ -17,6 +17,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import {
   IconCash,
   IconCashOff,
+  IconDownload,
   IconUserCheck,
   IconUsers,
 } from '@tabler/icons-react';
@@ -27,6 +28,7 @@ import {
   AopFilterOptions,
   AopFilters,
   EMPTY_AOP_DASHBOARD,
+  exportAopSummary,
   fetchAopBranchBreakdown,
   fetchAopFilterOptions,
   fetchAopRoleGroupingBreakdown,
@@ -115,6 +117,8 @@ export default function AopOverview() {
   const [dashboard, setDashboard] = useState<AopDashboardData>(EMPTY_AOP_DASHBOARD);
   const [loading, setLoading] = useState(true);
   const [filterOptionsLoading, setFilterOptionsLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const months = useMemo(
     () =>
@@ -211,6 +215,22 @@ export default function AopOverview() {
     setAppliedFilters(pendingFilters);
   };
 
+  const handleExport = async () => {
+    // Use current filter UI values so export includes every selected filter
+    // (dates, employer, sourced to, project, branch, segments) even before Apply.
+    if (!isKasbonDateFilterReady(pendingFilters)) return;
+    setExporting(true);
+    setExportError(null);
+    try {
+      await exportAopSummary(toSummaryFilters(pendingFilters));
+    } catch (err) {
+      console.error('Failed to export AOP summary:', err);
+      setExportError(err instanceof Error ? err.message : 'Failed to export Excel');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleDateModeChange = (nextMode: LoanDateMode) => {
     setPendingFilters((prev) => {
       const next = applyLoanDateModeChange(
@@ -274,6 +294,18 @@ export default function AopOverview() {
   const sectionTitleSx = { mb: 2, mt: 0, fontWeight: 600 } as const;
   const { summary } = dashboard;
 
+  const exportButton = (
+    <Button
+      variant="outlined"
+      size="small"
+      startIcon={<IconDownload size={18} />}
+      onClick={() => void handleExport()}
+      disabled={!isKasbonDateFilterReady(pendingFilters) || exporting || filtersBusy}
+    >
+      {exporting ? 'Exporting…' : 'Export Excel'}
+    </Button>
+  );
+
   const applyButton = (
     <Button
       variant="contained"
@@ -298,11 +330,20 @@ export default function AopOverview() {
             mb: 3,
           }}
         >
-          <Typography variant="h3" fontWeight="bold">
-            Associates On Payroll
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+            <Typography variant="h3" fontWeight="bold">
+              Associates On Payroll
+            </Typography>
+            {exportButton}
+          </Box>
           <LoanDateModeToggle value={pendingFilters.dateMode} onChange={handleDateModeChange} />
         </Box>
+
+        {exportError && (
+          <Typography color="error" variant="body2" sx={{ mb: 2 }}>
+            {exportError}
+          </Typography>
+        )}
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
           {pendingFilters.dateMode === 'month' ? (

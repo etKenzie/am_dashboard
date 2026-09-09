@@ -110,7 +110,8 @@ const CandidateDemographicsChart = ({
             <SourcingBreakdownList
               title="Gender Dist."
               data={genderDistribution}
-              colors={GENDER_COLORS}
+              barColor={GENDER_COLORS[0]}
+              variant="embedded"
             />
           </>
         )}

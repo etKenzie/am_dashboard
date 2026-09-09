@@ -731,3 +731,59 @@ export async function fetchAopDashboard(filters: AopFilters): Promise<AopDashboa
     associates_by_terms_of_payment,
   };
 }
+
+function filenameFromContentDisposition(header: string | null): string | null {
+  if (!header) return null;
+  const utf8Match = header.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1].trim());
+    } catch {
+      return utf8Match[1].trim();
+    }
+  }
+  const plainMatch = header.match(/filename="?([^";]+)"?/i);
+  return plainMatch?.[1]?.trim() ?? null;
+}
+
+/** Downloads payroll-associates export-summary as an .xlsx file. */
+export async function exportAopSummary(filters: AopFilters): Promise<void> {
+  const params = buildAopQueryParams(filters);
+  const query = params.toString();
+  const proxyUrl = `/api/executive-dashboard/payroll-associates/export-summary${query ? `?${query}` : ''}`;
+
+  console.log('[AOP] export request', {
+    proxyUrl,
+    query: Object.fromEntries(params.entries()),
+  });
+
+  const res = await fetch(proxyUrl, { method: 'GET', cache: 'no-store' });
+
+  if (!res.ok) {
+    let detail = `${res.status} ${res.statusText}`;
+    try {
+      const errBody = (await res.json()) as { error?: string; upstream_status?: number };
+      if (errBody.error) detail = `${detail} | ${errBody.error}`;
+      if (errBody.upstream_status != null) detail = `${detail} | upstream_status=${errBody.upstream_status}`;
+    } catch {
+      // not JSON
+    }
+    throw new Error(`AOP export failed: ${detail}`);
+  }
+
+  const blob = await res.blob();
+  const start = filters.start_date ? toApiDate(filters.start_date).replace(/\//g, '-') : 'start';
+  const end = filters.end_date ? toApiDate(filters.end_date).replace(/\//g, '-') : 'end';
+  const filename =
+    filenameFromContentDisposition(res.headers.get('content-disposition')) ??
+    `aop-payroll-associates-${start}_to_${end}.xlsx`;
+
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}

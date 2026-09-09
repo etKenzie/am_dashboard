@@ -13,6 +13,17 @@ function getAopApiToken(): string {
   return raw.trim().replace(/^["']|["']$/g, '');
 }
 
+function isBinaryExport(contentType: string, pathSegment: string): boolean {
+  if (pathSegment.includes('export')) return true;
+  return (
+    contentType.includes('spreadsheet') ||
+    contentType.includes('excel') ||
+    contentType.includes('octet-stream') ||
+    contentType.includes('zip') ||
+    contentType.includes('ms-excel')
+  );
+}
+
 /**
  * Proxy for executive-dashboard APIs (AOP). Avoids browser CORS to akumaju.com.
  *
@@ -45,6 +56,7 @@ export async function GET(
   forwardParams.delete('path');
   const search = forwardParams.toString();
   const upstreamUrl = `${AOP_UPSTREAM_BASE}/api/v1/executive-dashboard/${segment}${search ? `?${search}` : ''}`;
+  const wantsExport = segment.includes('export');
 
   console.log('[AOP proxy] upstream request', {
     method: 'GET',
@@ -52,18 +64,74 @@ export async function GET(
     proxyPath: `/api/executive-dashboard/${segment}${search ? `?${search}` : ''}`,
     hasApiKey: Boolean(token),
     tokenLength: token.length,
+    wantsExport,
   });
 
   const headers: HeadersInit = {
-    Accept: 'application/json',
+    Accept: wantsExport
+      ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream, */*'
+      : 'application/json',
     'x-api-key': token,
     'User-Agent': 'Mozilla/5.0 (compatible; AMDashboard/1.0)',
   };
 
   try {
     const res = await fetch(upstreamUrl, { method: 'GET', headers, cache: 'no-store' });
-    const bodyText = await res.text();
     const contentType = res.headers.get('content-type') ?? '';
+
+    if (isBinaryExport(contentType, segment) || wantsExport) {
+      const body = await res.arrayBuffer();
+
+      // Error payloads for export endpoints may still be JSON.
+      if (!res.ok && contentType.includes('application/json')) {
+        const text = new TextDecoder().decode(body);
+        try {
+          return NextResponse.json(JSON.parse(text) as unknown, { status: res.status });
+        } catch {
+          // fall through to binary/error response
+        }
+      }
+
+      if (!res.ok) {
+        console.error('Executive dashboard proxy export error:', {
+          upstreamUrl,
+          status: res.status,
+          contentType,
+        });
+        return NextResponse.json(
+          {
+            error: 'Export request failed',
+            upstream_status: res.status,
+            upstream_url: upstreamUrl,
+          },
+          { status: 502 },
+        );
+      }
+
+      const disposition =
+        res.headers.get('content-disposition') ??
+        'attachment; filename="aop-payroll-associates-export.xlsx"';
+
+      console.log('[AOP proxy] upstream export response', {
+        upstreamUrl,
+        status: res.status,
+        contentType,
+        bytes: body.byteLength,
+      });
+
+      return new NextResponse(body, {
+        status: res.status,
+        headers: {
+          'Content-Type':
+            contentType ||
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': disposition,
+          'Cache-Control': 'no-store',
+        },
+      });
+    }
+
+    const bodyText = await res.text();
 
     if (!contentType.includes('application/json')) {
       console.error('Executive dashboard proxy non-JSON response:', {

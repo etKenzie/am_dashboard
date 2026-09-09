@@ -110,7 +110,8 @@ const HiringRequirementChart = ({
             <SourcingBreakdownList
               title="Minimum Education"
               data={minimumEducation}
-              colors={EDUCATION_COLORS}
+              barColor={EDUCATION_COLORS[0]}
+              variant="embedded"
             />
           </>
         )}
