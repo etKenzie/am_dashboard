@@ -108,12 +108,12 @@ const CvBySkillChart = ({ data, loading = false }: CvBySkillChartProps) => {
           </Box>
         ) : values.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, py: 8 }}>
-            <Typography color="text.secondary">No skill data for this period</Typography>
+            <Typography color="text.secondary">No role grouping data for this period</Typography>
           </Box>
         ) : (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Across {labels.length} skills
+              Across {labels.length} role groupings
             </Typography>
             <Box sx={{ flex: 1, minHeight: 400, display: 'flex', flexDirection: 'column' }}>
               <ReactApexChart

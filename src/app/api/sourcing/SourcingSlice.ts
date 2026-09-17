@@ -11,6 +11,7 @@ import type {
   SourcingNamedCount,
   SourcingTrendPoint,
 } from '@/app/components/sourcing/sourcingDummyData';
+import { DEFAULT_RECRUITMENT_TYPE_OPTIONS } from '@/app/components/sourcing/sourcingDummyData';
 
 export interface SourcingFilters {
   employer: string;
@@ -20,6 +21,8 @@ export interface SourcingFilters {
   /** Empty array = all segments */
   client_segments: string[];
   product_type?: string;
+  recruitment_type?: string;
+  sourcing_pic?: string;
   year?: number;
   month?: number;
   start_date?: string;
@@ -61,14 +64,18 @@ interface ApiSourcingAnalyticsResponse {
     cv_received?: number;
     sourcing_gap?: number;
     avg_ai_score?: number;
-    cv_stock_coverage?: number;
+    cv_stock_coverage?: number | null;
     client_target?: number;
     hired?: number;
+    hired_by_ta?: number;
     onboard?: number;
     on_board?: number;
+    swing?: number;
     hiring_gap?: number;
+    hiring_gap_v2?: number;
     cv_to_hire_conversion?: number;
     cv_to_hire_rate?: number;
+    active_cv_stock_coverage?: number | null;
   };
   sourcing_performance?: {
     categories?: string[];
@@ -78,6 +85,7 @@ interface ApiSourcingAnalyticsResponse {
     avg_ai_score?: number;
     score_distribution?: ApiBucketCount[];
     cv_by_skill?: ApiBucketCount[];
+    cv_by_role_grouping?: ApiBucketCount[];
   };
   candidate_hiring_profile?: {
     age_distribution?: ApiBucketCount[];
@@ -99,6 +107,11 @@ interface ApiSourcingAnalyticsResponse {
     projects?: ApiIdName[];
     branches?: ApiIdName[];
     segments?: ApiIdName[];
+    recruitment_types?: ApiIdName[];
+    recruitment_type?: ApiIdName[];
+    sourcing_pics?: ApiIdName[];
+    sourcing_pic?: ApiIdName[];
+    pics?: ApiIdName[];
   };
 }
 
@@ -173,6 +186,8 @@ function buildSourcingQueryParams(filters: SourcingFilters): URLSearchParams {
     add('segment', segmentIds.join(','));
   }
   add('product_type', filters.product_type);
+  add('recruitment_type', filters.recruitment_type);
+  add('sourcing_pic_id', filters.sourcing_pic);
 
   if (filters.start_date && filters.end_date) {
     add('start_date', filters.start_date);
@@ -191,12 +206,18 @@ function mapFilterOptions(
   const mapList = (items?: ApiIdName[]) =>
     (items ?? []).map((x) => ({ id: String(x.id), name: String(x.name).trim() }));
 
+  const recruitmentTypes = mapList(raw?.recruitment_types ?? raw?.recruitment_type);
+  const sourcingPics = mapList(raw?.sourcing_pics ?? raw?.sourcing_pic ?? raw?.pics);
+
   return {
     employers: mapList(raw?.employers),
     sourced_to: mapList(raw?.sourced_to),
     projects: mapList(raw?.projects),
     branches: mapList(raw?.branches),
     segments: mapList(raw?.segments),
+    recruitment_types:
+      recruitmentTypes.length > 0 ? recruitmentTypes : DEFAULT_RECRUITMENT_TYPE_OPTIONS,
+    sourcing_pics: sourcingPics,
   };
 }
 
@@ -239,11 +260,11 @@ function mapKpis(summary?: ApiSourcingAnalyticsResponse['summary']): SourcingExe
     cv_received: num(summary?.cv_received),
     sourcing_gap: num(summary?.sourcing_gap),
     avg_ai_score: num(summary?.avg_ai_score),
-    cv_stock_coverage: num(summary?.cv_stock_coverage),
+    cv_stock_coverage: num(summary?.cv_stock_coverage ?? summary?.active_cv_stock_coverage),
     client_target: num(summary?.client_target),
-    hired: num(summary?.hired),
-    on_board: num(summary?.onboard ?? summary?.on_board),
-    hiring_gap: num(summary?.hiring_gap),
+    hired: num(summary?.hired_by_ta ?? summary?.hired),
+    on_board: num(summary?.swing ?? summary?.onboard ?? summary?.on_board),
+    hiring_gap: num(summary?.hiring_gap_v2 ?? summary?.hiring_gap),
     cv_to_hire_conversion: num(summary?.cv_to_hire_conversion ?? summary?.cv_to_hire_rate),
   };
 }
@@ -276,7 +297,10 @@ function mapSourcingApiToDashboard(json: ApiSourcingAnalyticsResponse): Sourcing
     kpis: { ...kpis, avg_ai_score: avgAiScore },
     trend: mapTrend(json.sourcing_performance),
     aiScoreDistribution: mapNamedCounts(json.sourcing_quality?.score_distribution, 'bucket'),
-    cvBySkill: mapNamedCounts(json.sourcing_quality?.cv_by_skill, 'skill'),
+    cvBySkill: mapNamedCounts(
+      json.sourcing_quality?.cv_by_role_grouping ?? json.sourcing_quality?.cv_by_skill,
+      'label',
+    ),
     candidateHiringProfile: mapCandidateHiringProfile(json.candidate_hiring_profile),
     avgAiScore,
   };

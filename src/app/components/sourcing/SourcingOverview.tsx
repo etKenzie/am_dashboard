@@ -20,9 +20,9 @@ import {
   IconClipboardList,
   IconFileDescription,
   IconPercentage,
+  IconRefresh,
   IconTargetArrow,
   IconUserCheck,
-  IconUserPlus,
   IconUsers,
   IconUserX,
 } from '@tabler/icons-react';
@@ -66,7 +66,28 @@ import {
 
 const ALL_OPTION = { value: '0', label: 'All' };
 
-function toSourcingFilters(filters: AopUiFilterState): SourcingFilters {
+type SourcingUiFilterState = AopUiFilterState & {
+  recruitmentType: string;
+  sourcingPic: string;
+};
+
+function createDefaultSourcingUiFilters(): SourcingUiFilterState {
+  return {
+    ...createDefaultAopUiFilters(),
+    recruitmentType: '0',
+    sourcingPic: '0',
+  };
+}
+
+function areSourcingFiltersEqual(a: SourcingUiFilterState, b: SourcingUiFilterState): boolean {
+  return (
+    areAopFiltersEqual(a, b)
+    && a.recruitmentType === b.recruitmentType
+    && a.sourcingPic === b.sourcingPic
+  );
+}
+
+function toSourcingFilters(filters: SourcingUiFilterState): SourcingFilters {
   const dateParams = kasbonDateParams(filters);
   const monthNum = filters.month ? Number(filters.month) : undefined;
   const yearNum = filters.year ? Number(filters.year) : undefined;
@@ -77,6 +98,8 @@ function toSourcingFilters(filters: AopUiFilterState): SourcingFilters {
     project: filters.project,
     branch: filters.branch,
     client_segments: filters.clientSegments,
+    recruitment_type: filters.recruitmentType,
+    sourcing_pic: filters.sourcingPic,
     start_date: dateParams.start_date,
     end_date: dateParams.end_date,
     ...(filters.dateMode === 'month'
@@ -119,8 +142,8 @@ function toMultiSelectOptions(items: Array<{ id: string; name: string }>) {
 }
 
 export default function SourcingOverview() {
-  const [pendingFilters, setPendingFilters] = useState<AopUiFilterState>(createDefaultAopUiFilters);
-  const [appliedFilters, setAppliedFilters] = useState<AopUiFilterState>(createDefaultAopUiFilters);
+  const [pendingFilters, setPendingFilters] = useState<SourcingUiFilterState>(createDefaultSourcingUiFilters);
+  const [appliedFilters, setAppliedFilters] = useState<SourcingUiFilterState>(createDefaultSourcingUiFilters);
   const [filterOptions, setFilterOptions] = useState<SourcingFilterOptions>(EMPTY_SOURCING_FILTER_OPTIONS);
   const [kpis, setKpis] = useState<SourcingExecutiveKpis>(EMPTY_SOURCING_DASHBOARD.kpis);
   const [trend, setTrend] = useState<SourcingTrendPoint[]>(EMPTY_SOURCING_DASHBOARD.trend);
@@ -213,7 +236,7 @@ export default function SourcingOverview() {
   };
 
   const hasPendingChanges = useMemo(
-    () => !areAopFiltersEqual(pendingFilters, appliedFilters),
+    () => !areSourcingFiltersEqual(pendingFilters, appliedFilters),
     [pendingFilters, appliedFilters],
   );
 
@@ -274,6 +297,12 @@ export default function SourcingOverview() {
       iconColor: '#2563EB',
     },
     {
+      title: 'CV Stock Coverage',
+      value: `${formatDecimal(kpis.cv_stock_coverage, 1)}x`,
+      icon: IconClipboardList,
+      iconColor: '#0891B2',
+    },
+    {
       title: 'Sourcing Gap',
       value: formatNumber(kpis.sourcing_gap),
       icon: IconChartBar,
@@ -284,12 +313,6 @@ export default function SourcingOverview() {
       value: formatDecimal(kpis.avg_ai_score, 1),
       icon: IconBrain,
       iconColor: '#7C3AED',
-    },
-    {
-      title: 'CV Stock Coverage',
-      value: `${formatDecimal(kpis.cv_stock_coverage, 1)}x`,
-      icon: IconClipboardList,
-      iconColor: '#0891B2',
     },
     {
       title: 'Client Target',
@@ -304,9 +327,9 @@ export default function SourcingOverview() {
       iconColor: '#16A34A',
     },
     {
-      title: 'On Board',
+      title: 'Swing',
       value: formatNumber(kpis.on_board),
-      icon: IconUserPlus,
+      icon: IconRefresh,
       iconColor: '#059669',
     },
     {
@@ -470,6 +493,8 @@ export default function SourcingOverview() {
             }}
           />
 
+          {/* TODO: show Recruitment Type / Sourcing PIC when API filter_options are ready */}
+
           <Box sx={{ display: { xs: 'flex', md: 'none' }, justifyContent: 'flex-end' }}>
             {applyButton}
           </Box>
@@ -574,7 +599,7 @@ export default function SourcingOverview() {
           sx={{
             display: 'grid',
             gap: 2,
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
             alignItems: 'stretch',
           }}
         >
@@ -593,14 +618,6 @@ export default function SourcingOverview() {
             loading={loading}
             unitLabel="roles"
             barColor="#0D9488"
-          />
-          <SourcingBreakdownList
-            title="Recruitment Type"
-            subtitle="New hire vs replacement demand."
-            data={candidateHiringProfile.recruitment_type}
-            loading={loading}
-            unitLabel="roles"
-            barColor="#8E24AA"
           />
         </Box>
       </Box>

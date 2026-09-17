@@ -33,6 +33,8 @@ export interface SourcingFilterOptions {
   projects: SourcingFilterOption[];
   branches: SourcingFilterOption[];
   segments: SourcingFilterOption[];
+  recruitment_types: SourcingFilterOption[];
+  sourcing_pics: SourcingFilterOption[];
 }
 
 export const EMPTY_SOURCING_FILTER_OPTIONS: SourcingFilterOptions = {
@@ -41,7 +43,16 @@ export const EMPTY_SOURCING_FILTER_OPTIONS: SourcingFilterOptions = {
   projects: [],
   branches: [],
   segments: [],
+  recruitment_types: [
+    { id: 'New Hire', name: 'New Hire' },
+    { id: 'Replacement', name: 'Replacement' },
+  ],
+  sourcing_pics: [],
 };
+
+/** Fallback when API omits recruitment_types (matches profile chart labels). */
+export const DEFAULT_RECRUITMENT_TYPE_OPTIONS: SourcingFilterOption[] =
+  EMPTY_SOURCING_FILTER_OPTIONS.recruitment_types;
 
 /** Dummy filter options until the Sourcing API is wired. */
 export const DUMMY_SOURCING_FILTER_OPTIONS: SourcingFilterOptions = {
@@ -71,6 +82,11 @@ export const DUMMY_SOURCING_FILTER_OPTIONS: SourcingFilterOptions = {
     { id: '1,2,5,6', name: 'All Non-BFSI' },
     { id: '1', name: 'Non BFSI Logistic' },
     { id: '6', name: 'Non BFSI E-commerce' },
+  ],
+  recruitment_types: DEFAULT_RECRUITMENT_TYPE_OPTIONS,
+  sourcing_pics: [
+    { id: '1', name: 'PIC A' },
+    { id: '2', name: 'PIC B' },
   ],
 };
 
