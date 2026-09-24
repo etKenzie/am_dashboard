@@ -260,6 +260,14 @@ export default function SourcingOverview() {
     () => toMultiSelectOptions(filterOptions.segments),
     [filterOptions.segments],
   );
+  const recruitmentTypeOptions = useMemo(
+    () => toSelectOptions(filterOptions.recruitment_types),
+    [filterOptions.recruitment_types],
+  );
+  const sourcingPicOptions = useMemo(
+    () => toSelectOptions(filterOptions.sourcing_pics),
+    [filterOptions.sourcing_pics],
+  );
 
   useEffect(() => {
     if (pendingFilters.clientSegments.length === 0) return;
@@ -493,7 +501,46 @@ export default function SourcingOverview() {
             }}
           />
 
-          {/* TODO: show Recruitment Type / Sourcing PIC when API filter_options are ready */}
+          <Grid container spacing={2} width="100%" alignItems="center">
+            <Grid size={{ xs: 12, sm: 6, md: 'grow' }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Recruitment Type</InputLabel>
+                <Select
+                  value={pendingFilters.recruitmentType}
+                  label="Recruitment Type"
+                  onChange={(e: SelectChangeEvent) =>
+                    setPendingFilters((prev) => ({ ...prev, recruitmentType: e.target.value }))
+                  }
+                  disabled={loading}
+                >
+                  {recruitmentTypeOptions.map((o) => (
+                    <MenuItem key={o.value} value={o.value}>
+                      {o.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 'grow' }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Sourcing PIC</InputLabel>
+                <Select
+                  value={pendingFilters.sourcingPic}
+                  label="Sourcing PIC"
+                  onChange={(e: SelectChangeEvent) =>
+                    setPendingFilters((prev) => ({ ...prev, sourcingPic: e.target.value }))
+                  }
+                  disabled={loading}
+                >
+                  {sourcingPicOptions.map((o) => (
+                    <MenuItem key={o.value} value={o.value}>
+                      {o.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
 
           <Box sx={{ display: { xs: 'flex', md: 'none' }, justifyContent: 'flex-end' }}>
             {applyButton}
