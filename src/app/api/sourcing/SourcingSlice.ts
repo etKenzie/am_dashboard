@@ -6,6 +6,7 @@
 import { AM_MAIN_API_TOKEN, AM_MAIN_API_URL } from '@/utils/config';
 import type {
   CandidateHiringProfileData,
+  SourcingChannelCount,
   SourcingExecutiveKpis,
   SourcingFilterOptions,
   SourcingNamedCount,
@@ -56,6 +57,18 @@ interface ApiBucketCount {
   pct?: number;
 }
 
+/** One channel row; label/count are the contract keys, source_name/cv_count are accepted aliases. */
+interface ApiChannelRow {
+  source_id?: number | string | null;
+  label?: string;
+  source_name?: string;
+  count?: number | string;
+  cv_count?: number | string;
+}
+
+/** Contract: { total, items: [...] }. A bare array of rows is accepted too. */
+type ApiChannelSection = { total?: number; items?: ApiChannelRow[] } | ApiChannelRow[];
+
 interface ApiSourcingAnalyticsResponse {
   success: boolean;
   message?: string;
@@ -100,7 +113,10 @@ interface ApiSourcingAnalyticsResponse {
     min_education?: ApiBucketCount[];
     working_type?: ApiBucketCount[];
     recruitment_type?: ApiBucketCount[];
+    /** Accepted as an alias of the top-level candidate_source_by_channel. */
+    candidate_source_by_channel?: ApiChannelSection;
   };
+  candidate_source_by_channel?: ApiChannelSection;
   filter_options?: {
     employers?: ApiIdName[];
     sourced_to?: ApiIdName[];
@@ -168,6 +184,43 @@ function mapNamedCounts(
       };
     })
     .filter((row) => row.label);
+}
+
+const UNKNOWN_CHANNEL_LABEL = 'Unknown source';
+
+/**
+ * Candidate Source by Channel. Keeps the API order (count DESC, "Unknown source" last).
+ * Rows that share a label are merged (the list component keys its rows by label), and the
+ * share is recomputed from the counts, so it always matches what the card draws.
+ */
+function mapSourceByChannel(section: ApiChannelSection | null | undefined): SourcingChannelCount[] {
+  const rows = Array.isArray(section) ? section : Array.isArray(section?.items) ? section.items : [];
+  const byLabel = new Map<string, SourcingChannelCount>();
+
+  rows.forEach((row) => {
+    if (!row || typeof row !== 'object') return;
+    const label = String(row.label ?? row.source_name ?? '').trim() || UNKNOWN_CHANNEL_LABEL;
+    const value = num(row.count ?? row.cv_count);
+    const existing = byLabel.get(label);
+    if (existing) {
+      existing.value += value;
+      return;
+    }
+    const rawId = row.source_id;
+    byLabel.set(label, {
+      source_id: rawId === undefined || rawId === null || rawId === '' ? null : String(rawId),
+      label,
+      value,
+      percent: 0,
+    });
+  });
+
+  const list = Array.from(byLabel.values());
+  const total = list.reduce((sum, row) => sum + row.value, 0);
+  return list.map((row) => ({
+    ...row,
+    percent: total > 0 ? Math.round((row.value / total) * 1000) / 10 : 0,
+  }));
 }
 
 function buildSourcingQueryParams(filters: SourcingFilters): URLSearchParams {
@@ -271,6 +324,7 @@ function mapKpis(summary?: ApiSourcingAnalyticsResponse['summary']): SourcingExe
 
 function mapCandidateHiringProfile(
   raw?: ApiSourcingAnalyticsResponse['candidate_hiring_profile'],
+  sourceByChannel?: ApiChannelSection,
 ): CandidateHiringProfileData {
   const gender = raw?.gender;
   const gender_distribution: SourcingNamedCount[] = [];
@@ -286,6 +340,9 @@ function mapCandidateHiringProfile(
     minimum_education: mapNamedCounts(raw?.education_level ?? raw?.min_education, 'label'),
     working_type: mapNamedCounts(raw?.working_type, 'label'),
     recruitment_type: mapNamedCounts(raw?.recruitment_type, 'label'),
+    candidate_source_by_channel: mapSourceByChannel(
+      sourceByChannel ?? raw?.candidate_source_by_channel,
+    ),
   };
 }
 
@@ -301,7 +358,10 @@ function mapSourcingApiToDashboard(json: ApiSourcingAnalyticsResponse): Sourcing
       json.sourcing_quality?.cv_by_role_grouping ?? json.sourcing_quality?.cv_by_skill,
       'label',
     ),
-    candidateHiringProfile: mapCandidateHiringProfile(json.candidate_hiring_profile),
+    candidateHiringProfile: mapCandidateHiringProfile(
+      json.candidate_hiring_profile,
+      json.candidate_source_by_channel,
+    ),
     avgAiScore,
   };
 }
@@ -329,6 +389,7 @@ export const EMPTY_SOURCING_DASHBOARD: SourcingDashboardData = {
     minimum_education: [],
     working_type: [],
     recruitment_type: [],
+    candidate_source_by_channel: [],
   },
   avgAiScore: 0,
 };

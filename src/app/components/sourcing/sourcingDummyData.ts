@@ -196,6 +196,14 @@ export function getDummyCvBySkill(filters: AopUiFilterState): SourcingNamedCount
   }));
 }
 
+/** One row of "Candidate Source by Channel" (received CVs per application channel). */
+export interface SourcingChannelCount extends SourcingNamedCount {
+  /** tbl_information_source_recruitment.id; '0' = Career Page, null = unresolved ("Unknown source"). */
+  source_id: string | null;
+  /** Share of the section total, 0-100 (one decimal). */
+  percent: number;
+}
+
 export interface CandidateHiringProfileData {
   age_distribution: SourcingNamedCount[];
   gender_distribution: SourcingNamedCount[];
@@ -203,6 +211,7 @@ export interface CandidateHiringProfileData {
   minimum_education: SourcingNamedCount[];
   working_type: SourcingNamedCount[];
   recruitment_type: SourcingNamedCount[];
+  candidate_source_by_channel: SourcingChannelCount[];
 }
 
 export const DUMMY_CANDIDATE_HIRING_PROFILE: CandidateHiringProfileData = {
@@ -241,6 +250,13 @@ export const DUMMY_CANDIDATE_HIRING_PROFILE: CandidateHiringProfileData = {
     { label: 'New Hire', value: 2410 },
     { label: 'Replacement', value: 1240 },
   ],
+  candidate_source_by_channel: [
+    { source_id: '0', label: 'Career Page', value: 1543, percent: 97.7 },
+    { source_id: '9', label: 'Re-hire', value: 12, percent: 0.8 },
+    { source_id: '4', label: 'Social Media', value: 11, percent: 0.7 },
+    { source_id: '6', label: 'Walk In Interview', value: 10, percent: 0.6 },
+    { source_id: '8', label: 'Referral', value: 3, percent: 0.2 },
+  ],
 };
 
 function bumpNamedCounts(rows: SourcingNamedCount[], bump: number): SourcingNamedCount[] {
@@ -259,5 +275,6 @@ export function getDummyCandidateHiringProfile(filters: AopUiFilterState): Candi
     minimum_education: bumpNamedCounts(DUMMY_CANDIDATE_HIRING_PROFILE.minimum_education, bump),
     working_type: bumpNamedCounts(DUMMY_CANDIDATE_HIRING_PROFILE.working_type, bump),
     recruitment_type: bumpNamedCounts(DUMMY_CANDIDATE_HIRING_PROFILE.recruitment_type, bump),
+    candidate_source_by_channel: DUMMY_CANDIDATE_HIRING_PROFILE.candidate_source_by_channel,
   };
 }
