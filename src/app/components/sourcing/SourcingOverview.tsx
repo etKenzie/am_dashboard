@@ -646,7 +646,7 @@ export default function SourcingOverview() {
           sx={{
             display: 'grid',
             gap: 2,
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
             alignItems: 'stretch',
           }}
         >
@@ -665,6 +665,14 @@ export default function SourcingOverview() {
             loading={loading}
             unitLabel="roles"
             barColor="#0D9488"
+          />
+          <SourcingBreakdownList
+            title="Candidate Source by Channel"
+            subtitle="Where received CVs came from."
+            data={candidateHiringProfile.candidate_source_by_channel}
+            loading={loading}
+            unitLabel="CVs"
+            barColor="#7C3AED"
           />
         </Box>
       </Box>
