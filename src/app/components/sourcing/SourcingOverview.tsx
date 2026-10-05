@@ -152,6 +152,9 @@ export default function SourcingOverview() {
     EMPTY_SOURCING_DASHBOARD.aiScoreDistribution,
   );
   const [cvBySkill, setCvBySkill] = useState<SourcingNamedCount[]>(EMPTY_SOURCING_DASHBOARD.cvBySkill);
+  const [candidateSources, setCandidateSources] = useState<SourcingNamedCount[]>(
+    EMPTY_SOURCING_DASHBOARD.candidateSources,
+  );
   const [candidateHiringProfile, setCandidateHiringProfile] = useState<CandidateHiringProfileData>(
     EMPTY_SOURCING_DASHBOARD.candidateHiringProfile,
   );
@@ -194,6 +197,7 @@ export default function SourcingOverview() {
         setTrend(result.dashboard.trend);
         setAiScoreDistribution(result.dashboard.aiScoreDistribution);
         setCvBySkill(result.dashboard.cvBySkill);
+        setCandidateSources(result.dashboard.candidateSources);
         setCandidateHiringProfile(result.dashboard.candidateHiringProfile);
         setFilterOptions(result.filterOptions);
       } catch (err) {
@@ -204,6 +208,7 @@ export default function SourcingOverview() {
         setTrend(EMPTY_SOURCING_DASHBOARD.trend);
         setAiScoreDistribution(EMPTY_SOURCING_DASHBOARD.aiScoreDistribution);
         setCvBySkill(EMPTY_SOURCING_DASHBOARD.cvBySkill);
+        setCandidateSources(EMPTY_SOURCING_DASHBOARD.candidateSources);
         setCandidateHiringProfile(EMPTY_SOURCING_DASHBOARD.candidateHiringProfile);
       } finally {
         if (!cancelled) setLoading(false);
@@ -613,8 +618,24 @@ export default function SourcingOverview() {
           ))}
         </Box>
 
-        <Box mt={4}>
+        <Box
+          mt={4}
+          sx={{
+            display: 'grid',
+            gap: 2,
+            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 2fr) minmax(0, 1fr)' },
+            alignItems: 'stretch',
+          }}
+        >
           <TargetVsCvReceivedChart data={trend} loading={loading} />
+          <SourcingDonutChart
+            title="Candidate Sources"
+            subtitle="Share of candidates by source."
+            data={candidateSources}
+            loading={loading}
+            colors={['#3B82F6', '#10B981', '#F59E0B', '#EC4899', '#7C3AED', '#0D9488']}
+            unitLabel="candidates"
+          />
         </Box>
 
         <Typography variant="h5" sx={{ ...sectionTitleSx, mt: 4 }}>

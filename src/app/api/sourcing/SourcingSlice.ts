@@ -35,6 +35,7 @@ export interface SourcingDashboardData {
   trend: SourcingTrendPoint[];
   aiScoreDistribution: SourcingNamedCount[];
   cvBySkill: SourcingNamedCount[];
+  candidateSources: SourcingNamedCount[];
   candidateHiringProfile: CandidateHiringProfileData;
   avgAiScore: number;
 }
@@ -117,6 +118,14 @@ interface ApiSourcingAnalyticsResponse {
     candidate_source_by_channel?: ApiChannelSection;
   };
   candidate_source_by_channel?: ApiChannelSection;
+  candidate_sources?: Array<{
+    source_name?: string;
+    label?: string;
+    total?: number | string;
+    count?: number | string;
+    ready_for_hiring_count?: number | string;
+    quality_rate_percent?: number | string;
+  }>;
   filter_options?: {
     employers?: ApiIdName[];
     sourced_to?: ApiIdName[];
@@ -341,6 +350,23 @@ function mapKpis(summary?: ApiSourcingAnalyticsResponse['summary']): SourcingExe
   };
 }
 
+function mapCandidateSources(
+  rows: ApiSourcingAnalyticsResponse['candidate_sources'],
+  fallback: SourcingNamedCount[],
+): SourcingNamedCount[] {
+  const mapped = (rows ?? [])
+    .map((row) => {
+      const label = String(row.source_name ?? row.label ?? '').trim();
+      return {
+        label,
+        value: num(row.total ?? row.count),
+      };
+    })
+    .filter((row) => row.label);
+
+  return mapped.length > 0 ? mapped : fallback;
+}
+
 function mapCandidateHiringProfile(
   raw?: ApiSourcingAnalyticsResponse['candidate_hiring_profile'],
   sourceByChannel?: ApiChannelSection,
@@ -381,6 +407,10 @@ function mapSourcingApiToDashboard(json: ApiSourcingAnalyticsResponse): Sourcing
       json.candidate_hiring_profile,
       json.candidate_source_by_channel,
     ),
+    candidateSources: mapCandidateSources(
+      json.candidate_sources,
+      mapSourceByChannel(json.candidate_source_by_channel ?? json.candidate_hiring_profile?.candidate_source_by_channel),
+    ),
     avgAiScore,
   };
 }
@@ -401,6 +431,7 @@ export const EMPTY_SOURCING_DASHBOARD: SourcingDashboardData = {
   trend: [],
   aiScoreDistribution: [],
   cvBySkill: [],
+  candidateSources: [],
   candidateHiringProfile: {
     age_distribution: [],
     gender_distribution: [],

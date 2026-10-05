@@ -74,8 +74,15 @@ const TargetVsCvReceivedChart = ({ data, loading = false }: TargetVsCvReceivedCh
   );
 
   return (
-    <Card sx={(t) => ({ ...aopCardOuterSx(t) })}>
-      <CardContent>
+    <Card
+      sx={(t) => ({
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        ...aopCardOuterSx(t),
+      })}
+    >
+      <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', '&:last-child': { pb: 2 } }}>
         <Box mb={2}>
           <Typography variant="h5" sx={{ fontWeight: 600, mb: 0.5 }}>
             Target vs CV Received vs Sourcing Gap
