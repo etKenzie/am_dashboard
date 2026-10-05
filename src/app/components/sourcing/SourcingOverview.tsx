@@ -43,6 +43,7 @@ import {
   type LoanDateMode,
 } from '../kasbon/kasbonDateHelpers';
 import { LoanDateModeToggle } from '../kasbon/KasbonFilters';
+import RecruitmentSearchableSelect from '../recruitment/RecruitmentSearchableSelect';
 import ClientScopeFilters from '../shared/ClientScopeFilters';
 import {
   EMPTY_SOURCING_DASHBOARD,
@@ -543,42 +544,26 @@ export default function SourcingOverview() {
 
           <Grid container spacing={2} width="100%" alignItems="center">
             <Grid size={{ xs: 12, sm: 6, md: 'grow' }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Recruitment Type</InputLabel>
-                <Select
-                  value={pendingFilters.recruitmentType}
-                  label="Recruitment Type"
-                  onChange={(e: SelectChangeEvent) =>
-                    setPendingFilters((prev) => ({ ...prev, recruitmentType: e.target.value }))
-                  }
-                  disabled={loading}
-                >
-                  {recruitmentTypeOptions.map((o) => (
-                    <MenuItem key={o.value} value={o.value}>
-                      {o.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <RecruitmentSearchableSelect
+                label="Recruitment Type"
+                value={pendingFilters.recruitmentType}
+                options={recruitmentTypeOptions}
+                disabled={loading && recruitmentTypeOptions.length <= 1}
+                onChange={(next) =>
+                  setPendingFilters((prev) => ({ ...prev, recruitmentType: next }))
+                }
+              />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 'grow' }}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Sourcing PIC</InputLabel>
-                <Select
-                  value={pendingFilters.sourcingPic}
-                  label="Sourcing PIC"
-                  onChange={(e: SelectChangeEvent) =>
-                    setPendingFilters((prev) => ({ ...prev, sourcingPic: e.target.value }))
-                  }
-                  disabled={loading}
-                >
-                  {sourcingPicOptions.map((o) => (
-                    <MenuItem key={o.value} value={o.value}>
-                      {o.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <RecruitmentSearchableSelect
+                label="Sourcing PIC"
+                value={pendingFilters.sourcingPic}
+                options={sourcingPicOptions}
+                disabled={loading && sourcingPicOptions.length <= 1}
+                onChange={(next) =>
+                  setPendingFilters((prev) => ({ ...prev, sourcingPic: next }))
+                }
+              />
             </Grid>
           </Grid>
 
