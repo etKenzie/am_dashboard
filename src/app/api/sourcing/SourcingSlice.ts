@@ -223,6 +223,30 @@ function mapSourceByChannel(section: ApiChannelSection | null | undefined): Sour
   }));
 }
 
+/**
+ * The sourcing endpoint is monthly: it only reads `period` (YYYY-MM, defaulting to the current month
+ * server-side) and ignores year / month / start_date / end_date.
+ * - Month mode (year AND month present) -> that month, zero-padded.
+ * - Date-range mode -> the month of the END date (the start date's month when the end date is missing).
+ * - Nothing usable -> undefined, so the backend falls back to the current month.
+ */
+export function resolveSourcingPeriod(filters: SourcingFilters): string | undefined {
+  const { year, month } = filters;
+  if (
+    year != null && Number.isInteger(year) && year >= 1000 && year <= 9999
+    && month != null && Number.isInteger(month) && month >= 1 && month <= 12
+  ) {
+    return `${year}-${String(month).padStart(2, '0')}`;
+  }
+
+  const periodOfDate = (value?: string): string | undefined => {
+    const match = /^(\d{4})-(0[1-9]|1[0-2])(?!\d)/.exec(value ?? '');
+    return match ? `${match[1]}-${match[2]}` : undefined;
+  };
+
+  return periodOfDate(filters.end_date) ?? periodOfDate(filters.start_date);
+}
+
 function buildSourcingQueryParams(filters: SourcingFilters): URLSearchParams {
   const params = new URLSearchParams();
   const add = (key: string, val: string | number | undefined) => {
@@ -242,13 +266,8 @@ function buildSourcingQueryParams(filters: SourcingFilters): URLSearchParams {
   add('recruitment_type', filters.recruitment_type);
   add('sourcing_pic_id', filters.sourcing_pic);
 
-  if (filters.start_date && filters.end_date) {
-    add('start_date', filters.start_date);
-    add('end_date', filters.end_date);
-  } else if (filters.year != null) {
-    add('year', filters.year);
-    if (filters.month != null) add('month', filters.month);
-  }
+  // The endpoint ignores year / month / start_date / end_date; send the single `period` it reads.
+  add('period', resolveSourcingPeriod(filters));
 
   return params;
 }
