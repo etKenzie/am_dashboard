@@ -47,6 +47,7 @@ import ClientScopeFilters from '../shared/ClientScopeFilters';
 import {
   EMPTY_SOURCING_DASHBOARD,
   fetchSourcingAnalytics,
+  resolveSourcingPeriod,
   type SourcingFilters,
 } from '../../api/sourcing/SourcingSlice';
 import AiScoreDistributionChart from './AiScoreDistributionChart';
@@ -172,6 +173,12 @@ export default function SourcingOverview() {
     return Array.from({ length: 6 }, (_, i) => (currentYear - i).toString());
   }, []);
 
+  // The sourcing API rejects a month in the future (HTTP 400), so the pickers never offer one.
+  const today = useMemo(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  }, []);
+
   useEffect(() => {
     if (!isKasbonDateFilterReady(appliedFilters)) return;
 
@@ -239,6 +246,17 @@ export default function SourcingOverview() {
     () => !areSourcingFiltersEqual(pendingFilters, appliedFilters),
     [pendingFilters, appliedFilters],
   );
+
+  // The sourcing API is monthly: a date range spanning several months is answered for the end date's month only.
+  const rangePeriodNote = useMemo(() => {
+    if (pendingFilters.dateMode !== 'range') return null;
+    const { startDate, endDate } = pendingFilters;
+    if (!startDate || !endDate || startDate.slice(0, 7) === endDate.slice(0, 7)) return null;
+    const period = resolveSourcingPeriod(toSourcingFilters(pendingFilters));
+    const monthLabel = months.find((m) => m.value === period?.slice(5, 7))?.label;
+    if (!period || !monthLabel) return null;
+    return `Sourcing analytics is monthly - showing ${monthLabel} ${period.slice(0, 4)} (the end date's month).`;
+  }, [pendingFilters, months]);
 
   const employerOptions = useMemo(
     () => toSelectOptions(filterOptions.employers),
@@ -394,7 +412,11 @@ export default function SourcingOverview() {
                     disabled={loading}
                   >
                     {months.map((m) => (
-                      <MenuItem key={m.value} value={m.value}>
+                      <MenuItem
+                        key={m.value}
+                        value={m.value}
+                        disabled={Number(pendingFilters.year) === today.year && Number(m.value) > today.month}
+                      >
                         {m.label}
                       </MenuItem>
                     ))}
@@ -407,9 +429,17 @@ export default function SourcingOverview() {
                   <Select
                     value={pendingFilters.year}
                     label="Year"
-                    onChange={(e: SelectChangeEvent) =>
-                      setPendingFilters((prev) => ({ ...prev, year: e.target.value }))
-                    }
+                    onChange={(e: SelectChangeEvent) => {
+                      const nextYear = e.target.value;
+                      setPendingFilters((prev) => ({
+                        ...prev,
+                        year: nextYear,
+                        month:
+                          Number(nextYear) === today.year && Number(prev.month) > today.month
+                            ? String(today.month).padStart(2, '0')
+                            : prev.month,
+                      }));
+                    }}
                     disabled={loading}
                   >
                     {years.map((y) => (
@@ -470,6 +500,11 @@ export default function SourcingOverview() {
                   {applyButton}
                 </Grid>
               </Grid>
+              {rangePeriodNote && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
+                  {rangePeriodNote}
+                </Typography>
+              )}
             </LocalizationProvider>
           )}
 
