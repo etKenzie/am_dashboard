@@ -6,13 +6,21 @@
 import { AM_MAIN_API_TOKEN, AM_MAIN_API_URL } from '@/utils/config';
 import type {
   CandidateHiringProfileData,
+  CurrentRecruitmentFunnelStage,
+  FunnelBreakdownItem,
+  NewCandidateGrowthData,
+  RecruitmentProductivityMetric,
   SourcingChannelCount,
   SourcingExecutiveKpis,
   SourcingFilterOptions,
   SourcingNamedCount,
   SourcingTrendPoint,
 } from '@/app/components/sourcing/sourcingDummyData';
-import { DEFAULT_RECRUITMENT_TYPE_OPTIONS } from '@/app/components/sourcing/sourcingDummyData';
+import {
+  DEFAULT_RECRUITMENT_TYPE_OPTIONS,
+  DUMMY_CURRENT_RECRUITMENT_FUNNEL,
+  DUMMY_RECRUITMENT_PRODUCTIVITY,
+} from '@/app/components/sourcing/sourcingDummyData';
 
 export interface SourcingFilters {
   employer: string;
@@ -24,6 +32,8 @@ export interface SourcingFilters {
   product_type?: string;
   recruitment_type?: string;
   sourcing_pic?: string;
+  priority?: string;
+  role?: string;
   year?: number;
   month?: number;
   start_date?: string;
@@ -37,6 +47,9 @@ export interface SourcingDashboardData {
   cvBySkill: SourcingNamedCount[];
   candidateSources: SourcingNamedCount[];
   candidateHiringProfile: CandidateHiringProfileData;
+  newCandidateGrowth: NewCandidateGrowthData;
+  currentRecruitmentFunnel: CurrentRecruitmentFunnelStage[];
+  recruitmentProductivity: RecruitmentProductivityMetric[];
   avgAiScore: number;
 }
 
@@ -84,12 +97,72 @@ interface ApiSourcingAnalyticsResponse {
     hired_by_ta?: number;
     onboard?: number;
     on_board?: number;
+    total_onboard?: number;
     swing?: number;
+    on_pipe_funnel?: number;
+    on_pipe?: number;
+    candidates_in_process?: number;
     hiring_gap?: number;
     hiring_gap_v2?: number;
     cv_to_hire_conversion?: number;
     cv_to_hire_rate?: number;
+    fulfillment_rate?: number;
+    fulfillment_rate_percent?: number;
+    new_candidates?: number;
+    new_candidate_count?: number;
+    processed?: number;
+    processed_count?: number;
+    not_processed?: number;
+    not_processed_count?: number;
     active_cv_stock_coverage?: number | null;
+  };
+  new_candidate_growth?: {
+    total?: number;
+    new_candidates?: number;
+    processed?: number;
+    processed_count?: number;
+    not_processed?: number;
+    not_processed_count?: number;
+    categories?: string[];
+    series?: Array<{ name?: string; data?: number[] }>;
+  };
+  candidate_growth?: {
+    categories?: string[];
+    series?: Array<{ name?: string; data?: number[] }>;
+  };
+  recruitment_funnel?: Array<{
+    stage_name?: string;
+    title?: string;
+    total_count?: number | string;
+    count?: number | string;
+    pass_rate_percent?: number | string;
+    items?: Array<{
+      label?: string;
+      name?: string;
+      count?: number | string;
+      percent?: number | string;
+      pct?: number | string;
+    }>;
+    breakdown?: Array<{
+      label?: string;
+      name?: string;
+      count?: number | string;
+      percent?: number | string;
+      pct?: number | string;
+    }>;
+  }>;
+  current_recruitment_funnel?: ApiSourcingAnalyticsResponse['recruitment_funnel'];
+  recruitment_productivity?: {
+    new_candidates?: number | string;
+    processed?: number | string;
+    interviewed?: number | string;
+    psych_test_assigned?: number | string;
+    psychological_test_assigned?: number | string;
+    ready_for_hiring?: number | string;
+    hired_by_ta?: number | string;
+    hired?: number | string;
+    hiring_rate?: number | string;
+    hiring_rate_percent?: number | string;
   };
   sourcing_performance?: {
     categories?: string[];
@@ -134,9 +207,16 @@ interface ApiSourcingAnalyticsResponse {
     segments?: ApiIdName[];
     recruitment_types?: ApiIdName[];
     recruitment_type?: ApiIdName[];
+    hiring_types?: ApiIdName[];
     sourcing_pics?: ApiIdName[];
     sourcing_pic?: ApiIdName[];
     pics?: ApiIdName[];
+    recruitment_pics?: ApiIdName[];
+    priorities?: ApiIdName[];
+    priority?: ApiIdName[];
+    roles?: ApiIdName[];
+    role?: ApiIdName[];
+    job_roles?: ApiIdName[];
   };
 }
 
@@ -274,6 +354,8 @@ function buildSourcingQueryParams(filters: SourcingFilters): URLSearchParams {
   add('product_type', filters.product_type);
   add('recruitment_type', filters.recruitment_type);
   add('sourcing_pic_id', filters.sourcing_pic);
+  add('priority', filters.priority);
+  add('role', filters.role);
 
   // The endpoint ignores year / month / start_date / end_date; send the single `period` it reads.
   add('period', resolveSourcingPeriod(filters));
@@ -287,8 +369,12 @@ function mapFilterOptions(
   const mapList = (items?: ApiIdName[]) =>
     (items ?? []).map((x) => ({ id: String(x.id), name: String(x.name).trim() }));
 
-  const recruitmentTypes = mapList(raw?.recruitment_types ?? raw?.recruitment_type);
-  const sourcingPics = mapList(raw?.sourcing_pics ?? raw?.sourcing_pic ?? raw?.pics);
+  const recruitmentTypes = mapList(
+    raw?.hiring_types ?? raw?.recruitment_types ?? raw?.recruitment_type,
+  );
+  const sourcingPics = mapList(
+    raw?.recruitment_pics ?? raw?.sourcing_pics ?? raw?.sourcing_pic ?? raw?.pics,
+  );
 
   return {
     employers: mapList(raw?.employers),
@@ -299,6 +385,8 @@ function mapFilterOptions(
     recruitment_types:
       recruitmentTypes.length > 0 ? recruitmentTypes : DEFAULT_RECRUITMENT_TYPE_OPTIONS,
     sourcing_pics: sourcingPics,
+    priorities: mapList(raw?.priorities ?? raw?.priority),
+    roles: mapList(raw?.roles ?? raw?.role ?? raw?.job_roles),
   };
 }
 
@@ -335,17 +423,259 @@ function mapTrend(raw?: ApiSourcingAnalyticsResponse['sourcing_performance']): S
   });
 }
 
+const FALLBACK_PROCESSED_RATIO = 0.62;
+
+function splitProcessed(total: number, processedRaw: unknown): { processed: number; not_processed: number } {
+  const hasProcessed = processedRaw !== undefined && processedRaw !== null && processedRaw !== '';
+  const processed = hasProcessed
+    ? Math.min(Math.max(0, num(processedRaw)), Math.max(0, total))
+    : Math.round(Math.max(0, total) * FALLBACK_PROCESSED_RATIO);
+  return {
+    processed,
+    not_processed: Math.max(0, total - processed),
+  };
+}
+
+function mapNewCandidateGrowth(
+  json: ApiSourcingAnalyticsResponse,
+  trend: SourcingTrendPoint[],
+): NewCandidateGrowthData {
+  const growth = json.new_candidate_growth;
+  const growthOrCandidate = growth ?? json.candidate_growth;
+  const processedSeries = findSeries(growthOrCandidate?.series, [
+    'Processed',
+    'Processed Candidate',
+    'Processed Candidates',
+  ]);
+  const notProcessedSeries = findSeries(growthOrCandidate?.series, [
+    'Not Processed',
+    'Not-Processed',
+    'Unprocessed',
+    'Not Processed Candidate',
+  ]);
+  const newCandidateSeries = findSeries(growthOrCandidate?.series, [
+    'New Candidate',
+    'New Candidates',
+  ]);
+  const categories = growthOrCandidate?.categories ?? [];
+
+  let points: NewCandidateGrowthData['trend'] = [];
+  if (categories.length > 0 && (processedSeries.length > 0 || notProcessedSeries.length > 0 || newCandidateSeries.length > 0)) {
+    points = categories.map((period, index) => {
+      const newCount = num(newCandidateSeries[index]);
+      const hasPair = processedSeries.length > 0 || notProcessedSeries.length > 0;
+      const split = hasPair
+        ? {
+            processed: num(processedSeries[index]),
+            not_processed:
+              notProcessedSeries.length > 0
+                ? num(notProcessedSeries[index])
+                : Math.max(0, newCount - num(processedSeries[index])),
+          }
+        : splitProcessed(newCount, undefined);
+      return {
+        period,
+        period_label: formatMonthCategory(period),
+        processed: split.processed,
+        not_processed: split.not_processed,
+      };
+    });
+  } else {
+    points = trend.map((row) => {
+      const split = splitProcessed(row.cv_received, undefined);
+      return {
+        period: row.period,
+        period_label: row.period_label,
+        processed: split.processed,
+        not_processed: split.not_processed,
+      };
+    });
+  }
+
+  const summedProcessed = points.reduce((sum, row) => sum + row.processed, 0);
+  const summedNot = points.reduce((sum, row) => sum + row.not_processed, 0);
+  const summedTotal = summedProcessed + summedNot;
+
+  const total = num(
+    growth?.total
+      ?? growth?.new_candidates
+      ?? json.summary?.new_candidates
+      ?? json.summary?.new_candidate_count
+      ?? json.summary?.cv_received
+      ?? summedTotal,
+  );
+  const processedHint =
+    growth?.processed ?? growth?.processed_count ?? json.summary?.processed ?? json.summary?.processed_count;
+  const notHint =
+    growth?.not_processed
+    ?? growth?.not_processed_count
+    ?? json.summary?.not_processed
+    ?? json.summary?.not_processed_count;
+
+  let processed: number;
+  let not_processed: number;
+  if (processedHint !== undefined && processedHint !== null) {
+    processed = num(processedHint);
+    not_processed = notHint !== undefined && notHint !== null ? num(notHint) : Math.max(0, total - processed);
+  } else if (notHint !== undefined && notHint !== null) {
+    not_processed = num(notHint);
+    processed = Math.max(0, total - not_processed);
+  } else if (summedTotal > 0) {
+    processed = summedProcessed;
+    not_processed = summedNot;
+  } else {
+    const split = splitProcessed(total, undefined);
+    processed = split.processed;
+    not_processed = split.not_processed;
+  }
+
+  return {
+    total: processed + not_processed,
+    processed,
+    not_processed,
+    trend: points,
+  };
+}
+
+type ApiFunnelStage = NonNullable<ApiSourcingAnalyticsResponse['recruitment_funnel']>[number];
+
+const FUNNEL_STAGE_ALIASES: Array<{ id: string; aliases: string[] }> = [
+  { id: 'pipeline', aliases: ['pipeline list', 'pipeline'] },
+  { id: 'hr_interview', aliases: ['hr interview', 'interview hr'] },
+  { id: 'skill_test', aliases: ['skill test', 'test skill'] },
+  { id: 'psychological_test', aliases: ['psychological test', 'psych test'] },
+  { id: 'background_check', aliases: ['background check'] },
+  { id: 'second_interview', aliases: ['2nd interview', 'second interview', 'user interview'] },
+  { id: 'ready_for_hiring', aliases: ['ready for hiring'] },
+];
+
+function slugifyName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function matchFunnelStageId(name: string): string | null {
+  const n = slugifyName(name);
+  const found = FUNNEL_STAGE_ALIASES.find((stage) =>
+    stage.aliases.some((alias) => n === alias || n.includes(alias)),
+  );
+  return found?.id ?? null;
+}
+
+function mapFunnelBreakdown(
+  raw: ApiFunnelStage | undefined,
+  dummy: FunnelBreakdownItem[],
+  stageCount: number,
+): FunnelBreakdownItem[] {
+  if (dummy.length === 0) return [];
+  const rows = raw?.items ?? raw?.breakdown ?? [];
+  if (rows.length > 0) {
+    return dummy.map((item) => {
+      const match = rows.find((row) => {
+        const label = slugifyName(String(row.label ?? row.name ?? ''));
+        return label === slugifyName(item.label) || label.includes(slugifyName(item.label));
+      });
+      const count = match ? num(match.count) : 0;
+      const percentRaw = match ? num(match.percent ?? match.pct) : 0;
+      const percent =
+        percentRaw > 0
+          ? percentRaw
+          : stageCount > 0
+            ? Math.round((count / stageCount) * 1000) / 10
+            : 0;
+      return { label: item.label, count, percent };
+    });
+  }
+
+  const dummyTotal = dummy.reduce((sum, item) => sum + item.count, 0) || 1;
+  return dummy.map((item) => {
+    const count = Math.round((item.count / dummyTotal) * stageCount);
+    const percent = stageCount > 0 ? Math.round((count / stageCount) * 1000) / 10 : 0;
+    return { label: item.label, count, percent };
+  });
+}
+
+function mapCurrentRecruitmentFunnel(
+  json: ApiSourcingAnalyticsResponse,
+): CurrentRecruitmentFunnelStage[] {
+  const raw = json.current_recruitment_funnel ?? json.recruitment_funnel ?? [];
+  if (raw.length === 0) return DUMMY_CURRENT_RECRUITMENT_FUNNEL;
+
+  return DUMMY_CURRENT_RECRUITMENT_FUNNEL.map((template) => {
+    const match = raw.find((stage) => {
+      const id = matchFunnelStageId(String(stage.stage_name ?? stage.title ?? ''));
+      return id === template.id;
+    });
+    const count = match ? num(match.total_count ?? match.count) : template.count;
+    return {
+      ...template,
+      count,
+      breakdown: mapFunnelBreakdown(match, template.breakdown, count),
+    };
+  });
+}
+
+function mapRecruitmentProductivity(
+  json: ApiSourcingAnalyticsResponse,
+): RecruitmentProductivityMetric[] {
+  const raw = json.recruitment_productivity;
+  if (!raw) return DUMMY_RECRUITMENT_PRODUCTIVITY;
+
+  const values: Record<string, number | undefined> = {
+    new_candidates: raw.new_candidates !== undefined ? num(raw.new_candidates) : undefined,
+    processed: raw.processed !== undefined ? num(raw.processed) : undefined,
+    interviewed: raw.interviewed !== undefined ? num(raw.interviewed) : undefined,
+    psych_test_assigned:
+      raw.psych_test_assigned !== undefined || raw.psychological_test_assigned !== undefined
+        ? num(raw.psych_test_assigned ?? raw.psychological_test_assigned)
+        : undefined,
+    ready_for_hiring: raw.ready_for_hiring !== undefined ? num(raw.ready_for_hiring) : undefined,
+    hired_by_ta:
+      raw.hired_by_ta !== undefined || raw.hired !== undefined
+        ? num(raw.hired_by_ta ?? raw.hired)
+        : undefined,
+    hiring_rate:
+      raw.hiring_rate_percent !== undefined || raw.hiring_rate !== undefined
+        ? num(raw.hiring_rate_percent ?? raw.hiring_rate)
+        : undefined,
+  };
+
+  return DUMMY_RECRUITMENT_PRODUCTIVITY.map((metric) => ({
+    ...metric,
+    value: values[metric.id] ?? metric.value,
+  }));
+}
+
 function mapKpis(summary?: ApiSourcingAnalyticsResponse['summary']): SourcingExecutiveKpis {
+  const client_target = num(summary?.client_target);
+  const on_board = num(summary?.total_onboard ?? summary?.onboard ?? summary?.on_board);
+  const hiring_gap_raw = summary?.hiring_gap_v2 ?? summary?.hiring_gap;
+  const hiring_gap =
+    hiring_gap_raw !== undefined && hiring_gap_raw !== null
+      ? num(hiring_gap_raw)
+      : Math.max(0, client_target - on_board);
+  const fulfillmentFromApi = summary?.fulfillment_rate_percent ?? summary?.fulfillment_rate;
+  const fulfillment_rate =
+    fulfillmentFromApi !== undefined && fulfillmentFromApi !== null
+      ? num(fulfillmentFromApi)
+      : client_target > 0
+        ? Math.round((on_board / client_target) * 1000) / 10
+        : 0;
+
   return {
     sourcing_target: num(summary?.sourcing_target),
     cv_received: num(summary?.cv_received),
     sourcing_gap: num(summary?.sourcing_gap),
     avg_ai_score: num(summary?.avg_ai_score),
     cv_stock_coverage: num(summary?.cv_stock_coverage ?? summary?.active_cv_stock_coverage),
-    client_target: num(summary?.client_target),
+    client_target,
     hired: num(summary?.hired_by_ta ?? summary?.hired),
-    on_board: num(summary?.swing ?? summary?.onboard ?? summary?.on_board),
-    hiring_gap: num(summary?.hiring_gap_v2 ?? summary?.hiring_gap),
+    swing: num(summary?.swing),
+    on_board,
+    on_pipe_funnel: num(
+      summary?.on_pipe_funnel ?? summary?.on_pipe ?? summary?.candidates_in_process,
+    ),
+    hiring_gap,
+    fulfillment_rate,
     cv_to_hire_conversion: num(summary?.cv_to_hire_conversion ?? summary?.cv_to_hire_rate),
   };
 }
@@ -394,10 +724,11 @@ function mapCandidateHiringProfile(
 function mapSourcingApiToDashboard(json: ApiSourcingAnalyticsResponse): SourcingDashboardData {
   const kpis = mapKpis(json.summary);
   const avgAiScore = num(json.sourcing_quality?.avg_ai_score ?? kpis.avg_ai_score);
+  const trend = mapTrend(json.sourcing_performance);
 
   return {
     kpis: { ...kpis, avg_ai_score: avgAiScore },
-    trend: mapTrend(json.sourcing_performance),
+    trend,
     aiScoreDistribution: mapNamedCounts(json.sourcing_quality?.score_distribution, 'bucket'),
     cvBySkill: mapNamedCounts(
       json.sourcing_quality?.cv_by_role_grouping ?? json.sourcing_quality?.cv_by_skill,
@@ -411,6 +742,9 @@ function mapSourcingApiToDashboard(json: ApiSourcingAnalyticsResponse): Sourcing
       json.candidate_sources,
       mapSourceByChannel(json.candidate_source_by_channel ?? json.candidate_hiring_profile?.candidate_source_by_channel),
     ),
+    newCandidateGrowth: mapNewCandidateGrowth(json, trend),
+    currentRecruitmentFunnel: mapCurrentRecruitmentFunnel(json),
+    recruitmentProductivity: mapRecruitmentProductivity(json),
     avgAiScore,
   };
 }
@@ -424,14 +758,25 @@ export const EMPTY_SOURCING_DASHBOARD: SourcingDashboardData = {
     cv_stock_coverage: 0,
     client_target: 0,
     hired: 0,
+    swing: 0,
     on_board: 0,
+    on_pipe_funnel: 0,
     hiring_gap: 0,
+    fulfillment_rate: 0,
     cv_to_hire_conversion: 0,
   },
   trend: [],
   aiScoreDistribution: [],
   cvBySkill: [],
   candidateSources: [],
+  newCandidateGrowth: {
+    total: 0,
+    processed: 0,
+    not_processed: 0,
+    trend: [],
+  },
+  currentRecruitmentFunnel: DUMMY_CURRENT_RECRUITMENT_FUNNEL,
+  recruitmentProductivity: DUMMY_RECRUITMENT_PRODUCTIVITY,
   candidateHiringProfile: {
     age_distribution: [],
     gender_distribution: [],

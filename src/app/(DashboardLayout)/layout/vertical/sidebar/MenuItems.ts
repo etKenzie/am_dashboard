@@ -172,6 +172,14 @@ const Menuitems: MenuitemsType[] = [
 
   {
     id: uniqueId(),
+    title: "Recruitment Mockup",
+    icon: IconMask,
+    href: "/recruitment-mockup",
+    requiredRoles: [ROLES.ADMIN, ROLES.RECRUITMENT, ROLES.SOURCING],
+  },
+
+  {
+    id: uniqueId(),
     title: "Associates On Payroll",
     icon: IconBuilding,
     href: "/aop",

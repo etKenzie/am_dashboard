@@ -360,7 +360,7 @@ export default function SourcingOverview() {
     },
     {
       title: 'Swing',
-      value: formatNumber(kpis.on_board),
+      value: formatNumber(kpis.swing),
       icon: IconRefresh,
       iconColor: '#059669',
     },

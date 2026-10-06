@@ -8,8 +8,12 @@ export interface SourcingExecutiveKpis {
   cv_stock_coverage: number;
   client_target: number;
   hired: number;
+  swing: number;
   on_board: number;
+  on_pipe_funnel: number;
   hiring_gap: number;
+  /** 0–100 */
+  fulfillment_rate: number;
   /** 0–100 */
   cv_to_hire_conversion: number;
 }
@@ -21,6 +25,115 @@ export interface SourcingTrendPoint {
   cv_received: number;
   sourcing_gap: number;
 }
+
+export interface NewCandidateGrowthPoint {
+  period: string;
+  period_label: string;
+  processed: number;
+  not_processed: number;
+}
+
+export interface NewCandidateGrowthData {
+  total: number;
+  processed: number;
+  not_processed: number;
+  trend: NewCandidateGrowthPoint[];
+}
+
+export interface FunnelBreakdownItem {
+  label: string;
+  count: number;
+  percent: number;
+}
+
+export interface CurrentRecruitmentFunnelStage {
+  id: string;
+  title: string;
+  count: number;
+  breakdown: FunnelBreakdownItem[];
+}
+
+export const DUMMY_CURRENT_RECRUITMENT_FUNNEL: CurrentRecruitmentFunnelStage[] = [
+  {
+    id: 'pipeline',
+    title: 'Pipeline List',
+    count: 1646,
+    breakdown: [
+      { label: 'Processed', count: 1020, percent: 62.0 },
+      { label: 'Not Processed', count: 626, percent: 38.0 },
+    ],
+  },
+  {
+    id: 'hr_interview',
+    title: 'HR Interview',
+    count: 103,
+    breakdown: [
+      { label: 'AI Interview', count: 48, percent: 46.6 },
+      { label: 'Online Interview', count: 35, percent: 34.0 },
+      { label: 'Offline Interview', count: 20, percent: 19.4 },
+    ],
+  },
+  {
+    id: 'skill_test',
+    title: 'Skill Test',
+    count: 79,
+    breakdown: [
+      { label: 'Completed', count: 64, percent: 81.0 },
+      { label: 'Not Tested', count: 15, percent: 19.0 },
+    ],
+  },
+  {
+    id: 'psychological_test',
+    title: 'Psychological Test',
+    count: 70,
+    breakdown: [
+      { label: 'Recommended', count: 42, percent: 60.0 },
+      { label: 'Considered', count: 18, percent: 25.7 },
+      { label: 'Not Recommended', count: 10, percent: 14.3 },
+    ],
+  },
+  {
+    id: 'background_check',
+    title: 'Background Check',
+    count: 40,
+    breakdown: [
+      { label: 'Passed', count: 32, percent: 80.0 },
+      { label: 'Not Passed', count: 8, percent: 20.0 },
+    ],
+  },
+  {
+    id: 'second_interview',
+    title: '2nd Interview',
+    count: 22,
+    breakdown: [
+      { label: 'Online Interview', count: 14, percent: 63.6 },
+      { label: 'Offline Interview', count: 8, percent: 36.4 },
+    ],
+  },
+  {
+    id: 'ready_for_hiring',
+    title: 'Ready for Hiring',
+    count: 8,
+    breakdown: [],
+  },
+];
+
+export interface RecruitmentProductivityMetric {
+  id: string;
+  title: string;
+  value: number;
+  format: 'count' | 'percent';
+}
+
+export const DUMMY_RECRUITMENT_PRODUCTIVITY: RecruitmentProductivityMetric[] = [
+  { id: 'new_candidates', title: 'New Candidates', value: 1646, format: 'count' },
+  { id: 'processed', title: 'Processed', value: 1020, format: 'count' },
+  { id: 'interviewed', title: 'Interviewed', value: 103, format: 'count' },
+  { id: 'psych_test_assigned', title: 'Psych Test Assigned', value: 70, format: 'count' },
+  { id: 'ready_for_hiring', title: 'Ready for Hiring', value: 8, format: 'count' },
+  { id: 'hired_by_ta', title: 'Hired by TA', value: 6, format: 'count' },
+  { id: 'hiring_rate', title: 'Hiring Rate', value: 75.0, format: 'percent' },
+];
 
 export interface SourcingFilterOption {
   id: string;
@@ -35,6 +148,8 @@ export interface SourcingFilterOptions {
   segments: SourcingFilterOption[];
   recruitment_types: SourcingFilterOption[];
   sourcing_pics: SourcingFilterOption[];
+  priorities: SourcingFilterOption[];
+  roles: SourcingFilterOption[];
 }
 
 export const EMPTY_SOURCING_FILTER_OPTIONS: SourcingFilterOptions = {
@@ -48,6 +163,8 @@ export const EMPTY_SOURCING_FILTER_OPTIONS: SourcingFilterOptions = {
     { id: 'Replacement', name: 'Replacement' },
   ],
   sourcing_pics: [],
+  priorities: [],
+  roles: [],
 };
 
 /** Fallback when API omits recruitment_types (matches profile chart labels). */
@@ -88,6 +205,12 @@ export const DUMMY_SOURCING_FILTER_OPTIONS: SourcingFilterOptions = {
     { id: '1', name: 'PIC A' },
     { id: '2', name: 'PIC B' },
   ],
+  priorities: [
+    { id: 'high', name: 'High' },
+    { id: 'medium', name: 'Medium' },
+    { id: 'low', name: 'Low' },
+  ],
+  roles: [],
 };
 
 export const DUMMY_SOURCING_KPIS: SourcingExecutiveKpis = {
@@ -98,8 +221,11 @@ export const DUMMY_SOURCING_KPIS: SourcingExecutiveKpis = {
   cv_stock_coverage: 1.6,
   client_target: 980,
   hired: 745,
+  swing: 48,
   on_board: 612,
-  hiring_gap: -235,
+  on_pipe_funnel: 186,
+  hiring_gap: 368,
+  fulfillment_rate: 62.4,
   cv_to_hire_conversion: 19.4,
 };
 
