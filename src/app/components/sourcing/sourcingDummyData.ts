@@ -1,5 +1,3 @@
-import type { AopUiFilterState } from '../aop/aopChartHelpers';
-
 export interface SourcingExecutiveKpis {
   sourcing_target: number;
   cv_received: number;
@@ -16,6 +14,17 @@ export interface SourcingExecutiveKpis {
   fulfillment_rate: number;
   /** 0–100 */
   cv_to_hire_conversion: number;
+}
+
+export interface RecruitmentExecutiveKpis {
+  client_target: number | null;
+  hired: number;
+  swing: number;
+  on_board: number;
+  on_pipe_funnel: number;
+  hiring_gap: number | null;
+  /** 0–100, null when there is no client target */
+  fulfillment_rate: number | null;
 }
 
 export interface SourcingTrendPoint {
@@ -51,72 +60,8 @@ export interface CurrentRecruitmentFunnelStage {
   title: string;
   count: number;
   breakdown: FunnelBreakdownItem[];
+  extraBreakdown?: FunnelBreakdownItem[];
 }
-
-export const DUMMY_CURRENT_RECRUITMENT_FUNNEL: CurrentRecruitmentFunnelStage[] = [
-  {
-    id: 'pipeline',
-    title: 'Pipeline List',
-    count: 1646,
-    breakdown: [
-      { label: 'Processed', count: 1020, percent: 62.0 },
-      { label: 'Not Processed', count: 626, percent: 38.0 },
-    ],
-  },
-  {
-    id: 'hr_interview',
-    title: 'HR Interview',
-    count: 103,
-    breakdown: [
-      { label: 'AI Interview', count: 48, percent: 46.6 },
-      { label: 'Online Interview', count: 35, percent: 34.0 },
-      { label: 'Offline Interview', count: 20, percent: 19.4 },
-    ],
-  },
-  {
-    id: 'skill_test',
-    title: 'Skill Test',
-    count: 79,
-    breakdown: [
-      { label: 'Completed', count: 64, percent: 81.0 },
-      { label: 'Not Tested', count: 15, percent: 19.0 },
-    ],
-  },
-  {
-    id: 'psychological_test',
-    title: 'Psychological Test',
-    count: 70,
-    breakdown: [
-      { label: 'Recommended', count: 42, percent: 60.0 },
-      { label: 'Considered', count: 18, percent: 25.7 },
-      { label: 'Not Recommended', count: 10, percent: 14.3 },
-    ],
-  },
-  {
-    id: 'background_check',
-    title: 'Background Check',
-    count: 40,
-    breakdown: [
-      { label: 'Passed', count: 32, percent: 80.0 },
-      { label: 'Not Passed', count: 8, percent: 20.0 },
-    ],
-  },
-  {
-    id: 'second_interview',
-    title: '2nd Interview',
-    count: 22,
-    breakdown: [
-      { label: 'Online Interview', count: 14, percent: 63.6 },
-      { label: 'Offline Interview', count: 8, percent: 36.4 },
-    ],
-  },
-  {
-    id: 'ready_for_hiring',
-    title: 'Ready for Hiring',
-    count: 8,
-    breakdown: [],
-  },
-];
 
 export interface RecruitmentProductivityMetric {
   id: string;
@@ -124,16 +69,6 @@ export interface RecruitmentProductivityMetric {
   value: number;
   format: 'count' | 'percent';
 }
-
-export const DUMMY_RECRUITMENT_PRODUCTIVITY: RecruitmentProductivityMetric[] = [
-  { id: 'new_candidates', title: 'New Candidates', value: 1646, format: 'count' },
-  { id: 'processed', title: 'Processed', value: 1020, format: 'count' },
-  { id: 'interviewed', title: 'Interviewed', value: 103, format: 'count' },
-  { id: 'psych_test_assigned', title: 'Psych Test Assigned', value: 70, format: 'count' },
-  { id: 'ready_for_hiring', title: 'Ready for Hiring', value: 8, format: 'count' },
-  { id: 'hired_by_ta', title: 'Hired by TA', value: 6, format: 'count' },
-  { id: 'hiring_rate', title: 'Hiring Rate', value: 75.0, format: 'percent' },
-];
 
 export interface SourcingFilterOption {
   id: string;
@@ -171,155 +106,9 @@ export const EMPTY_SOURCING_FILTER_OPTIONS: SourcingFilterOptions = {
 export const DEFAULT_RECRUITMENT_TYPE_OPTIONS: SourcingFilterOption[] =
   EMPTY_SOURCING_FILTER_OPTIONS.recruitment_types;
 
-/** Dummy filter options until the Sourcing API is wired. */
-export const DUMMY_SOURCING_FILTER_OPTIONS: SourcingFilterOptions = {
-  employers: [
-    { id: '1', name: 'VI' },
-    { id: '2', name: 'VSDM' },
-  ],
-  sourced_to: [
-    { id: '60', name: 'PT Wahana Ottomitra Multiartha' },
-    { id: '82', name: 'PT Bank UOB Indonesia' },
-    { id: '224', name: 'PT Bank Negara Indonesia' },
-  ],
-  projects: [
-    { id: '108', name: 'WOM Finance' },
-    { id: '142', name: 'Bank UOB Sales' },
-    { id: '373', name: 'BNI Sales Generalis' },
-  ],
-  branches: [
-    { id: 'Jakarta', name: 'Jakarta' },
-    { id: 'Surabaya', name: 'Surabaya' },
-    { id: 'Bandung', name: 'Bandung' },
-  ],
-  segments: [
-    { id: '3,8,9', name: 'All BFSI' },
-    { id: '3', name: 'BFSI Bank' },
-    { id: '8', name: 'BFSI Multi Finance' },
-    { id: '1,2,5,6', name: 'All Non-BFSI' },
-    { id: '1', name: 'Non BFSI Logistic' },
-    { id: '6', name: 'Non BFSI E-commerce' },
-  ],
-  recruitment_types: DEFAULT_RECRUITMENT_TYPE_OPTIONS,
-  sourcing_pics: [
-    { id: '1', name: 'PIC A' },
-    { id: '2', name: 'PIC B' },
-  ],
-  priorities: [
-    { id: 'high', name: 'High' },
-    { id: 'medium', name: 'Medium' },
-    { id: 'low', name: 'Low' },
-  ],
-  roles: [],
-};
-
-export const DUMMY_SOURCING_KPIS: SourcingExecutiveKpis = {
-  sourcing_target: 4200,
-  cv_received: 3850,
-  sourcing_gap: 350,
-  avg_ai_score: 78.4,
-  cv_stock_coverage: 1.6,
-  client_target: 980,
-  hired: 745,
-  swing: 48,
-  on_board: 612,
-  on_pipe_funnel: 186,
-  hiring_gap: 368,
-  fulfillment_rate: 62.4,
-  cv_to_hire_conversion: 19.4,
-};
-
-const MONTH_LABELS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
-/** Dummy month-to-month series for Target vs CV Received vs Sourcing Gap. */
-export function getDummySourcingTrend(year: string): SourcingTrendPoint[] {
-  const y = year || String(new Date().getFullYear());
-  const targets = [3100, 3200, 3350, 3500, 3600, 3800, 4000, 4200, 4300, 4400, 4500, 4600];
-  const received = [2950, 3080, 3420, 3310, 3550, 3720, 3910, 3850, 0, 0, 0, 0];
-
-  return MONTH_LABELS.map((label, index) => {
-    const sourcing_target = targets[index];
-    const cv_received = received[index];
-    return {
-      period: `${y}-${String(index + 1).padStart(2, '0')}`,
-      period_label: `${label} ${y}`,
-      sourcing_target,
-      cv_received,
-      sourcing_gap: Math.abs(sourcing_target - cv_received),
-    };
-  });
-}
-
-export function buildDummySourcingKpis(filters: AopUiFilterState): SourcingExecutiveKpis {
-  // Soft variation from filters so Apply Filters feels responsive before real API.
-  const seed =
-    Number(filters.employer || 0)
-    + Number(filters.project || 0)
-    + (filters.clientSegments?.length ?? 0) * 7
-    + Number(filters.month || 1);
-
-  const delta = (seed % 11) * 12;
-  const sourcing_target = DUMMY_SOURCING_KPIS.sourcing_target + delta;
-  const cv_received = DUMMY_SOURCING_KPIS.cv_received + Math.round(delta * 0.7);
-  return {
-    ...DUMMY_SOURCING_KPIS,
-    sourcing_target,
-    cv_received,
-    sourcing_gap: Math.abs(sourcing_target - cv_received),
-    hired: DUMMY_SOURCING_KPIS.hired + Math.round(delta * 0.15),
-    on_board: DUMMY_SOURCING_KPIS.on_board + Math.round(delta * 0.1),
-  };
-}
-
 export interface SourcingNamedCount {
   label: string;
   value: number;
-}
-
-export const DUMMY_AI_SCORE_DISTRIBUTION: SourcingNamedCount[] = [
-  { label: '0-40', value: 420 },
-  { label: '41-60', value: 980 },
-  { label: '61-80', value: 1650 },
-  { label: '81-100', value: 800 },
-];
-
-export const DUMMY_CV_BY_SKILL: SourcingNamedCount[] = [
-  { label: 'Sales', value: 920 },
-  { label: 'Customer Service', value: 780 },
-  { label: 'Logistics', value: 640 },
-  { label: 'Admin', value: 510 },
-  { label: 'Finance', value: 390 },
-  { label: 'IT Support', value: 310 },
-  { label: 'Operations', value: 300 },
-];
-
-export function getDummyAiScoreDistribution(filters: AopUiFilterState): SourcingNamedCount[] {
-  const bump = (Number(filters.month || 1) % 5) * 8;
-  return DUMMY_AI_SCORE_DISTRIBUTION.map((row, index) => ({
-    ...row,
-    value: row.value + bump * (index + 1),
-  }));
-}
-
-export function getDummyCvBySkill(filters: AopUiFilterState): SourcingNamedCount[] {
-  const bump = (Number(filters.project || 0) % 7) * 6;
-  return DUMMY_CV_BY_SKILL.map((row, index) => ({
-    ...row,
-    value: Math.max(0, row.value + bump - index * 4),
-  }));
 }
 
 /** One row of "Candidate Source by Channel" (received CVs per application channel). */
@@ -340,67 +129,3 @@ export interface CandidateHiringProfileData {
   candidate_source_by_channel: SourcingChannelCount[];
 }
 
-export const DUMMY_CANDIDATE_HIRING_PROFILE: CandidateHiringProfileData = {
-  age_distribution: [
-    { label: '< 21', value: 180 },
-    { label: '21-25', value: 920 },
-    { label: '26-30', value: 1180 },
-    { label: '31-35', value: 740 },
-    { label: '36-40', value: 420 },
-    { label: '> 40', value: 210 },
-  ],
-  gender_distribution: [
-    { label: 'Male', value: 2100 },
-    { label: 'Female', value: 1480 },
-    { label: 'Other / Undisclosed', value: 70 },
-  ],
-  salary_range: [
-    { label: '< 4jt', value: 510 },
-    { label: '4-6jt', value: 980 },
-    { label: '6-8jt', value: 1120 },
-    { label: '8-12jt', value: 640 },
-    { label: '> 12jt', value: 280 },
-  ],
-  minimum_education: [
-    { label: 'SMA / SMK', value: 980 },
-    { label: 'D3', value: 720 },
-    { label: 'S1', value: 1450 },
-    { label: 'S2+', value: 180 },
-  ],
-  working_type: [
-    { label: 'Onsite', value: 2180 },
-    { label: 'Hybrid', value: 980 },
-    { label: 'Remote', value: 490 },
-  ],
-  recruitment_type: [
-    { label: 'New Hire', value: 2410 },
-    { label: 'Replacement', value: 1240 },
-  ],
-  candidate_source_by_channel: [
-    { source_id: '0', label: 'Career Page', value: 1543, percent: 97.7 },
-    { source_id: '9', label: 'Re-hire', value: 12, percent: 0.8 },
-    { source_id: '4', label: 'Social Media', value: 11, percent: 0.7 },
-    { source_id: '6', label: 'Walk In Interview', value: 10, percent: 0.6 },
-    { source_id: '8', label: 'Referral', value: 3, percent: 0.2 },
-  ],
-};
-
-function bumpNamedCounts(rows: SourcingNamedCount[], bump: number): SourcingNamedCount[] {
-  return rows.map((row, index) => ({
-    ...row,
-    value: Math.max(0, row.value + bump - index * 3),
-  }));
-}
-
-export function getDummyCandidateHiringProfile(filters: AopUiFilterState): CandidateHiringProfileData {
-  const bump = (Number(filters.month || 1) % 6) * 5 + (filters.clientSegments?.length ?? 0) * 4;
-  return {
-    age_distribution: bumpNamedCounts(DUMMY_CANDIDATE_HIRING_PROFILE.age_distribution, bump),
-    gender_distribution: bumpNamedCounts(DUMMY_CANDIDATE_HIRING_PROFILE.gender_distribution, bump),
-    salary_range: bumpNamedCounts(DUMMY_CANDIDATE_HIRING_PROFILE.salary_range, bump),
-    minimum_education: bumpNamedCounts(DUMMY_CANDIDATE_HIRING_PROFILE.minimum_education, bump),
-    working_type: bumpNamedCounts(DUMMY_CANDIDATE_HIRING_PROFILE.working_type, bump),
-    recruitment_type: bumpNamedCounts(DUMMY_CANDIDATE_HIRING_PROFILE.recruitment_type, bump),
-    candidate_source_by_channel: DUMMY_CANDIDATE_HIRING_PROFILE.candidate_source_by_channel,
-  };
-}

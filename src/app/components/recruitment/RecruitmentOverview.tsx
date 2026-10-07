@@ -37,6 +37,12 @@ const EMPTY_FILTER_OPTIONS: RecruitmentFilterOptions = {
   branches: [],
   segments: [],
   product_types: [],
+  priorities: [],
+  roles: [],
+  hiring_types: [],
+  recruitment_types: [],
+  recruitment_pics: [],
+  sourcing_pics: [],
 };
 
 function formatNumber(value: number): string {

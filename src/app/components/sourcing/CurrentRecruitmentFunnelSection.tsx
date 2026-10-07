@@ -1,10 +1,20 @@
 'use client';
 
 import { Box, Card, CircularProgress, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { IconChevronRight } from '@tabler/icons-react';
+import type { Icon } from '@tabler/icons-react';
+import {
+  IconChevronRight,
+  IconClipboardCheck,
+  IconListDetails,
+  IconMessageCircle,
+  IconMoodSmile,
+  IconShieldCheck,
+  IconUserCheck,
+  IconUsersGroup,
+} from '@tabler/icons-react';
 import { useState } from 'react';
 import { aopCardOuterSx } from '../aop/aopStyles';
-import type { CurrentRecruitmentFunnelStage } from './sourcingDummyData';
+import type { CurrentRecruitmentFunnelStage, FunnelBreakdownItem } from './sourcingDummyData';
 
 interface CurrentRecruitmentFunnelSectionProps {
   stages: CurrentRecruitmentFunnelStage[];
@@ -22,6 +32,76 @@ function formatPercent(value: number): string {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   })}%`;
+}
+
+function withAlpha(hex: string, alpha: number): string {
+  const normalized = hex.replace('#', '');
+  if (normalized.length !== 6) return hex;
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+const FUNNEL_STAGE_ICONS: Record<string, { icon: Icon; color: string }> = {
+  pipeline_list: { icon: IconListDetails, color: '#4F46E5' },
+  pipeline: { icon: IconListDetails, color: '#4F46E5' },
+  hr_interview: { icon: IconMessageCircle, color: '#2563EB' },
+  skill_test: { icon: IconClipboardCheck, color: '#0891B2' },
+  psychological_test: { icon: IconMoodSmile, color: '#7C3AED' },
+  background_check: { icon: IconShieldCheck, color: '#0D9488' },
+  second_interview: { icon: IconUsersGroup, color: '#EA580C' },
+  ready_for_hiring: { icon: IconUserCheck, color: '#16A34A' },
+};
+
+function funnelIconFor(stageId: string): { icon: Icon; color: string } {
+  return FUNNEL_STAGE_ICONS[stageId] ?? { icon: IconListDetails, color: '#64748B' };
+}
+
+function BreakdownList({
+  items,
+  valueMode,
+  caption,
+}: {
+  items: FunnelBreakdownItem[];
+  valueMode: FunnelValueMode;
+  caption?: string;
+}) {
+  if (items.length === 0) return null;
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mt: 0.5 }}>
+      {caption && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          fontWeight={700}
+          sx={{ lineHeight: 1.25, display: 'block', textTransform: 'uppercase', letterSpacing: 0.4 }}
+        >
+          {caption}
+        </Typography>
+      )}
+      {items.map((item) => (
+        <Box key={item.label}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            fontWeight={600}
+            sx={{ lineHeight: 1.25, display: 'block' }}
+          >
+            {item.label}
+          </Typography>
+          <Typography
+            variant="caption"
+            fontWeight={700}
+            sx={{ fontVariantNumeric: 'tabular-nums', display: 'block', lineHeight: 1.25 }}
+          >
+            {valueMode === 'percent' ? formatPercent(item.percent) : formatNumber(item.count)}
+          </Typography>
+        </Box>
+      ))}
+    </Box>
+  );
 }
 
 const CurrentRecruitmentFunnelSection = ({
@@ -71,6 +151,10 @@ const CurrentRecruitmentFunnelSection = ({
             <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', py: 6 }}>
               <CircularProgress />
             </Box>
+          ) : stages.length === 0 ? (
+            <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', py: 6 }}>
+              <Typography color="text.secondary">No funnel data</Typography>
+            </Box>
           ) : (
             stages.map((stage, index) => (
                 <Box
@@ -87,15 +171,37 @@ const CurrentRecruitmentFunnelSection = ({
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 0.5 }}>
-                    <Typography
-                      color="text.secondary"
-                      fontWeight={600}
-                      sx={{ fontSize: '0.75rem', lineHeight: 1.3, pr: 0.5 }}
-                    >
-                      {stage.title}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0, pr: 0.5 }}>
+                      {(() => {
+                        const { icon: StageIcon, color } = funnelIconFor(stage.id);
+                        return (
+                          <Box
+                            sx={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: 1,
+                              bgcolor: withAlpha(color, 0.12),
+                              color,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <StageIcon size={16} stroke={1.75} />
+                          </Box>
+                        );
+                      })()}
+                      <Typography
+                        color="text.secondary"
+                        fontWeight={700}
+                        sx={{ fontSize: '0.75rem', lineHeight: 1.3 }}
+                      >
+                        {stage.title}
+                      </Typography>
+                    </Box>
                     {index < stages.length - 1 && (
-                      <Box sx={{ color: 'text.disabled', flexShrink: 0, mt: 0.1, display: { xs: 'none', lg: 'flex' } }}>
+                      <Box sx={{ color: 'text.disabled', flexShrink: 0, mt: 0.4, display: { xs: 'none', lg: 'flex' } }}>
                         <IconChevronRight size={16} stroke={2} />
                       </Box>
                     )}
@@ -111,29 +217,12 @@ const CurrentRecruitmentFunnelSection = ({
                   >
                     {formatNumber(stage.count)}
                   </Typography>
-                  {stage.breakdown.length > 0 && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mt: 0.5 }}>
-                      {stage.breakdown.map((item) => (
-                        <Box key={item.label}>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            fontWeight={600}
-                            sx={{ lineHeight: 1.25, display: 'block' }}
-                          >
-                            {item.label}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            fontWeight={700}
-                            sx={{ fontVariantNumeric: 'tabular-nums', display: 'block', lineHeight: 1.25 }}
-                          >
-                            {valueMode === 'percent' ? formatPercent(item.percent) : formatNumber(item.count)}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                  )}
+                  <BreakdownList items={stage.breakdown} valueMode={valueMode} />
+                  <BreakdownList
+                    items={stage.extraBreakdown ?? []}
+                    valueMode={valueMode}
+                    caption={stage.extraBreakdown && stage.extraBreakdown.length > 0 ? 'Status' : undefined}
+                  />
                 </Box>
             ))
           )}

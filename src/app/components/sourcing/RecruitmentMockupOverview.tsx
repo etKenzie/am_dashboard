@@ -13,81 +13,75 @@ import {
   type AopUiFilterState,
 } from '../aop/aopChartHelpers';
 import PageContainer from '../container/PageContainer';
-import {
-  isKasbonDateFilterReady,
-  kasbonDateParams,
-} from '../kasbon/kasbonDateHelpers';
 import RecruitmentSearchableSelect from '../recruitment/RecruitmentSearchableSelect';
 import {
-  EMPTY_SOURCING_DASHBOARD,
-  fetchSourcingAnalytics,
-  type SourcingFilters,
-} from '../../api/sourcing/SourcingSlice';
+  EMPTY_RECRUITMENT_EXECUTIVE,
+  EMPTY_RECRUITMENT_FILTER_OPTIONS,
+  fetchRecruitmentDashboard,
+  type RecruitmentFilterOptions,
+  type RecruitmentFilters,
+} from '../../api/recruitment/RecruitmentSlice';
 import CurrentRecruitmentFunnelSection from './CurrentRecruitmentFunnelSection';
 import RecruitmentProductivitySection from './RecruitmentProductivitySection';
 import NewCandidateGrowthSection from './NewCandidateGrowthSection';
 import RecruitmentOverviewSection from './RecruitmentOverviewSection';
-import {
-  EMPTY_SOURCING_FILTER_OPTIONS,
-  type SourcingExecutiveKpis,
-  type SourcingFilterOptions,
-  type NewCandidateGrowthData,
-  type CurrentRecruitmentFunnelStage,
-  type RecruitmentProductivityMetric,
+import type {
+  CurrentRecruitmentFunnelStage,
+  NewCandidateGrowthData,
+  RecruitmentExecutiveKpis,
+  RecruitmentProductivityMetric,
 } from './sourcingDummyData';
 
 const ALL_OPTION = { value: '0', label: 'All' };
 
-type SourcingUiFilterState = AopUiFilterState & {
+type RecruitmentUiFilterState = AopUiFilterState & {
   recruitmentType: string;
-  sourcingPic: string;
+  recruitmentPic: string;
   priority: string;
   role: string;
 };
 
-function createDefaultSourcingUiFilters(): SourcingUiFilterState {
+function createDefaultRecruitmentUiFilters(): RecruitmentUiFilterState {
   return {
     ...createDefaultAopUiFilters(),
     recruitmentType: '0',
-    sourcingPic: '0',
+    recruitmentPic: '0',
     priority: '0',
     role: '0',
   };
 }
 
-function areSourcingFiltersEqual(a: SourcingUiFilterState, b: SourcingUiFilterState): boolean {
+function areRecruitmentFiltersEqual(a: RecruitmentUiFilterState, b: RecruitmentUiFilterState): boolean {
   return (
     areAopFiltersEqual(a, b)
     && a.recruitmentType === b.recruitmentType
-    && a.sourcingPic === b.sourcingPic
+    && a.recruitmentPic === b.recruitmentPic
     && a.priority === b.priority
     && a.role === b.role
   );
 }
 
-function toSourcingFilters(filters: SourcingUiFilterState): SourcingFilters {
-  const dateParams = kasbonDateParams(filters);
-  const monthNum = filters.month ? Number(filters.month) : undefined;
-  const yearNum = filters.year ? Number(filters.year) : undefined;
+function toPeriod(filters: RecruitmentUiFilterState): string {
+  if (filters.year && filters.month) {
+    return `${filters.year}-${String(filters.month).padStart(2, '0')}`;
+  }
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
 
+function toRecruitmentFilters(filters: RecruitmentUiFilterState): RecruitmentFilters {
   return {
     employer: filters.employer,
     sourced_to: filters.sourcedTo,
     project: filters.project,
     branch: filters.branch,
-    client_segments: filters.clientSegments,
-    recruitment_type: filters.recruitmentType,
-    sourcing_pic: filters.sourcingPic,
+    customer_segments: [],
+    product_type: '0',
+    period: toPeriod(filters),
     priority: filters.priority,
     role: filters.role,
-    start_date: dateParams.start_date,
-    end_date: dateParams.end_date,
-    ...(filters.dateMode === 'month'
-      ? {
-          year: yearNum,
-          month: monthNum,
-        }
-      : {}),
+    recruitment_type: filters.recruitmentType,
+    recruitment_pic: filters.recruitmentPic,
   };
 }
 
@@ -96,46 +90,53 @@ function toSelectOptions(items: Array<{ id: string; name: string }>) {
 }
 
 export default function RecruitmentMockupOverview() {
-  const [pendingFilters, setPendingFilters] = useState<SourcingUiFilterState>(createDefaultSourcingUiFilters);
-  const [appliedFilters, setAppliedFilters] = useState<SourcingUiFilterState>(createDefaultSourcingUiFilters);
-  const [filterOptions, setFilterOptions] = useState<SourcingFilterOptions>(EMPTY_SOURCING_FILTER_OPTIONS);
-  const [kpis, setKpis] = useState<SourcingExecutiveKpis>(EMPTY_SOURCING_DASHBOARD.kpis);
+  const [pendingFilters, setPendingFilters] = useState<RecruitmentUiFilterState>(
+    createDefaultRecruitmentUiFilters,
+  );
+  const [appliedFilters, setAppliedFilters] = useState<RecruitmentUiFilterState>(
+    createDefaultRecruitmentUiFilters,
+  );
+  const [filterOptions, setFilterOptions] = useState<RecruitmentFilterOptions>(
+    EMPTY_RECRUITMENT_FILTER_OPTIONS,
+  );
+  const [kpis, setKpis] = useState<RecruitmentExecutiveKpis>(EMPTY_RECRUITMENT_EXECUTIVE.kpis);
   const [newCandidateGrowth, setNewCandidateGrowth] = useState<NewCandidateGrowthData>(
-    EMPTY_SOURCING_DASHBOARD.newCandidateGrowth,
+    EMPTY_RECRUITMENT_EXECUTIVE.newCandidateGrowth,
   );
   const [currentRecruitmentFunnel, setCurrentRecruitmentFunnel] = useState<CurrentRecruitmentFunnelStage[]>(
-    EMPTY_SOURCING_DASHBOARD.currentRecruitmentFunnel,
+    EMPTY_RECRUITMENT_EXECUTIVE.currentRecruitmentFunnel,
   );
   const [recruitmentProductivity, setRecruitmentProductivity] = useState<RecruitmentProductivityMetric[]>(
-    EMPTY_SOURCING_DASHBOARD.recruitmentProductivity,
+    EMPTY_RECRUITMENT_EXECUTIVE.recruitmentProductivity,
   );
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isKasbonDateFilterReady(appliedFilters)) return;
-
     let cancelled = false;
 
     const load = async () => {
       setLoading(true);
       setError(null);
       try {
-        const result = await fetchSourcingAnalytics(toSourcingFilters(appliedFilters));
+        const result = await fetchRecruitmentDashboard(toRecruitmentFilters(appliedFilters));
         if (cancelled) return;
-        setKpis(result.dashboard.kpis);
-        setNewCandidateGrowth(result.dashboard.newCandidateGrowth);
-        setCurrentRecruitmentFunnel(result.dashboard.currentRecruitmentFunnel);
-        setRecruitmentProductivity(result.dashboard.recruitmentProductivity);
+        setKpis(result.executive.kpis);
+        setNewCandidateGrowth(result.executive.newCandidateGrowth);
+        setCurrentRecruitmentFunnel(result.executive.currentRecruitmentFunnel);
+        setRecruitmentProductivity(result.executive.recruitmentProductivity);
+        setWarnings(result.executive.warnings);
         setFilterOptions(result.filterOptions);
       } catch (err) {
         if (cancelled) return;
-        console.error('Failed to load sourcing analytics:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load sourcing data');
-        setKpis(EMPTY_SOURCING_DASHBOARD.kpis);
-        setNewCandidateGrowth(EMPTY_SOURCING_DASHBOARD.newCandidateGrowth);
-        setCurrentRecruitmentFunnel(EMPTY_SOURCING_DASHBOARD.currentRecruitmentFunnel);
-        setRecruitmentProductivity(EMPTY_SOURCING_DASHBOARD.recruitmentProductivity);
+        console.error('Failed to load recruitment dashboard:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load recruitment dashboard');
+        setKpis(EMPTY_RECRUITMENT_EXECUTIVE.kpis);
+        setNewCandidateGrowth(EMPTY_RECRUITMENT_EXECUTIVE.newCandidateGrowth);
+        setCurrentRecruitmentFunnel(EMPTY_RECRUITMENT_EXECUTIVE.currentRecruitmentFunnel);
+        setRecruitmentProductivity(EMPTY_RECRUITMENT_EXECUTIVE.recruitmentProductivity);
+        setWarnings([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -147,38 +148,73 @@ export default function RecruitmentMockupOverview() {
     };
   }, [appliedFilters]);
 
+  useEffect(() => {
+    if (pendingFilters.employer === appliedFilters.employer) return;
+
+    let cancelled = false;
+
+    const loadOptions = async () => {
+      try {
+        const result = await fetchRecruitmentDashboard({
+          ...toRecruitmentFilters({
+            ...appliedFilters,
+            employer: pendingFilters.employer,
+            sourcedTo: '0',
+            project: '0',
+          }),
+        });
+        if (cancelled) return;
+        setFilterOptions(result.filterOptions);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('Failed to refresh recruitment filter options:', err);
+      }
+    };
+
+    void loadOptions();
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingFilters.employer, appliedFilters]);
+
   const handleApplyFilters = () => {
     setAppliedFilters(pendingFilters);
   };
 
   const hasPendingChanges = useMemo(
-    () => !areSourcingFiltersEqual(pendingFilters, appliedFilters),
+    () => !areRecruitmentFiltersEqual(pendingFilters, appliedFilters),
     [pendingFilters, appliedFilters],
   );
+
+  const entitySelected = pendingFilters.employer !== '0';
+  const hiringTypeSource =
+    filterOptions.hiring_types.length > 0
+      ? filterOptions.hiring_types
+      : filterOptions.recruitment_types;
 
   const employerOptions = useMemo(
     () => toSelectOptions(filterOptions.employers),
     [filterOptions.employers],
   );
   const sourcedToOptions = useMemo(
-    () => toSelectOptions(filterOptions.sourced_to),
-    [filterOptions.sourced_to],
+    () => (entitySelected ? toSelectOptions(filterOptions.sourced_to) : [ALL_OPTION]),
+    [entitySelected, filterOptions.sourced_to],
   );
   const projectOptions = useMemo(
-    () => toSelectOptions(filterOptions.projects),
-    [filterOptions.projects],
+    () => (entitySelected ? toSelectOptions(filterOptions.projects) : [ALL_OPTION]),
+    [entitySelected, filterOptions.projects],
   );
   const branchOptions = useMemo(
     () => toSelectOptions(filterOptions.branches),
     [filterOptions.branches],
   );
   const recruitmentTypeOptions = useMemo(
-    () => toSelectOptions(filterOptions.recruitment_types),
-    [filterOptions.recruitment_types],
+    () => toSelectOptions(hiringTypeSource),
+    [hiringTypeSource],
   );
-  const sourcingPicOptions = useMemo(
-    () => toSelectOptions(filterOptions.sourcing_pics),
-    [filterOptions.sourcing_pics],
+  const recruitmentPicOptions = useMemo(
+    () => toSelectOptions(filterOptions.recruitment_pics),
+    [filterOptions.recruitment_pics],
   );
   const priorityOptions = useMemo(
     () => toSelectOptions(filterOptions.priorities),
@@ -224,6 +260,12 @@ export default function RecruitmentMockupOverview() {
           </Typography>
         )}
 
+        {warnings.length > 0 && (
+          <Typography color="warning.main" variant="body2" sx={{ mb: 2 }}>
+            {warnings.join(' ')}
+          </Typography>
+        )}
+
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
           <Grid container spacing={2} width="100%">
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
@@ -238,7 +280,6 @@ export default function RecruitmentMockupOverview() {
                     employer: next,
                     sourcedTo: '0',
                     project: '0',
-                    branch: '0',
                   }))
                 }
               />
@@ -257,7 +298,7 @@ export default function RecruitmentMockupOverview() {
                 label="Client"
                 value={pendingFilters.sourcedTo}
                 options={sourcedToOptions}
-                disabled={loading && sourcedToOptions.length <= 1}
+                disabled={!entitySelected || (loading && sourcedToOptions.length <= 1)}
                 onChange={(next) =>
                   setPendingFilters((prev) => ({
                     ...prev,
@@ -272,17 +313,17 @@ export default function RecruitmentMockupOverview() {
                 label="Project"
                 value={pendingFilters.project}
                 options={projectOptions}
-                disabled={loading && projectOptions.length <= 1}
+                disabled={!entitySelected || (loading && projectOptions.length <= 1)}
                 onChange={(next) => setPendingFilters((prev) => ({ ...prev, project: next }))}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6, md: 2.4 }}>
               <RecruitmentSearchableSelect
                 label="Recruitment PIC"
-                value={pendingFilters.sourcingPic}
-                options={sourcingPicOptions}
-                disabled={loading && sourcingPicOptions.length <= 1}
-                onChange={(next) => setPendingFilters((prev) => ({ ...prev, sourcingPic: next }))}
+                value={pendingFilters.recruitmentPic}
+                options={recruitmentPicOptions}
+                disabled={loading && recruitmentPicOptions.length <= 1}
+                onChange={(next) => setPendingFilters((prev) => ({ ...prev, recruitmentPic: next }))}
               />
             </Grid>
           </Grid>

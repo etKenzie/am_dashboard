@@ -4,6 +4,13 @@
  */
 
 import { AM_MAIN_API_TOKEN, AM_MAIN_API_URL } from '@/utils/config';
+import type {
+  CurrentRecruitmentFunnelStage,
+  FunnelBreakdownItem,
+  NewCandidateGrowthData,
+  RecruitmentExecutiveKpis,
+  RecruitmentProductivityMetric,
+} from '@/app/components/sourcing/sourcingDummyData';
 
 export interface RecruitmentFilters {
   employer: string;
@@ -15,8 +22,15 @@ export interface RecruitmentFilters {
   product_type: string;
   year?: number;
   month?: number;
+  /** YYYY-MM — executive sections are month-scoped */
+  period?: string;
   start_date?: string;
   end_date?: string;
+  priority?: string;
+  role?: string;
+  recruitment_type?: string;
+  recruitment_pic?: string;
+  sourcing_pic?: string;
 }
 
 export interface RecruitmentFilterOption {
@@ -31,6 +45,12 @@ export interface RecruitmentFilterOptions {
   branches: RecruitmentFilterOption[];
   segments: RecruitmentFilterOption[];
   product_types: RecruitmentFilterOption[];
+  priorities: RecruitmentFilterOption[];
+  roles: RecruitmentFilterOption[];
+  hiring_types: RecruitmentFilterOption[];
+  recruitment_types: RecruitmentFilterOption[];
+  recruitment_pics: RecruitmentFilterOption[];
+  sourcing_pics: RecruitmentFilterOption[];
 }
 
 export interface RecruitmentSummary {
@@ -121,9 +141,18 @@ export interface RecruitmentDashboardData {
   candidate_quality: CandidateQualityInsights;
 }
 
+export interface RecruitmentExecutiveView {
+  kpis: RecruitmentExecutiveKpis;
+  newCandidateGrowth: NewCandidateGrowthData;
+  currentRecruitmentFunnel: CurrentRecruitmentFunnelStage[];
+  recruitmentProductivity: RecruitmentProductivityMetric[];
+  warnings: string[];
+}
+
 export interface RecruitmentDashboardResult {
   dashboard: RecruitmentDashboardData;
   filterOptions: RecruitmentFilterOptions;
+  executive: RecruitmentExecutiveView;
 }
 
 // --- Raw API types ---
@@ -142,6 +171,16 @@ interface ApiRecruitmentDashboardResponse {
     total_hired?: number;
     hiring_conversion_rate?: number;
     average_time_to_hire_days?: number;
+    client_target?: number | null;
+    on_pipe_funnel?: number;
+    hired_by_ta?: number;
+    swing?: number;
+    total_onboard?: number;
+    hiring_gap?: number | null;
+    fulfillment_rate_percent?: number | null;
+    new_candidates?: number;
+    processed?: number;
+    not_processed?: number;
   };
   candidate_growth?: {
     categories?: string[];
@@ -189,6 +228,40 @@ interface ApiRecruitmentDashboardResponse {
     branches?: ApiIdName[];
     segments?: ApiIdName[];
     product_types?: ApiIdName[];
+    priorities?: ApiIdName[];
+    roles?: ApiIdName[];
+    hiring_types?: ApiIdName[];
+    recruitment_types?: ApiIdName[];
+    recruitment_pics?: ApiIdName[];
+    sourcing_pics?: ApiIdName[];
+  };
+  new_candidate_growth?: {
+    period?: string;
+    total?: number;
+    processed?: number;
+    not_processed?: number;
+    categories?: string[];
+    series?: Array<{ name: string; data: number[] }>;
+  };
+  current_recruitment_funnel?: Array<{
+    stage_key?: string;
+    stage_name: string;
+    total_count: number;
+    pass_rate_percent?: number;
+    items?: Array<{ label: string; count: number; percent: number }>;
+    status_items?: Array<{ label: string; count: number; percent: number }>;
+  }>;
+  recruitment_productivity?: {
+    new_candidates?: number;
+    processed?: number;
+    interviewed?: number;
+    psych_test_assigned?: number;
+    ready_for_hiring?: number;
+    hired_by_ta?: number;
+    hiring_rate_percent?: number;
+  };
+  executive_meta?: {
+    warnings?: string[];
   };
 }
 
@@ -213,6 +286,12 @@ function num(value: unknown, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function numOrNull(value: unknown): number | null {
+  if (value === undefined || value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 function buildRecruitmentQueryParams(filters: RecruitmentFilters): URLSearchParams {
   const params = new URLSearchParams();
   const add = (key: string, val: string | number | undefined) => {
@@ -229,8 +308,15 @@ function buildRecruitmentQueryParams(filters: RecruitmentFilters): URLSearchPara
     add('segment', segmentIds.join(','));
   }
   add('product_type', filters.product_type);
+  add('priority', filters.priority);
+  add('role_id', filters.role);
+  add('recruitment_type', filters.recruitment_type);
+  add('recruitment_pic_id', filters.recruitment_pic);
+  add('sourcing_pic_id', filters.sourcing_pic);
 
-  if (filters.start_date && filters.end_date) {
+  if (filters.period) {
+    add('period', filters.period);
+  } else if (filters.start_date && filters.end_date) {
     add('start_date', filters.start_date);
     add('end_date', filters.end_date);
   } else if (filters.year != null) {
@@ -252,6 +338,88 @@ function mapFilterOptions(raw?: ApiRecruitmentDashboardResponse['filter_options'
     branches: mapList(raw?.branches),
     segments: mapList(raw?.segments),
     product_types: mapList(raw?.product_types),
+    priorities: mapList(raw?.priorities),
+    roles: mapList(raw?.roles),
+    hiring_types: mapList(raw?.hiring_types),
+    recruitment_types: mapList(raw?.recruitment_types),
+    recruitment_pics: mapList(raw?.recruitment_pics),
+    sourcing_pics: mapList(raw?.sourcing_pics),
+  };
+}
+
+function mapFunnelItems(
+  items?: Array<{ label: string; count: number; percent: number }>,
+): FunnelBreakdownItem[] {
+  return (items ?? []).map((item) => ({
+    label: String(item.label ?? ''),
+    count: num(item.count),
+    percent: num(item.percent),
+  }));
+}
+
+function mapNewCandidateGrowth(
+  raw?: ApiRecruitmentDashboardResponse['new_candidate_growth'],
+): NewCandidateGrowthData {
+  const categories = raw?.categories ?? [];
+  const processedSeries = (raw?.series ?? []).find((s) => s.name === 'Processed')?.data ?? [];
+  const notProcessedSeries = (raw?.series ?? []).find((s) => s.name === 'Not Processed')?.data ?? [];
+
+  return {
+    total: num(raw?.total),
+    processed: num(raw?.processed),
+    not_processed: num(raw?.not_processed),
+    trend: categories.map((period, index) => ({
+      period,
+      period_label: formatMonthCategory(period),
+      processed: num(processedSeries[index]),
+      not_processed: num(notProcessedSeries[index]),
+    })),
+  };
+}
+
+function mapCurrentRecruitmentFunnel(
+  stages?: ApiRecruitmentDashboardResponse['current_recruitment_funnel'],
+): CurrentRecruitmentFunnelStage[] {
+  return (stages ?? []).map((stage) => ({
+    id: stage.stage_key || slugify(stage.stage_name),
+    title: stage.stage_name,
+    count: num(stage.total_count),
+    breakdown: mapFunnelItems(stage.items),
+    extraBreakdown: mapFunnelItems(stage.status_items),
+  }));
+}
+
+function mapRecruitmentProductivity(
+  raw?: ApiRecruitmentDashboardResponse['recruitment_productivity'],
+): RecruitmentProductivityMetric[] {
+  return [
+    { id: 'new_candidates', title: 'New Candidates', value: num(raw?.new_candidates), format: 'count' },
+    { id: 'processed', title: 'Processed', value: num(raw?.processed), format: 'count' },
+    { id: 'interviewed', title: 'Interviewed', value: num(raw?.interviewed), format: 'count' },
+    { id: 'psych_test_assigned', title: 'Psych Test Assigned', value: num(raw?.psych_test_assigned), format: 'count' },
+    { id: 'ready_for_hiring', title: 'Ready for Hiring', value: num(raw?.ready_for_hiring), format: 'count' },
+    { id: 'hired_by_ta', title: 'Hired by TA', value: num(raw?.hired_by_ta), format: 'count' },
+    { id: 'hiring_rate', title: 'Hiring Rate', value: num(raw?.hiring_rate_percent), format: 'percent' },
+  ];
+}
+
+function mapRecruitmentExecutive(json: ApiRecruitmentDashboardResponse): RecruitmentExecutiveView {
+  const summary = json.summary ?? {};
+
+  return {
+    kpis: {
+      client_target: numOrNull(summary.client_target),
+      hired: num(summary.hired_by_ta),
+      swing: num(summary.swing),
+      on_board: num(summary.total_onboard),
+      on_pipe_funnel: num(summary.on_pipe_funnel),
+      hiring_gap: numOrNull(summary.hiring_gap),
+      fulfillment_rate: numOrNull(summary.fulfillment_rate_percent),
+    },
+    newCandidateGrowth: mapNewCandidateGrowth(json.new_candidate_growth),
+    currentRecruitmentFunnel: mapCurrentRecruitmentFunnel(json.current_recruitment_funnel),
+    recruitmentProductivity: mapRecruitmentProductivity(json.recruitment_productivity),
+    warnings: json.executive_meta?.warnings ?? [],
   };
 }
 
@@ -346,6 +514,37 @@ function mapRecruitmentApiToDashboard(json: ApiRecruitmentDashboardResponse): Re
   };
 }
 
+export const EMPTY_RECRUITMENT_FILTER_OPTIONS: RecruitmentFilterOptions = {
+  employers: [],
+  sourced_to: [],
+  projects: [],
+  branches: [],
+  segments: [],
+  product_types: [],
+  priorities: [],
+  roles: [],
+  hiring_types: [],
+  recruitment_types: [],
+  recruitment_pics: [],
+  sourcing_pics: [],
+};
+
+export const EMPTY_RECRUITMENT_EXECUTIVE: RecruitmentExecutiveView = {
+  kpis: {
+    client_target: null,
+    hired: 0,
+    swing: 0,
+    on_board: 0,
+    on_pipe_funnel: 0,
+    hiring_gap: null,
+    fulfillment_rate: null,
+  },
+  newCandidateGrowth: { total: 0, processed: 0, not_processed: 0, trend: [] },
+  currentRecruitmentFunnel: [],
+  recruitmentProductivity: mapRecruitmentProductivity(),
+  warnings: [],
+};
+
 export const EMPTY_RECRUITMENT_DASHBOARD: RecruitmentDashboardData = {
   summary: {
     total_applicants: 0,
@@ -421,5 +620,6 @@ export async function fetchRecruitmentDashboard(
   return {
     dashboard: mapRecruitmentApiToDashboard(json),
     filterOptions: mapFilterOptions(json.filter_options),
+    executive: mapRecruitmentExecutive(json),
   };
 }

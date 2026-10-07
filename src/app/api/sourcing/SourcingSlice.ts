@@ -16,11 +16,7 @@ import type {
   SourcingNamedCount,
   SourcingTrendPoint,
 } from '@/app/components/sourcing/sourcingDummyData';
-import {
-  DEFAULT_RECRUITMENT_TYPE_OPTIONS,
-  DUMMY_CURRENT_RECRUITMENT_FUNNEL,
-  DUMMY_RECRUITMENT_PRODUCTIVITY,
-} from '@/app/components/sourcing/sourcingDummyData';
+import { DEFAULT_RECRUITMENT_TYPE_OPTIONS } from '@/app/components/sourcing/sourcingDummyData';
 
 export interface SourcingFilters {
   employer: string;
@@ -423,13 +419,12 @@ function mapTrend(raw?: ApiSourcingAnalyticsResponse['sourcing_performance']): S
   });
 }
 
-const FALLBACK_PROCESSED_RATIO = 0.62;
 
 function splitProcessed(total: number, processedRaw: unknown): { processed: number; not_processed: number } {
   const hasProcessed = processedRaw !== undefined && processedRaw !== null && processedRaw !== '';
   const processed = hasProcessed
     ? Math.min(Math.max(0, num(processedRaw)), Math.max(0, total))
-    : Math.round(Math.max(0, total) * FALLBACK_PROCESSED_RATIO);
+    : 0;
   return {
     processed,
     not_processed: Math.max(0, total - processed),
@@ -537,79 +532,33 @@ function mapNewCandidateGrowth(
   };
 }
 
-type ApiFunnelStage = NonNullable<ApiSourcingAnalyticsResponse['recruitment_funnel']>[number];
-
-const FUNNEL_STAGE_ALIASES: Array<{ id: string; aliases: string[] }> = [
-  { id: 'pipeline', aliases: ['pipeline list', 'pipeline'] },
-  { id: 'hr_interview', aliases: ['hr interview', 'interview hr'] },
-  { id: 'skill_test', aliases: ['skill test', 'test skill'] },
-  { id: 'psychological_test', aliases: ['psychological test', 'psych test'] },
-  { id: 'background_check', aliases: ['background check'] },
-  { id: 'second_interview', aliases: ['2nd interview', 'second interview', 'user interview'] },
-  { id: 'ready_for_hiring', aliases: ['ready for hiring'] },
-];
-
-function slugifyName(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-}
-
-function matchFunnelStageId(name: string): string | null {
-  const n = slugifyName(name);
-  const found = FUNNEL_STAGE_ALIASES.find((stage) =>
-    stage.aliases.some((alias) => n === alias || n.includes(alias)),
-  );
-  return found?.id ?? null;
-}
-
-function mapFunnelBreakdown(
-  raw: ApiFunnelStage | undefined,
-  dummy: FunnelBreakdownItem[],
-  stageCount: number,
+function mapFunnelBreakdownItems(
+  rows?: Array<{
+    label?: string;
+    name?: string;
+    count?: number | string;
+    percent?: number | string;
+    pct?: number | string;
+  }>,
 ): FunnelBreakdownItem[] {
-  if (dummy.length === 0) return [];
-  const rows = raw?.items ?? raw?.breakdown ?? [];
-  if (rows.length > 0) {
-    return dummy.map((item) => {
-      const match = rows.find((row) => {
-        const label = slugifyName(String(row.label ?? row.name ?? ''));
-        return label === slugifyName(item.label) || label.includes(slugifyName(item.label));
-      });
-      const count = match ? num(match.count) : 0;
-      const percentRaw = match ? num(match.percent ?? match.pct) : 0;
-      const percent =
-        percentRaw > 0
-          ? percentRaw
-          : stageCount > 0
-            ? Math.round((count / stageCount) * 1000) / 10
-            : 0;
-      return { label: item.label, count, percent };
-    });
-  }
-
-  const dummyTotal = dummy.reduce((sum, item) => sum + item.count, 0) || 1;
-  return dummy.map((item) => {
-    const count = Math.round((item.count / dummyTotal) * stageCount);
-    const percent = stageCount > 0 ? Math.round((count / stageCount) * 1000) / 10 : 0;
-    return { label: item.label, count, percent };
-  });
+  return (rows ?? []).map((row) => ({
+    label: String(row.label ?? row.name ?? ''),
+    count: num(row.count),
+    percent: num(row.percent ?? row.pct),
+  }));
 }
 
 function mapCurrentRecruitmentFunnel(
   json: ApiSourcingAnalyticsResponse,
 ): CurrentRecruitmentFunnelStage[] {
   const raw = json.current_recruitment_funnel ?? json.recruitment_funnel ?? [];
-  if (raw.length === 0) return DUMMY_CURRENT_RECRUITMENT_FUNNEL;
-
-  return DUMMY_CURRENT_RECRUITMENT_FUNNEL.map((template) => {
-    const match = raw.find((stage) => {
-      const id = matchFunnelStageId(String(stage.stage_name ?? stage.title ?? ''));
-      return id === template.id;
-    });
-    const count = match ? num(match.total_count ?? match.count) : template.count;
+  return raw.map((stage) => {
+    const title = String(stage.stage_name ?? stage.title ?? '');
     return {
-      ...template,
-      count,
-      breakdown: mapFunnelBreakdown(match, template.breakdown, count),
+      id: title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'stage',
+      title,
+      count: num(stage.total_count ?? stage.count),
+      breakdown: mapFunnelBreakdownItems(stage.items ?? stage.breakdown),
     };
   });
 }
@@ -618,31 +567,27 @@ function mapRecruitmentProductivity(
   json: ApiSourcingAnalyticsResponse,
 ): RecruitmentProductivityMetric[] {
   const raw = json.recruitment_productivity;
-  if (!raw) return DUMMY_RECRUITMENT_PRODUCTIVITY;
+  if (!raw) return [];
 
-  const values: Record<string, number | undefined> = {
-    new_candidates: raw.new_candidates !== undefined ? num(raw.new_candidates) : undefined,
-    processed: raw.processed !== undefined ? num(raw.processed) : undefined,
-    interviewed: raw.interviewed !== undefined ? num(raw.interviewed) : undefined,
-    psych_test_assigned:
-      raw.psych_test_assigned !== undefined || raw.psychological_test_assigned !== undefined
-        ? num(raw.psych_test_assigned ?? raw.psychological_test_assigned)
-        : undefined,
-    ready_for_hiring: raw.ready_for_hiring !== undefined ? num(raw.ready_for_hiring) : undefined,
-    hired_by_ta:
-      raw.hired_by_ta !== undefined || raw.hired !== undefined
-        ? num(raw.hired_by_ta ?? raw.hired)
-        : undefined,
-    hiring_rate:
-      raw.hiring_rate_percent !== undefined || raw.hiring_rate !== undefined
-        ? num(raw.hiring_rate_percent ?? raw.hiring_rate)
-        : undefined,
-  };
-
-  return DUMMY_RECRUITMENT_PRODUCTIVITY.map((metric) => ({
-    ...metric,
-    value: values[metric.id] ?? metric.value,
-  }));
+  return [
+    { id: 'new_candidates', title: 'New Candidates', value: num(raw.new_candidates), format: 'count' },
+    { id: 'processed', title: 'Processed', value: num(raw.processed), format: 'count' },
+    { id: 'interviewed', title: 'Interviewed', value: num(raw.interviewed), format: 'count' },
+    {
+      id: 'psych_test_assigned',
+      title: 'Psych Test Assigned',
+      value: num(raw.psych_test_assigned ?? raw.psychological_test_assigned),
+      format: 'count',
+    },
+    { id: 'ready_for_hiring', title: 'Ready for Hiring', value: num(raw.ready_for_hiring), format: 'count' },
+    { id: 'hired_by_ta', title: 'Hired by TA', value: num(raw.hired_by_ta ?? raw.hired), format: 'count' },
+    {
+      id: 'hiring_rate',
+      title: 'Hiring Rate',
+      value: num(raw.hiring_rate_percent ?? raw.hiring_rate),
+      format: 'percent',
+    },
+  ];
 }
 
 function mapKpis(summary?: ApiSourcingAnalyticsResponse['summary']): SourcingExecutiveKpis {
@@ -775,8 +720,8 @@ export const EMPTY_SOURCING_DASHBOARD: SourcingDashboardData = {
     not_processed: 0,
     trend: [],
   },
-  currentRecruitmentFunnel: DUMMY_CURRENT_RECRUITMENT_FUNNEL,
-  recruitmentProductivity: DUMMY_RECRUITMENT_PRODUCTIVITY,
+  currentRecruitmentFunnel: [],
+  recruitmentProductivity: [],
   candidateHiringProfile: {
     age_distribution: [],
     gender_distribution: [],
