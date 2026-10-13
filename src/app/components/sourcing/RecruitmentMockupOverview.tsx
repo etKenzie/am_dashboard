@@ -237,7 +237,7 @@ export default function RecruitmentMockupOverview() {
   );
 
   return (
-    <PageContainer title="Recruitment Mockup" description="Recruitment mockup KPIs and filters">
+    <PageContainer title="Recruitment" description="Recruitment executive dashboard">
       <Box>
         <Box
           sx={{
@@ -250,7 +250,7 @@ export default function RecruitmentMockupOverview() {
           }}
         >
           <Typography variant="h3" fontWeight="bold">
-            Recruitment Mockup
+            Recruitment
           </Typography>
         </Box>
 

@@ -2,10 +2,10 @@
 
 import { getPageRoles } from '@/config/roles';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
-import RecruitmentOverview from '../../components/recruitment/RecruitmentOverview';
+import RecruitmentMockupOverview from '../../components/sourcing/RecruitmentMockupOverview';
 
 const RecruitmentPage = () => {
-  return <RecruitmentOverview />;
+  return <RecruitmentMockupOverview />;
 };
 
 export default function ProtectedRecruitmentPage() {

@@ -1,10 +1,11 @@
 'use client';
 
-import { Box, Card, CircularProgress, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { Box, Card, CircularProgress, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
 import type { Icon } from '@tabler/icons-react';
 import {
   IconChevronRight,
   IconClipboardCheck,
+  IconInfoCircle,
   IconListDetails,
   IconMessageCircle,
   IconMoodSmile,
@@ -58,7 +59,7 @@ function funnelIconFor(stageId: string): { icon: Icon; color: string } {
   return FUNNEL_STAGE_ICONS[stageId] ?? { icon: IconListDetails, color: '#64748B' };
 }
 
-function BreakdownList({
+function BreakdownTooltipRows({
   items,
   valueMode,
   caption,
@@ -70,32 +71,31 @@ function BreakdownList({
   if (items.length === 0) return null;
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, mt: 0.5 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
       {caption && (
         <Typography
           variant="caption"
-          color="text.secondary"
           fontWeight={700}
-          sx={{ lineHeight: 1.25, display: 'block', textTransform: 'uppercase', letterSpacing: 0.4 }}
+          sx={{
+            display: 'block',
+            textTransform: 'uppercase',
+            letterSpacing: 0.4,
+            opacity: 0.8,
+            mt: 0.5,
+          }}
         >
           {caption}
         </Typography>
       )}
       {items.map((item) => (
-        <Box key={item.label}>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            fontWeight={600}
-            sx={{ lineHeight: 1.25, display: 'block' }}
-          >
+        <Box
+          key={item.label}
+          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 2 }}
+        >
+          <Typography variant="caption" sx={{ opacity: 0.85 }}>
             {item.label}
           </Typography>
-          <Typography
-            variant="caption"
-            fontWeight={700}
-            sx={{ fontVariantNumeric: 'tabular-nums', display: 'block', lineHeight: 1.25 }}
-          >
+          <Typography variant="caption" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
             {valueMode === 'percent' ? formatPercent(item.percent) : formatNumber(item.count)}
           </Typography>
         </Box>
@@ -156,9 +156,12 @@ const CurrentRecruitmentFunnelSection = ({
               <Typography color="text.secondary">No funnel data</Typography>
             </Box>
           ) : (
-            stages.map((stage, index) => (
+            stages.map((stage, index) => {
+              const { icon: StageIcon, color } = funnelIconFor(stage.id);
+              const extraBreakdown = stage.extraBreakdown ?? [];
+              const hasDetails = stage.breakdown.length > 0 || extraBreakdown.length > 0;
+              const stageColumn = (
                 <Box
-                  key={stage.id}
                   sx={{
                     flex: '1 1 0',
                     minWidth: { lg: 128 },
@@ -168,30 +171,28 @@ const CurrentRecruitmentFunnelSection = ({
                     flexDirection: 'column',
                     gap: 0.5,
                     position: 'relative',
+                    cursor: hasDetails ? 'help' : 'default',
+                    outline: 'none',
                   }}
+                  tabIndex={hasDetails ? 0 : undefined}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 0.5 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0, pr: 0.5 }}>
-                      {(() => {
-                        const { icon: StageIcon, color } = funnelIconFor(stage.id);
-                        return (
-                          <Box
-                            sx={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: 1,
-                              bgcolor: withAlpha(color, 0.12),
-                              color,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <StageIcon size={16} stroke={1.75} />
-                          </Box>
-                        );
-                      })()}
+                      <Box
+                        sx={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 1,
+                          bgcolor: withAlpha(color, 0.12),
+                          color,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <StageIcon size={16} stroke={1.75} />
+                      </Box>
                       <Typography
                         color="text.secondary"
                         fontWeight={700}
@@ -199,6 +200,11 @@ const CurrentRecruitmentFunnelSection = ({
                       >
                         {stage.title}
                       </Typography>
+                      {hasDetails && (
+                        <Box sx={{ color: 'text.disabled', display: 'flex', flexShrink: 0 }}>
+                          <IconInfoCircle size={14} stroke={1.75} />
+                        </Box>
+                      )}
                     </Box>
                     {index < stages.length - 1 && (
                       <Box sx={{ color: 'text.disabled', flexShrink: 0, mt: 0.4, display: { xs: 'none', lg: 'flex' } }}>
@@ -217,14 +223,32 @@ const CurrentRecruitmentFunnelSection = ({
                   >
                     {formatNumber(stage.count)}
                   </Typography>
-                  <BreakdownList items={stage.breakdown} valueMode={valueMode} />
-                  <BreakdownList
-                    items={stage.extraBreakdown ?? []}
-                    valueMode={valueMode}
-                    caption={stage.extraBreakdown && stage.extraBreakdown.length > 0 ? 'Status' : undefined}
-                  />
                 </Box>
-            ))
+              );
+
+              if (!hasDetails) return <Box key={stage.id}>{stageColumn}</Box>;
+
+              return (
+                <Tooltip
+                  key={stage.id}
+                  arrow
+                  placement="top"
+                  enterDelay={200}
+                  title={
+                    <Box sx={{ py: 0.25, minWidth: 148 }}>
+                      <BreakdownTooltipRows items={stage.breakdown} valueMode={valueMode} />
+                      <BreakdownTooltipRows
+                        items={extraBreakdown}
+                        valueMode={valueMode}
+                        caption={extraBreakdown.length > 0 ? 'Status' : undefined}
+                      />
+                    </Box>
+                  }
+                >
+                  {stageColumn}
+                </Tooltip>
+              );
+            })
           )}
         </Box>
       </Card>

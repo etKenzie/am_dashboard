@@ -8,7 +8,6 @@ import {
   IconUsers,
   IconUserSearch,
   IconHome,
-  IconMask,
   // IconPaywall,
   IconUserCancel
 } from "@tabler/icons-react";
@@ -168,14 +167,6 @@ const Menuitems: MenuitemsType[] = [
     icon: IconUsers,
     href: "/recruitment",
     requiredRoles: [ROLES.ADMIN, ROLES.RECRUITMENT],
-  },
-
-  {
-    id: uniqueId(),
-    title: "Recruitment Mockup",
-    icon: IconMask,
-    href: "/recruitment-mockup",
-    requiredRoles: [ROLES.ADMIN, ROLES.RECRUITMENT, ROLES.SOURCING],
   },
 
   {
